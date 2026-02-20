@@ -24,6 +24,20 @@ export default function Rooms({ property, state, updateState, updateData, openMo
     state.elecMonth
   )
 
+  // 刪除房間
+  const deleteRoom = (roomId: number) => {
+    if (!confirm(t('confirmDeleteRoom', state.lang))) return
+    
+    const updatedProperties = state.data.properties.map(p => 
+      p.id === property.id
+        ? { ...p, rooms: p.rooms.filter(r => r.id !== roomId) }
+        : p
+    )
+    
+    updateData({ properties: updatedProperties })
+    alert(t('roomDeleted', state.lang))
+  }
+
   return (
     <div className="space-y-4">
       {/* 房間總覽卡片 */}
@@ -118,16 +132,16 @@ export default function Rooms({ property, state, updateState, updateData, openMo
                 {room.s === 'occupied' ? (
                   <>
                     <button 
-                      onClick={() => openModal('detail', room.id)}
+                      onClick={() => openModal('roomDetail', room.id)}
                       className="flex-1 btn btn-primary text-sm"
                     >
                       {t('details', state.lang)}
                     </button>
                     <button 
-                      onClick={() => openModal('editTenant', room.id)}
-                      className="flex-1 btn bg-gray-200 text-sm"
+                      onClick={() => openModal('updateMeter', room.id)}
+                      className="flex-1 btn bg-blue-100 text-blue-600 text-sm"
                     >
-                      {t('edit', state.lang)}
+                      {t('updateMeter', state.lang)}
                     </button>
                     <button 
                       onClick={() => openModal('moveOut', room.id)}
@@ -151,7 +165,7 @@ export default function Rooms({ property, state, updateState, updateData, openMo
                       {t('edit', state.lang)}
                     </button>
                     <button 
-                      onClick={() => openModal('deleteRoom', room.id)}
+                      onClick={() => deleteRoom(room.id)}
                       className="flex-1 btn bg-red-100 text-red-600 text-sm"
                     >
                       {t('delete', state.lang)}

@@ -144,6 +144,13 @@ export const translations: Translation = {
     imported: '✓ 已匯入',
     importFailed: '匯入失敗：',
     rateMustBePositive: '電價必須>0',
+    roomDetails: '房間詳情',
+    confirmDeleteRoom: '確定要刪除此房間嗎？',
+    roomDeleted: '房間已刪除',
+    meterCannotBeLess: '本次電錶不能小於上次電錶',
+    meterUpdated: '電錶已更新',
+    pleaseEnterTenantName: '請輸入租客姓名',
+    roomRented: '房間已出租',
   },
   'vi-VN': {
     system: 'Hệ thống Quản lý Đa BĐS',
@@ -288,6 +295,13 @@ export const translations: Translation = {
     imported: '✓ Nhập',
     importFailed: 'Lỗi:',
     rateMustBePositive: '>0',
+    roomDetails: 'Chi tiết phòng',
+    confirmDeleteRoom: 'Xóa phòng?',
+    roomDeleted: 'Đã xóa phòng',
+    meterCannotBeLess: 'Số điện không nhỏ hơn',
+    meterUpdated: 'Đã cập nhật',
+    pleaseEnterTenantName: 'Nhập tên người thuê',
+    roomRented: 'Đã cho thuê',
   }
 };
 

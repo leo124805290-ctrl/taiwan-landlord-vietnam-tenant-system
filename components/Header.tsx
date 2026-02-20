@@ -23,11 +23,35 @@ export default function Header({ state, updateState, openModal }: HeaderProps) {
       <div className="max-w-7xl mx-auto px-4 py-4">
         {/* 頂部欄 */}
         <div className="flex justify-between items-center mb-4">
-          <div>
-            <h1 className="text-2xl font-bold">🏢 {t('system', state.lang)}</h1>
-            <p className="text-sm text-gray-500">
-              {state.data.properties.length} {t('properties', state.lang)}
-            </p>
+          <div className="flex items-center gap-4">
+            <div>
+              <h1 className="text-2xl font-bold">🏢 {t('system', state.lang)}</h1>
+              <p className="text-sm text-gray-500">
+                {state.data.properties.length} {t('properties', state.lang)}
+              </p>
+            </div>
+            
+            {/* 物業切換下拉選單 */}
+            {state.data.properties.length > 0 && (
+              <div className="relative">
+                <select 
+                  value={state.currentProperty || ''}
+                  onChange={(e) => updateState({ currentProperty: parseInt(e.target.value) })}
+                  className="px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  {state.data.properties.map(property => (
+                    <option key={property.id} value={property.id}>
+                      {property.name} ({property.rooms.length} {t('rooms', state.lang)})
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                  </svg>
+                </div>
+              </div>
+            )}
           </div>
           
           <div className="flex gap-2">
