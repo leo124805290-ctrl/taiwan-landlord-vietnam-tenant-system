@@ -2,67 +2,72 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
-}
-
-body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+* {
+  -webkit-tap-highlight-color: transparent;
+  font-family: system-ui, sans-serif;
 }
 
 @layer base {
-  h1 {
-    @apply text-4xl font-bold tracking-tight;
-  }
-  h2 {
-    @apply text-3xl font-semibold tracking-tight;
-  }
-  h3 {
-    @apply text-2xl font-semibold tracking-tight;
-  }
-  h4 {
-    @apply text-xl font-semibold tracking-tight;
+  body {
+    @apply bg-gradient-to-br from-blue-50 to-purple-50;
   }
 }
 
 @layer components {
+  .card {
+    @apply bg-white rounded-xl shadow-lg p-6 border border-gray-100;
+  }
+  
+  .modal {
+    @apply fixed inset-0 bg-black/70 flex items-center justify-center z-50;
+  }
+  
+  .modal-box {
+    @apply bg-white rounded-xl p-6 max-w-lg w-[90%] max-h-[90vh] overflow-y-auto;
+  }
+  
+  .badge {
+    @apply inline-block px-3 py-1 rounded-full text-xs font-semibold;
+  }
+  
+  .btn {
+    @apply px-4 py-2 rounded-lg font-semibold transition-all duration-200 cursor-pointer;
+  }
+  
   .btn-primary {
-    @apply bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors font-medium;
+    @apply bg-blue-600 text-white hover:bg-blue-700 hover:translate-y-[-2px];
   }
   
   .btn-secondary {
-    @apply bg-secondary-200 text-secondary-800 px-4 py-2 rounded-lg hover:bg-secondary-300 transition-colors font-medium;
+    @apply bg-gray-100 text-gray-800 hover:bg-gray-200;
   }
   
-  .card {
-    @apply bg-white rounded-xl shadow-md p-6 border border-gray-200;
+  .stat-card {
+    @apply rounded-xl p-6 text-white;
   }
   
-  .input-field {
-    @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+  .property-tab {
+    @apply px-4 py-2 rounded-lg cursor-pointer transition-all duration-200 whitespace-nowrap;
   }
   
-  .table-header {
-    @apply px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+  .property-tab.active {
+    @apply bg-white text-blue-600 font-bold;
   }
   
-  .table-cell {
-    @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900;
+  .property-tab:not(.active) {
+    @apply bg-white/20 text-white;
   }
+  
+  input, select, textarea {
+    @apply w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500;
+  }
+  
+  input:focus, select:focus, textarea:focus {
+    @apply outline-none border-blue-500;
+  }
+}
+
+/* 自定義樣式 */
+.gradient-bg {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
