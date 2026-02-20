@@ -79,12 +79,24 @@ fi
 
 # 檢查頁面檔案
 echo "9. 檢查頁面檔案..."
-REQUIRED_PAGES=("app/page.tsx" "app/dashboard/page.tsx" "app/layout.tsx")
+REQUIRED_PAGES=("app/page.tsx" "app/layout.tsx" "app/globals.css")
 for page in "${REQUIRED_PAGES[@]}"; do
     if [ -f "$page" ]; then
         echo "   ✅ $page 存在"
     else
         echo "   ❌ $page 不存在"
+        exit 1
+    fi
+done
+
+# 檢查元件檔案
+echo "10. 檢查元件檔案..."
+REQUIRED_COMPONENTS=("components/Header.tsx" "components/Dashboard.tsx" "components/Modal.tsx")
+for component in "${REQUIRED_COMPONENTS[@]}"; do
+    if [ -f "$component" ]; then
+        echo "   ✅ $component 存在"
+    else
+        echo "   ❌ $component 不存在"
         exit 1
     fi
 done
