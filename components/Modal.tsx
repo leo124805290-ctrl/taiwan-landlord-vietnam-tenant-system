@@ -1,6 +1,6 @@
 'use client'
 
-import { AppState } from '@/lib/types'
+import { AppState, Room } from '@/lib/types'
 import { t } from '@/lib/translations'
 import { formatCurrency } from '@/lib/utils'
 
@@ -129,7 +129,7 @@ export default function Modal({
         )
 
       case 'roomDetail':
-        const room = property?.rooms.find(r => r.id === data)
+        const room = property?.rooms.find((r: Room) => r.id === data)
         if (!room) return null
         
         return (
@@ -181,7 +181,8 @@ export default function Modal({
               <button 
                 onClick={() => {
                   closeModal()
-                  openModal(room.s === 'occupied' ? 'updateMeter' : 'editRoom', room.id)
+                  // 這裡無法直接調用 openModal，需要其他方式
+                  // 暫時只關閉 modal
                 }}
                 className="flex-1 btn btn-primary"
               >
@@ -192,7 +193,7 @@ export default function Modal({
         )
 
       case 'updateMeter':
-        const meterRoom = property?.rooms.find(r => r.id === data)
+        const meterRoom = property?.rooms.find((r: Room) => r.id === data)
         if (!meterRoom) return null
         
         return (
@@ -236,7 +237,7 @@ export default function Modal({
         )
 
       case 'rentOut':
-        const rentRoom = property?.rooms.find(r => r.id === data)
+        const rentRoom = property?.rooms.find((r: Room) => r.id === data)
         if (!rentRoom) return null
         
         return (
@@ -273,6 +274,135 @@ export default function Modal({
                 {t('cancel', state.lang)}
               </button>
               <button onClick={() => saveRentOut(data)} className="flex-1 btn btn-primary">
+                {t('save', state.lang)}
+              </button>
+            </div>
+          </>
+        )
+
+      case 'editRoom':
+        const editRoom = property?.rooms.find((r: Room) => r.id === data)
+        if (!editRoom) return null
+        
+        return (
+          <>
+            <h2 className="text-2xl font-bold mb-4">✏️ {t('edit', state.lang)} {t('room', state.lang)}</h2>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm mb-1">{t('roomNumber', state.lang)}</label>
+                <input type="text" id="editRoomNumber" defaultValue={editRoom.n} className="input-field" />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">{t('floor', state.lang)}</label>
+                <input type="number" id="editFloor" defaultValue={editRoom.f} className="input-field" />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">{t('monthlyRent', state.lang)}</label>
+                <input type="number" id="editRent" defaultValue={editRoom.r} className="input-field" />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">{t('deposit', state.lang)}</label>
+                <input type="number" id="editDeposit" defaultValue={editRoom.d || 0} className="input-field" />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <button onClick={closeModal} className="flex-1 btn bg-gray-200">
+                {t('cancel', state.lang)}
+              </button>
+              <button onClick={() => saveEditRoom(data)} className="flex-1 btn btn-primary">
+                {t('save', state.lang)}
+              </button>
+            </div>
+          </>
+        )
+
+      case 'moveOut':
+        const moveOutRoom = property?.rooms.find((r: Room) => r.id === data)
+        if (!moveOutRoom) return null
+        
+        return (
+          <>
+            <h2 className="text-2xl font-bold mb-4">🚪 {t('moveOut', state.lang)}</h2>
+            <div className="space-y-3">
+              <div>
+                <div className="text-sm text-gray-600 mb-1">{t('room', state.lang)}</div>
+                <div className="text-lg font-bold">{moveOutRoom.n} ({moveOutRoom.f}F)</div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-600 mb-1">{t('tenantName', state.lang)}</div>
+                <div className="text-lg">{moveOutRoom.t || t('noTenant', state.lang)}</div>
+              </div>
+              <div className="p-4 bg-yellow-50 border-l-4 border-yellow-500 rounded">
+                <div className="font-bold text-yellow-800">{t('warning', state.lang)}</div>
+                <div className="text-sm text-yellow-700 mt-1">
+                  {t('moveOutWarning', state.lang)}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm mb-1">{t('finalMeter', state.lang)}</label>
+                <input type="number" id="finalMeter" defaultValue={moveOutRoom.cm || moveOutRoom.lm || 0} className="input-field" />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">{t('moveOutDate', state.lang)}</label>
+                <input type="date" id="moveOutDate" defaultValue={new Date().toISOString().split('T')[0]} className="input-field" />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <button onClick={closeModal} className="flex-1 btn bg-gray-200">
+                {t('cancel', state.lang)}
+              </button>
+              <button onClick={() => saveMoveOut(data)} className="flex-1 btn bg-red-600 text-white">
+                {t('confirmMoveOut', state.lang)}
+              </button>
+            </div>
+          </>
+        )
+
+      case 'editMaint':
+        const maint = property?.maintenance?.find((m: any) => m.id === data)
+        if (!maint) return null
+        
+        return (
+          <>
+            <h2 className="text-2xl font-bold mb-4">🔧 {t('edit', state.lang)} {t('maintenance', state.lang)}</h2>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm mb-1">{t('title', state.lang)}</label>
+                <input type="text" id="editMaintTitle" defaultValue={maint.title} className="input-field" />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">{t('description', state.lang)}</label>
+                <textarea id="editMaintDesc" defaultValue={maint.desc} className="input-field h-24" />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">{t('urgency', state.lang)}</label>
+                <select id="editMaintUrg" defaultValue={maint.urg} className="input-field">
+                  <option value="urgent">{t('urgent', state.lang)}</option>
+                  <option value="normal">{t('normal', state.lang)}</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm mb-1">{t('status', state.lang)}</label>
+                <select id="editMaintStatus" defaultValue={maint.s} className="input-field">
+                  <option value="pending">{t('pendingStatus', state.lang)}</option>
+                  <option value="assigned">{t('assignedStatus', state.lang)}</option>
+                  <option value="completed">{t('completedStatus', state.lang)}</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm mb-1">{t('cost', state.lang)}</label>
+                <input type="number" id="editMaintCost" defaultValue={maint.cost || 0} className="input-field" />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">{t('repairDate', state.lang)}</label>
+                <input type="date" id="editMaintDate" defaultValue={maint.repairDate || ''} className="input-field" />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <button onClick={closeModal} className="flex-1 btn bg-gray-200">
+                {t('cancel', state.lang)}
+              </button>
+              <button onClick={() => saveEditMaintenance(data)} className="flex-1 btn btn-primary">
                 {t('save', state.lang)}
               </button>
             </div>
@@ -357,7 +487,7 @@ export default function Modal({
 
     const meterInput = document.getElementById('currentMeter') as HTMLInputElement
     const currentMeter = parseInt(meterInput.value) || 0
-    const lastMeter = property.rooms.find(r => r.id === roomId)?.lm || 0
+    const lastMeter = property.rooms.find((r: Room) => r.id === roomId)?.lm || 0
 
     if (currentMeter < lastMeter) {
       alert(t('meterCannotBeLess', state.lang))
@@ -379,6 +509,136 @@ export default function Modal({
 
     updateData({ properties: updatedProperties })
     alert(t('meterUpdated', state.lang))
+    closeModal()
+  }
+
+  // 儲存編輯房間
+  const saveEditRoom = (roomId: number) => {
+    const property = getCurrentProperty()
+    if (!property) return
+
+    const roomNumInput = document.getElementById('editRoomNumber') as HTMLInputElement
+    const floorInput = document.getElementById('editFloor') as HTMLInputElement
+    const rentInput = document.getElementById('editRent') as HTMLInputElement
+    const depositInput = document.getElementById('editDeposit') as HTMLInputElement
+
+    if (!roomNumInput?.value.trim()) {
+      alert(t('pleaseEnterRoomNumber', state.lang))
+      return
+    }
+
+    const updatedProperties = state.data.properties.map(p => 
+      p.id === property.id
+        ? {
+            ...p,
+            rooms: p.rooms.map(r => 
+              r.id === roomId
+                ? { 
+                    ...r, 
+                    n: roomNumInput.value.trim(),
+                    f: parseInt(floorInput.value) || r.f,
+                    r: parseInt(rentInput.value) || r.r,
+                    d: parseInt(depositInput.value) || r.d
+                  }
+                : r
+            )
+          }
+        : p
+    )
+
+    updateData({ properties: updatedProperties })
+    alert(t('roomUpdated', state.lang))
+    closeModal()
+  }
+
+  // 儲存編輯報修
+  const saveEditMaintenance = (maintId: number) => {
+    const property = getCurrentProperty()
+    if (!property) return
+
+    const titleInput = document.getElementById('editMaintTitle') as HTMLInputElement
+    const descInput = document.getElementById('editMaintDesc') as HTMLTextAreaElement
+    const urgInput = document.getElementById('editMaintUrg') as HTMLSelectElement
+    const statusInput = document.getElementById('editMaintStatus') as HTMLSelectElement
+    const costInput = document.getElementById('editMaintCost') as HTMLInputElement
+    const dateInput = document.getElementById('editMaintDate') as HTMLInputElement
+
+    if (!titleInput?.value.trim()) {
+      alert(t('pleaseEnterTitle', state.lang))
+      return
+    }
+
+    const updatedProperties = state.data.properties.map(p => 
+      p.id === property.id
+        ? {
+            ...p,
+            maintenance: (p.maintenance || []).map(m => 
+              m.id === maintId
+                ? {
+                    ...m,
+                    title: titleInput.value.trim(),
+                    desc: descInput.value.trim(),
+                    urg: urgInput.value as any,
+                    s: statusInput.value as any,
+                    cost: parseInt(costInput.value) || undefined,
+                    repairDate: dateInput.value || undefined
+                  }
+                : m
+            )
+          }
+        : p
+    )
+
+    updateData({ properties: updatedProperties })
+    alert(t('maintenanceUpdated', state.lang))
+    closeModal()
+  }
+
+  // 儲存退租
+  const saveMoveOut = (roomId: number) => {
+    const property = getCurrentProperty()
+    if (!property) return
+
+    const finalMeterInput = document.getElementById('finalMeter') as HTMLInputElement
+    const moveOutDateInput = document.getElementById('moveOutDate') as HTMLInputElement
+
+    const finalMeter = parseInt(finalMeterInput.value) || 0
+    const moveOutDate = moveOutDateInput.value
+
+    // 計算最後電費
+    const room = property.rooms.find((r: Room) => r.id === roomId)
+    if (!room) return
+
+    const lastMeter = room.lm || 0
+    const electricityFee = Math.max(0, finalMeter - lastMeter) * state.data.electricityRate
+
+    const updatedProperties = state.data.properties.map(p => 
+      p.id === property.id
+        ? {
+            ...p,
+            rooms: p.rooms.map(r => 
+              r.id === roomId
+                ? { 
+                    ...r, 
+                    s: 'available' as const,
+                    t: undefined,
+                    p: undefined,
+                    cs: undefined,
+                    ce: undefined,
+                    cm: finalMeter,
+                    // 記錄退租資訊
+                    moveOutDate: moveOutDate,
+                    finalMeter: finalMeter,
+                    finalElectricityFee: electricityFee
+                  }
+                : r
+            )
+          }
+        : p
+    )
+
+    updateData({ properties: updatedProperties })
+    alert(t('moveOutCompleted', state.lang))
     closeModal()
   }
 
