@@ -106,6 +106,13 @@ export default function Dashboard({ property }: DashboardProps) {
       to: '#2563eb'
     },
     {
+      title: t('totalDeposit', state.lang),
+      value: formatCurrency(stats.totalDeposit),
+      subText: `${stats.occupied} ${t('rooms', state.lang)}`,
+      from: '#8b5cf6',
+      to: '#7c3aed'
+    },
+    {
       title: t('occupied', state.lang),
       value: stats.occupied.toString(),
       subText: `${t('available', state.lang)} ${stats.available}`,
@@ -116,13 +123,6 @@ export default function Dashboard({ property }: DashboardProps) {
       title: t('received', state.lang),
       value: `$${Math.round(stats.received / 1000)}K`,
       subText: `${(property.history || []).length} ${t('items', state.lang)}`,
-      from: '#8b5cf6',
-      to: '#7c3aed'
-    },
-    {
-      title: t('pending', state.lang),
-      value: `$${Math.round(stats.pending / 1000)}K`,
-      subText: `${stats.pendingCount} ${t('items', state.lang)}`,
       from: '#f59e0b',
       to: '#d97706'
     }
@@ -151,9 +151,9 @@ export default function Dashboard({ property }: DashboardProps) {
       text: 'text-purple-600'
     },
     {
-      title: t('totalDeposit', state.lang),
-      value: formatCurrency(stats.totalDeposit),
-      subText: `${stats.occupied} ${t('rooms', state.lang)}`,
+      title: t('pending', state.lang),
+      value: `$${Math.round(stats.pending / 1000)}K`,
+      subText: `${stats.pendingCount} ${t('items', state.lang)}`,
       bg: 'bg-indigo-50',
       text: 'text-indigo-600'
     },
@@ -208,6 +208,16 @@ export default function Dashboard({ property }: DashboardProps) {
 
   return (
     <div className="space-y-6">
+      {/* 總表標題 */}
+      <div className="flex justify-between items-center mb-2">
+        <h1 className="text-2xl font-bold">📊 {t('summaryTable', state.lang)}</h1>
+        <div className="text-sm text-gray-600">
+          {showAllProperties 
+            ? `${state.data.properties.length} ${t('properties', state.lang)}`
+            : property.name}
+        </div>
+      </div>
+      
       {/* 物業標題 */}
       <div className="card gradient-bg text-white">
         <div className="flex justify-between items-start">
