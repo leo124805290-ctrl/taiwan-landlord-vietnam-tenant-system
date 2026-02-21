@@ -49,6 +49,17 @@ export function calcPayments(property: Property, electricityRate: number): void 
   property.payments = [];
   let id = (property.history?.length > 0 ? Math.max(...property.history.map(p => p.id)) : 0) + 100;
   
+  // 獲取當前年月
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1; // 0-based to 1-based
+  const currentMonthStr = `${currentYear}/${currentMonth.toString().padStart(2, '0')}`;
+  
+  // 計算下個月的5號為到期日
+  const nextMonth = new Date(now);
+  nextMonth.setMonth(nextMonth.getMonth() + 1);
+  const dueDate = `${nextMonth.getFullYear()}-${(nextMonth.getMonth() + 1).toString().padStart(2, '0')}-05`;
+  
   property.rooms
     .filter(r => r.s === 'occupied')
     .forEach(rm => {
@@ -59,12 +70,12 @@ export function calcPayments(property: Property, electricityRate: number): void 
         rid: rm.id,
         n: rm.n,
         t: rm.t || '',
-        m: '2026/03',
+        m: currentMonthStr,
         r: rm.r,
         u: u,
         e: e,
         total: rm.r + e,
-        due: '2026-03-05',
+        due: dueDate,
         s: 'pending'
       });
     });

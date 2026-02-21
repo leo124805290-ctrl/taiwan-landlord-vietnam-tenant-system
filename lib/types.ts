@@ -46,6 +46,8 @@ export interface Payment {
   due: string; // 到期日
   s: PaymentStatus; // 狀態
   paid?: string; // 付款日期
+  paymentMethod?: string; // 付款方式
+  notes?: string; // 備註
 }
 
 // 維修記錄

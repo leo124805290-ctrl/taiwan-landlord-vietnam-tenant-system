@@ -413,6 +413,83 @@ export default function Modal() {
           </>
         )
 
+      case 'quickPay':
+        const payment = property?.payments?.find((p: any) => p.id === data)
+        if (!payment) return null
+        
+        return (
+          <>
+            <h2 className="text-2xl font-bold mb-4">💰 {t('collect', state.lang)}</h2>
+            <div className="space-y-4">
+              {/* 付款資訊 */}
+              <div className="p-4 bg-blue-50 rounded-lg">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <div className="text-sm text-gray-600">{t('roomNumber', state.lang)}</div>
+                    <div className="text-lg font-bold">{payment.n}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-600">{t('tenant', state.lang)}</div>
+                    <div className="text-lg font-bold">{payment.t}</div>
+                  </div>
+                </div>
+                
+                <div className="mt-3 pt-3 border-t">
+                  <div className="flex justify-between mb-1">
+                    <span>{t('rent', state.lang)}</span>
+                    <span className="font-bold">{formatCurrency(payment.r)}</span>
+                  </div>
+                  <div className="flex justify-between mb-1">
+                    <span>{t('electricity', state.lang)} ({payment.u}{t('degree', state.lang)})</span>
+                    <span className="font-bold">{formatCurrency(payment.e)}</span>
+                  </div>
+                  <div className="flex justify-between mt-2 pt-2 border-t font-bold text-lg">
+                    <span>{t('total', state.lang)}</span>
+                    <span className="text-green-600">{formatCurrency(payment.total)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 收款設定 */}
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm mb-1">{t('paymentMethod', state.lang)}</label>
+                  <select id="paymentMethod" className="input-field" defaultValue="cash">
+                    <option value="cash">💵 {t('cash', state.lang)}</option>
+                    <option value="transfer">🏦 {t('transfer', state.lang)}</option>
+                    <option value="other">📱 {t('other', state.lang)}</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm mb-1">{t('paymentDate', state.lang)}</label>
+                  <input 
+                    type="date" 
+                    id="paymentDate" 
+                    defaultValue={new Date().toISOString().split('T')[0]}
+                    className="input-field" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm mb-1">{t('notes', state.lang)}</label>
+                  <textarea 
+                    id="paymentNotes" 
+                    placeholder={t('optionalNotes', state.lang)}
+                    className="input-field h-20" 
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <button onClick={closeModal} className="flex-1 btn bg-gray-200">
+                {t('cancel', state.lang)}
+              </button>
+              <button onClick={() => saveQuickPay(payment.id)} className="flex-1 btn btn-primary">
+                ✅ {t('confirmPayment', state.lang)}
+              </button>
+            </div>
+          </>
+        )
+
       case 'editMaint':
         const maint = property?.maintenance?.find((m: any) => m.id === data)
         if (!maint) return null
@@ -730,10 +807,22 @@ export default function Modal() {
     const finalMeter = parseInt(finalMeterInput.value) || 0
     const moveOutDate = moveOutDateInput.value
 
-    // 計算最後電費
+    // 檢查是否有未繳費用
     const room = property.rooms.find((r: Room) => r.id === roomId)
     if (!room) return
 
+    // 檢查該房間是否有待收款項
+    const pendingPayments = property.payments.filter((p: any) => p.rid === roomId && p.s === 'pending')
+    if (pendingPayments.length > 0) {
+      const totalPending = pendingPayments.reduce((sum: number, p: any) => sum + p.total, 0)
+      const confirmMessage = `⚠️ ${t('warning', state.lang)}\n\n${t('unpaidWarning', state.lang)} ${formatCurrency(totalPending)}\n\n${t('confirmMoveOutAnyway', state.lang)}`
+      
+      if (!confirm(confirmMessage)) {
+        return // 用戶取消退租
+      }
+    }
+
+    // 計算最後電費
     const lastMeter = room.lm || 0
     const electricityFee = Math.max(0, finalMeter - lastMeter) * state.data.electricityRate
 
@@ -764,6 +853,43 @@ export default function Modal() {
 
     updateData({ properties: updatedProperties })
     alert(t('moveOutCompleted', state.lang))
+    closeModal()
+  }
+
+  // 儲存快速收款
+  const saveQuickPay = (paymentId: number) => {
+    const property = getCurrentProperty()
+    if (!property) return
+
+    const payment = property.payments.find((p: any) => p.id === paymentId)
+    if (!payment) return
+
+    const methodInput = document.getElementById('paymentMethod') as HTMLSelectElement
+    const dateInput = document.getElementById('paymentDate') as HTMLInputElement
+    const notesInput = document.getElementById('paymentNotes') as HTMLTextAreaElement
+
+    const updatedPayment = {
+      ...payment,
+      s: 'paid' as const,
+      paid: dateInput.value,
+      paymentMethod: methodInput.value,
+      notes: notesInput.value.trim() || undefined
+    }
+
+    const updatedProperties = state.data.properties.map(p => 
+      p.id === property.id
+        ? {
+            ...p,
+            payments: p.payments.filter(pay => pay.id !== paymentId),
+            history: [...(p.history || []), updatedPayment]
+          }
+        : p
+    )
+
+    updateData({ properties: updatedProperties })
+    
+    // 顯示成功訊息
+    alert(`✅ ${t('collected', state.lang)}\n${payment.n} - ${payment.t}\n${formatCurrency(payment.total)}`)
     closeModal()
   }
 
