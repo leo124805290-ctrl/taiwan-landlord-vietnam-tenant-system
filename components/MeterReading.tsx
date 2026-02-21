@@ -199,8 +199,8 @@ export default function MeterReading({ property }: MeterReadingProps) {
   const [historyFilterMonth, setHistoryFilterMonth] = useState<string>('all')
   
   // 獲取所有可用的年份和月份
-  const availableYears = Array.from(new Set(meterHistory.map((record: any) => record.month.split('/')[0]))).sort((a, b) => b.localeCompare(a))
-  const availableMonths = Array.from(new Set(meterHistory.map((record: any) => record.month))).sort((a, b) => b.localeCompare(a))
+  const availableYears = Array.from(new Set<string>(meterHistory.map((record: any) => record.month.split('/')[0]))).sort((a: string, b: string) => b.localeCompare(a))
+  const availableMonths = Array.from(new Set<string>(meterHistory.map((record: any) => record.month))).sort((a: string, b: string) => b.localeCompare(a))
   
   // 篩選抄錶歷史
   const filteredMeterHistory = meterHistory.filter((record: any) => {
@@ -392,7 +392,7 @@ export default function MeterReading({ property }: MeterReadingProps) {
                 className="input-field"
               >
                 <option value="all">{t('allYears', state.lang)}</option>
-                {availableYears.map(year => (
+                {availableYears.map((year: string) => (
                   <option key={year} value={year}>{year}</option>
                 ))}
               </select>
