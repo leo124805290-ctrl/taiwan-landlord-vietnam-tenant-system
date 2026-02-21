@@ -163,6 +163,9 @@ export const translations: Translation = {
     cost: '費用',
     pleaseEnterTitle: '請輸入標題',
     maintenanceUpdated: '報修已更新',
+    totalRevenue: '總租金收入',
+    totalElectricityCost: '總電費支出',
+    viewAll: '查看全部',
   },
   'vi-VN': {
     system: 'Hệ thống Quản lý Đa BĐS',
@@ -326,6 +329,9 @@ export const translations: Translation = {
     cost: 'Chi phí',
     pleaseEnterTitle: 'Nhập tiêu đề',
     maintenanceUpdated: 'Đã cập nhật',
+    totalRevenue: 'Tổng thu nhập',
+    totalElectricityCost: 'Tổng chi điện',
+    viewAll: 'Xem tất cả',
   }
 };
 

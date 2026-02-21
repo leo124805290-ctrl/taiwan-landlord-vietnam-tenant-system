@@ -99,6 +99,13 @@ export interface AppState {
   elecYear: number;
   elecMonth: string;
   data: AppData;
+  // 新增：臨時篩選狀態
+  tempRevenueTimeScope: TimeScope;
+  tempRevenueYear: number;
+  tempRevenueMonth: string;
+  tempElecTimeScope: TimeScope;
+  tempElecYear: number;
+  tempElecMonth: string;
 }
 
 // 統計資料

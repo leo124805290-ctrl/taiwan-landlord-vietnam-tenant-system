@@ -9,19 +9,75 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ property }: DashboardProps) {
-  const { state, updateState, openModal } = useApp()
-  const stats = calculateStats(
-    property, 
-    state.data, 
-    state.revenueTimeScope, 
-    state.revenueYear, 
-    state.revenueMonth,
-    state.elecTimeScope,
-    state.elecYear,
-    state.elecMonth
-  )
+  const { state, updateState, openModal, getCurrentProperty } = useApp()
   
-  const elecAnalysis = analyzeElectricity(stats.elec)
+  // 檢查是否顯示全部物業
+  const showAllProperties = state.currentProperty === null
+  
+  // 計算統計數據
+  let stats, elecAnalysis
+  if (showAllProperties) {
+    // 計算所有物業的總和
+    const allStats = state.data.properties.map(p => 
+      calculateStats(
+        p, 
+        state.data, 
+        state.revenueTimeScope, 
+        state.revenueYear, 
+        state.revenueMonth,
+        state.elecTimeScope,
+        state.elecYear,
+        state.elecMonth
+      )
+    )
+    
+    // 合併所有物業的統計數據
+    stats = {
+      total: allStats.reduce((sum, s) => sum + s.total, 0),
+      occupied: allStats.reduce((sum, s) => sum + s.occupied, 0),
+      available: allStats.reduce((sum, s) => sum + s.available, 0),
+      rate: allStats.length > 0 ? Math.round(allStats.reduce((sum, s) => sum + s.rate, 0) / allStats.length) : 0,
+      totalRent: allStats.reduce((sum, s) => sum + s.totalRent, 0),
+      avgRent: allStats.length > 0 ? Math.round(allStats.reduce((sum, s) => sum + s.avgRent, 0) / allStats.length) : 0,
+      totalElec: allStats.reduce((sum, s) => sum + s.totalElec, 0),
+      received: allStats.reduce((sum, s) => sum + s.received, 0),
+      pending: allStats.reduce((sum, s) => sum + s.pending, 0),
+      pendingCount: allStats.reduce((sum, s) => sum + s.pendingCount, 0),
+      expiring: allStats.reduce((sum, s) => sum + s.expiring, 0),
+      totalDeposit: allStats.reduce((sum, s) => sum + s.totalDeposit, 0),
+      elecReceivable: allStats.reduce((sum, s) => sum + s.elecReceivable, 0),
+      floors: [],
+      rentByFloor: [],
+      elec: {
+        charged: allStats.reduce((sum, s) => sum + s.elec.charged, 0),
+        chargedRate: state.data.electricityRate,
+        usage: allStats.reduce((sum, s) => sum + s.elec.usage, 0),
+        actualCost: allStats.reduce((sum, s) => sum + s.elec.actualCost, 0),
+        actualRate: state.data.actualElectricityRate,
+        profit: allStats.reduce((sum, s) => sum + s.elec.profit, 0),
+        profitRate: allStats.reduce((sum, s) => sum + s.elec.actualCost, 0) > 0 
+          ? (allStats.reduce((sum, s) => sum + s.elec.profit, 0) / allStats.reduce((sum, s) => sum + s.elec.actualCost, 0)) * 100 
+          : 0,
+      }
+    }
+    
+    elecAnalysis = analyzeElectricity(stats.elec)
+  } else {
+    // 單一物業的統計
+    const currentProperty = getCurrentProperty()
+    stats = calculateStats(
+      currentProperty, 
+      state.data, 
+      state.revenueTimeScope, 
+      state.revenueYear, 
+      state.revenueMonth,
+      state.elecTimeScope,
+      state.elecYear,
+      state.elecMonth
+    )
+    
+    elecAnalysis = analyzeElectricity(stats.elec)
+  }
 
   const statCards = [
     {
@@ -138,18 +194,28 @@ export default function Dashboard({ property }: DashboardProps) {
       <div className="card gradient-bg text-white">
         <div className="flex justify-between items-start">
           <div>
-            <h2 className="text-3xl font-bold mb-2">{property.name}</h2>
-            <p className="opacity-90">{property.address}</p>
+            <h2 className="text-3xl font-bold mb-2">
+              {showAllProperties ? `📊 ${t('allProperties', state.lang)}` : property.name}
+            </h2>
+            <p className="opacity-90">
+              {showAllProperties 
+                ? `${state.data.properties.length} ${t('properties', state.lang)} · ${stats.total} ${t('rooms', state.lang)}`
+                : property.address}
+            </p>
             <p className="text-sm opacity-75 mt-2">
-              {property.floors} {t('floor', state.lang)} · {property.rooms.length} {t('rooms', state.lang)}
+              {showAllProperties
+                ? `${t('totalRevenue', state.lang)}: ${formatCurrency(stats.totalRent)} · ${t('totalElectricityCost', state.lang)}: ${formatCurrency(Math.round(stats.elec.actualCost))}`
+                : `${property.floors} ${t('floor', state.lang)} · ${property.rooms.length} ${t('rooms', state.lang)}`}
             </p>
           </div>
-          <button 
-            onClick={() => openModal('editProperty', property.id)}
-            className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-sm"
-          >
-            ✏️ {t('edit', state.lang)}
-          </button>
+          {!showAllProperties && (
+            <button 
+              onClick={() => openModal('editProperty', property.id)}
+              className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-sm"
+            >
+              ✏️ {t('edit', state.lang)}
+            </button>
+          )}
         </div>
       </div>
 
@@ -177,10 +243,10 @@ export default function Dashboard({ property }: DashboardProps) {
             <span>💰</span>
             <span>{t('revenueAnalysis', state.lang)}</span>
           </h2>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap items-center">
             <select 
-              value={state.revenueTimeScope}
-              onChange={(e) => updateState({ revenueTimeScope: e.target.value as any })}
+              value={state.tempRevenueTimeScope || state.revenueTimeScope}
+              onChange={(e) => updateState({ tempRevenueTimeScope: e.target.value as any })}
               className="px-3 py-2 border rounded-lg text-sm"
             >
               <option value="all">{t('allTime', state.lang)}</option>
@@ -188,23 +254,55 @@ export default function Dashboard({ property }: DashboardProps) {
               <option value="month">{t('selectMonth', state.lang)}</option>
             </select>
             
-            {state.revenueTimeScope === 'year' && (
+            {(state.tempRevenueTimeScope || state.revenueTimeScope) === 'year' && (
               <input 
                 type="number"
-                value={state.revenueYear}
-                onChange={(e) => updateState({ revenueYear: parseInt(e.target.value) })}
+                value={state.tempRevenueYear || state.revenueYear}
+                onChange={(e) => updateState({ tempRevenueYear: parseInt(e.target.value) })}
                 className="w-24 px-3 py-2 border rounded-lg text-sm"
+                placeholder="年份"
               />
             )}
             
-            {state.revenueTimeScope === 'month' && (
+            {(state.tempRevenueTimeScope || state.revenueTimeScope) === 'month' && (
               <input 
                 type="month"
-                value={state.revenueMonth}
-                onChange={(e) => updateState({ revenueMonth: e.target.value })}
+                value={state.tempRevenueMonth || state.revenueMonth}
+                onChange={(e) => updateState({ tempRevenueMonth: e.target.value })}
                 className="px-3 py-2 border rounded-lg text-sm"
               />
             )}
+            
+            {/* 確認按鈕 */}
+            <button
+              onClick={() => {
+                updateState({
+                  revenueTimeScope: state.tempRevenueTimeScope || state.revenueTimeScope,
+                  revenueYear: state.tempRevenueYear || state.revenueYear,
+                  revenueMonth: state.tempRevenueMonth || state.revenueMonth
+                })
+              }}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
+            >
+              ✅ {t('confirm', state.lang)}
+            </button>
+            
+            {/* 重置按鈕 */}
+            <button
+              onClick={() => {
+                updateState({
+                  revenueTimeScope: 'all',
+                  revenueYear: 2026,
+                  revenueMonth: '2026-02',
+                  tempRevenueTimeScope: 'all',
+                  tempRevenueYear: 2026,
+                  tempRevenueMonth: '2026-02'
+                })
+              }}
+              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm font-medium"
+            >
+              🔄 {t('reset', state.lang)}
+            </button>
           </div>
         </div>
 
@@ -226,10 +324,10 @@ export default function Dashboard({ property }: DashboardProps) {
             <span>⚡</span>
             <span>{t('elecAnalysis', state.lang)}</span>
           </h2>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap items-center">
             <select 
-              value={state.elecTimeScope}
-              onChange={(e) => updateState({ elecTimeScope: e.target.value as any })}
+              value={state.tempElecTimeScope || state.elecTimeScope}
+              onChange={(e) => updateState({ tempElecTimeScope: e.target.value as any })}
               className="px-3 py-2 border rounded-lg text-sm"
             >
               <option value="all">{t('allTime', state.lang)}</option>
@@ -237,23 +335,55 @@ export default function Dashboard({ property }: DashboardProps) {
               <option value="month">{t('selectMonth', state.lang)}</option>
             </select>
             
-            {state.elecTimeScope === 'year' && (
+            {(state.tempElecTimeScope || state.elecTimeScope) === 'year' && (
               <input 
                 type="number"
-                value={state.elecYear}
-                onChange={(e) => updateState({ elecYear: parseInt(e.target.value) })}
+                value={state.tempElecYear || state.elecYear}
+                onChange={(e) => updateState({ tempElecYear: parseInt(e.target.value) })}
                 className="w-24 px-3 py-2 border rounded-lg text-sm"
+                placeholder="年份"
               />
             )}
             
-            {state.elecTimeScope === 'month' && (
+            {(state.tempElecTimeScope || state.elecTimeScope) === 'month' && (
               <input 
                 type="month"
-                value={state.elecMonth}
-                onChange={(e) => updateState({ elecMonth: e.target.value })}
+                value={state.tempElecMonth || state.elecMonth}
+                onChange={(e) => updateState({ tempElecMonth: e.target.value })}
                 className="px-3 py-2 border rounded-lg text-sm"
               />
             )}
+            
+            {/* 確認按鈕 */}
+            <button
+              onClick={() => {
+                updateState({
+                  elecTimeScope: state.tempElecTimeScope || state.elecTimeScope,
+                  elecYear: state.tempElecYear || state.elecYear,
+                  elecMonth: state.tempElecMonth || state.elecMonth
+                })
+              }}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
+            >
+              ✅ {t('confirm', state.lang)}
+            </button>
+            
+            {/* 重置按鈕 */}
+            <button
+              onClick={() => {
+                updateState({
+                  elecTimeScope: 'all',
+                  elecYear: 2026,
+                  elecMonth: '2026-02',
+                  tempElecTimeScope: 'all',
+                  tempElecYear: 2026,
+                  tempElecMonth: '2026-02'
+                })
+              }}
+              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm font-medium"
+            >
+              🔄 {t('reset', state.lang)}
+            </button>
           </div>
         </div>
 

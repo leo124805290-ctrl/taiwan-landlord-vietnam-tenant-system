@@ -30,6 +30,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     elecYear: 2026,
     elecMonth: '2026-02',
     data: initData(),
+    // 新增：臨時篩選狀態
+    tempRevenueTimeScope: 'all',
+    tempRevenueYear: 2026,
+    tempRevenueMonth: '2026-02',
+    tempElecTimeScope: 'all',
+    tempElecYear: 2026,
+    tempElecMonth: '2026-02',
   })
 
   // 載入本地儲存資料

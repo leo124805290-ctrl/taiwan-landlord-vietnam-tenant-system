@@ -31,10 +31,20 @@ export default function Header() {
             {state.data.properties.length > 0 && (
               <div className="relative">
                 <select 
-                  value={state.currentProperty || ''}
-                  onChange={(e) => updateState({ currentProperty: parseInt(e.target.value) })}
+                  value={state.currentProperty || 'all'}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    if (value === 'all') {
+                      updateState({ currentProperty: null })
+                    } else {
+                      updateState({ currentProperty: parseInt(value) })
+                    }
+                  }}
                   className="px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
+                  <option value="all">
+                    📊 {t('allProperties', state.lang)} ({state.data.properties.length})
+                  </option>
                   {state.data.properties.map(property => (
                     <option key={property.id} value={property.id}>
                       {property.name} ({property.rooms.length} {t('rooms', state.lang)})
