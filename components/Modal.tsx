@@ -25,26 +25,94 @@ export default function Modal() {
         return (
           <>
             <h2 className="text-2xl font-bold mb-4">{t('addProperty', state.lang)}</h2>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm mb-1">{t('propertyName', state.lang)}</label>
-                <input type="text" id="pname" className="input-field" />
+            <div className="space-y-4">
+              {/* 基本資訊 */}
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm mb-1">{t('propertyName', state.lang)}</label>
+                  <input type="text" id="pname" className="input-field" placeholder="例如：汐止大同路" />
+                </div>
+                <div>
+                  <label className="block text-sm mb-1">{t('address', state.lang)}</label>
+                  <input type="text" id="paddr" className="input-field" placeholder="詳細地址" />
+                </div>
               </div>
-              <div>
-                <label className="block text-sm mb-1">{t('address', state.lang)}</label>
-                <input type="text" id="paddr" className="input-field" />
-              </div>
-              <div>
-                <label className="block text-sm mb-1">{t('floors', state.lang)}</label>
-                <input type="number" id="pfloors" defaultValue={3} min={1} className="input-field" />
+
+              {/* 快速設定樓層房間 */}
+              <div className="border-t pt-4">
+                <h3 className="font-bold mb-3">🏢 {t('quickSetup', state.lang)}</h3>
+                
+                <div className="mb-3">
+                  <label className="block text-sm mb-1">{t('floors', state.lang)}</label>
+                  <input 
+                    type="number" 
+                    id="pfloors" 
+                    defaultValue={3} 
+                    min={1} 
+                    max={10}
+                    className="input-field"
+                    onChange={(e) => {
+                      const floors = parseInt(e.target.value) || 3
+                      // 動態生成樓層設定
+                      const floorConfigDiv = document.getElementById('floorConfig')
+                      if (floorConfigDiv) {
+                        let html = ''
+                        for (let i = 1; i <= floors; i++) {
+                          html += `
+                            <div class="mb-2">
+                              <label class="block text-sm mb-1">${t('floor', state.lang)} ${i} ${t('roomsPerFloor', state.lang)}</label>
+                              <input type="number" id="floor${i}Rooms" value="4" min="1" max="20" class="input-field floor-room-input" />
+                            </div>
+                          `
+                        }
+                        floorConfigDiv.innerHTML = html
+                      }
+                    }}
+                  />
+                </div>
+
+                {/* 樓層房間設定容器 */}
+                <div id="floorConfig" className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                  {/* 預設顯示3層 */}
+                  <div className="mb-2">
+                    <label className="block text-sm mb-1">{t('floor', state.lang)} 1 {t('roomsPerFloor', state.lang)}</label>
+                    <input type="number" id="floor1Rooms" defaultValue={4} min={1} max={20} className="input-field floor-room-input" />
+                  </div>
+                  <div className="mb-2">
+                    <label className="block text-sm mb-1">{t('floor', state.lang)} 2 {t('roomsPerFloor', state.lang)}</label>
+                    <input type="number" id="floor2Rooms" defaultValue={4} min={1} max={20} className="input-field floor-room-input" />
+                  </div>
+                  <div className="mb-2">
+                    <label className="block text-sm mb-1">{t('floor', state.lang)} 3 {t('roomsPerFloor', state.lang)}</label>
+                    <input type="number" id="floor3Rooms" defaultValue={4} min={1} max={20} className="input-field floor-room-input" />
+                  </div>
+                </div>
+
+                {/* 預設租金和押金設定 */}
+                <div className="grid grid-cols-2 gap-3 mt-3">
+                  <div>
+                    <label className="block text-sm mb-1">{t('defaultRent', state.lang)}</label>
+                    <input type="number" id="defaultRent" defaultValue={7000} min={1000} className="input-field" />
+                  </div>
+                  <div>
+                    <label className="block text-sm mb-1">{t('defaultDeposit', state.lang)}</label>
+                    <input type="number" id="defaultDeposit" defaultValue={14000} min={0} className="input-field" />
+                  </div>
+                </div>
+
+                <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                  <div className="text-sm text-blue-700">
+                    💡 {t('autoGenerate', state.lang)}: {t('roomNumber', state.lang)} 101, 102, 103...
+                  </div>
+                </div>
               </div>
             </div>
             <div className="flex gap-2 mt-4">
               <button onClick={closeModal} className="flex-1 btn bg-gray-200">
                 {t('cancel', state.lang)}
               </button>
-              <button onClick={saveAddProperty} className="flex-1 btn btn-primary">
-                {t('save', state.lang)}
+              <button onClick={saveAddPropertyWithRooms} className="flex-1 btn btn-primary">
+                🏢 {t('save', state.lang)} & {t('generateRooms', state.lang)}
               </button>
             </div>
           </>
@@ -438,6 +506,76 @@ export default function Modal() {
     })
     
     updateState({ currentProperty: newId })
+    closeModal()
+  }
+
+  // 儲存新增物業（帶快速房間設定）
+  const saveAddPropertyWithRooms = () => {
+    const nameInput = document.getElementById('pname') as HTMLInputElement
+    const addrInput = document.getElementById('paddr') as HTMLInputElement
+    const floorsInput = document.getElementById('pfloors') as HTMLInputElement
+    const defaultRentInput = document.getElementById('defaultRent') as HTMLInputElement
+    const defaultDepositInput = document.getElementById('defaultDeposit') as HTMLInputElement
+
+    if (!nameInput?.value.trim() || !addrInput?.value.trim()) {
+      alert('請填寫所有必填欄位')
+      return
+    }
+
+    const floors = parseInt(floorsInput.value) || 3
+    const defaultRent = parseInt(defaultRentInput.value) || 7000
+    const defaultDeposit = parseInt(defaultDepositInput.value) || 14000
+    
+    // 收集每層樓的房間數
+    const floorRooms: number[] = []
+    for (let i = 1; i <= floors; i++) {
+      const floorInput = document.getElementById(`floor${i}Rooms`) as HTMLInputElement
+      if (floorInput) {
+        floorRooms.push(parseInt(floorInput.value) || 4)
+      } else {
+        floorRooms.push(4) // 預設值
+      }
+    }
+
+    const newId = Math.max(...state.data.properties.map(p => p.id), 0) + 1
+    
+    // 自動生成房間
+    const rooms = []
+    let roomId = 1
+    
+    for (let floor = 1; floor <= floors; floor++) {
+      const roomsOnFloor = floorRooms[floor - 1]
+      for (let roomNum = 1; roomNum <= roomsOnFloor; roomNum++) {
+        rooms.push({
+          id: roomId++,
+          f: floor,
+          n: `${floor}${roomNum.toString().padStart(2, '0')}`, // 如 101, 102, 201, 202
+          r: defaultRent,
+          d: defaultDeposit,
+          s: 'available' as const
+        })
+      }
+    }
+
+    const newProperty = {
+      id: newId,
+      name: nameInput.value.trim(),
+      address: addrInput.value.trim(),
+      floors: floors,
+      rooms: rooms,
+      payments: [],
+      history: [],
+      maintenance: []
+    }
+
+    updateData({
+      properties: [...state.data.properties, newProperty]
+    })
+    
+    updateState({ currentProperty: newId })
+    
+    // 顯示成功訊息
+    alert(`✅ 物業建立成功！\n已自動建立 ${rooms.length} 間房間`)
     closeModal()
   }
 

@@ -166,6 +166,12 @@ export const translations: Translation = {
     totalRevenue: '總租金收入',
     totalElectricityCost: '總電費支出',
     viewAll: '查看全部',
+    defaultRent: '預設月租金',
+    defaultDeposit: '預設押金',
+    quickSetup: '快速設定',
+    roomsPerFloor: '每層房間數',
+    autoGenerate: '自動生成',
+    generateRooms: '生成房間',
   },
   'vi-VN': {
     system: 'Hệ thống Quản lý Đa BĐS',
@@ -332,6 +338,12 @@ export const translations: Translation = {
     totalRevenue: 'Tổng thu nhập',
     totalElectricityCost: 'Tổng chi điện',
     viewAll: 'Xem tất cả',
+    defaultRent: 'Tiền thuê mặc định',
+    defaultDeposit: 'Tiền cọc mặc định',
+    quickSetup: 'Cài nhanh',
+    roomsPerFloor: 'Phòng/tầng',
+    autoGenerate: 'Tự động',
+    generateRooms: 'Tạo phòng',
   }
 };
 
