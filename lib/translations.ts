@@ -182,6 +182,7 @@ export const translations: Translation = {
     confirmPayment: '確認收款',
     unpaidWarning: '此房間有待收款項：',
     confirmMoveOutAnyway: '確定要繼續退租嗎？',
+    resetCompleted: '重置完成！所有資料已清空。',
   },
   'vi-VN': {
     system: 'Hệ thống Quản lý Đa BĐS',
@@ -364,6 +365,7 @@ export const translations: Translation = {
     confirmPayment: 'Xác nhận thu',
     unpaidWarning: 'Phòng này có tiền chưa thu:',
     confirmMoveOutAnyway: 'Tiếp tục trả phòng?',
+    resetCompleted: 'Đã xóa toàn bộ dữ liệu!',
   }
 };
 

@@ -58,8 +58,21 @@ export default function Settings() {
     if (!confirm(t('confirmReset', state.lang))) return
     if (!confirm(t('confirmResetFinal', state.lang))) return
     
+    // 創建真正的空數據
+    const emptyData = {
+      properties: [],
+      electricityRate: 6,
+      actualElectricityRate: 4.5,
+    }
+    
+    // 更新數據和狀態
+    updateData(emptyData)
+    updateState({ currentProperty: null })
+    
+    // 清除本地儲存
     localStorage.removeItem('multiPropertyDataV2')
-    window.location.reload()
+    
+    alert(t('resetCompleted', state.lang))
   }
 
   return (

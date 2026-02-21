@@ -64,10 +64,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  // 計算付款
+  // 計算付款（只在初始化時計算一次）
   useEffect(() => {
-    calcAllPayments(state.data)
-  }, [state.data])
+    // 只在數據為初始數據時計算付款
+    const savedData = localStorage.getItem('multiPropertyDataV2')
+    if (!savedData) {
+      calcAllPayments(state.data)
+    }
+  }, [])
 
   // 儲存資料到本地儲存
   useEffect(() => {

@@ -44,11 +44,8 @@ export function calcAllPayments(data: AppData): void {
   });
 }
 
-// 計算物業付款
+// 計算物業付款（智能生成，避免重複）
 export function calcPayments(property: Property, electricityRate: number): void {
-  property.payments = [];
-  let id = (property.history?.length > 0 ? Math.max(...property.history.map(p => p.id)) : 0) + 100;
-  
   // 獲取當前年月
   const now = new Date();
   const currentYear = now.getFullYear();
@@ -60,42 +57,88 @@ export function calcPayments(property: Property, electricityRate: number): void 
   nextMonth.setMonth(nextMonth.getMonth() + 1);
   const dueDate = `${nextMonth.getFullYear()}-${(nextMonth.getMonth() + 1).toString().padStart(2, '0')}-05`;
   
+  // 獲取現有的待繳款項
+  const existingPendingPayments = property.payments.filter(p => p.s === 'pending');
+  
+  // 為每個已出租房間檢查是否需要生成付款
   property.rooms
     .filter(r => r.s === 'occupied')
     .forEach(rm => {
-      const u = (rm.cm || 0) - (rm.pm || 0);
-      const e = u * electricityRate;
-      property.payments.push({
-        id: id++,
-        rid: rm.id,
-        n: rm.n,
-        t: rm.t || '',
-        m: currentMonthStr,
-        r: rm.r,
-        u: u,
-        e: e,
-        total: rm.r + e,
-        due: dueDate,
-        s: 'pending'
-      });
+      // 檢查是否已經有這個房間這個月的待繳款項
+      const existingPayment = existingPendingPayments.find(p => 
+        p.rid === rm.id && p.m === currentMonthStr
+      );
+      
+      if (!existingPayment) {
+        // 生成新的付款項
+        const u = (rm.cm || 0) - (rm.pm || 0);
+        const e = u * electricityRate;
+        
+        // 生成唯一的ID
+        const maxId = Math.max(
+          ...property.payments.map(p => p.id),
+          ...(property.history || []).map(p => p.id),
+          0
+        );
+        
+        property.payments.push({
+          id: maxId + 1,
+          rid: rm.id,
+          n: rm.n,
+          t: rm.t || '',
+          m: currentMonthStr,
+          r: rm.r,
+          u: u,
+          e: e,
+          total: rm.r + e,
+          due: dueDate,
+          s: 'pending'
+        });
+      }
     });
+  
+  // 移除已退租房間的待繳款項
+  property.payments = property.payments.filter(p => {
+    const room = property.rooms.find(r => r.id === p.rid);
+    return room && room.s === 'occupied';
+  });
 }
 
 // 時間篩選
 export function filterHistoryByTime(history: Payment[], timeScope: TimeScope, year?: number, month?: string): Payment[] {
   if (!history) return [];
-  if (timeScope === 'all') return history;
+  
+  // 獲取當前年份和月份
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+  
+  // 過濾掉未來月份的數據
+  const filteredHistory = history.filter(h => {
+    if (!h.m) return false;
+    
+    // 解析月份字串 (格式: YYYY/MM)
+    const [hYear, hMonth] = h.m.split('/').map(Number);
+    
+    // 排除未來月份
+    if (hYear > currentYear) return false;
+    if (hYear === currentYear && hMonth > currentMonth) return false;
+    
+    return true;
+  });
+  
+  if (timeScope === 'all') return filteredHistory;
   
   if (timeScope === 'year' && year) {
-    return history.filter(h => h.m && h.m.startsWith(String(year)));
+    return filteredHistory.filter(h => h.m && h.m.startsWith(String(year)));
   }
   
   if (timeScope === 'month' && month) {
     const targetMonth = month.replace('-', '/');
-    return history.filter(h => h.m && h.m.startsWith(targetMonth));
+    return filteredHistory.filter(h => h.m && h.m.startsWith(targetMonth));
   }
   
-  return history;
+  return filteredHistory;
 }
 
 // 電費時間篩選
@@ -106,12 +149,33 @@ export function filterElecByTime(
   year?: number, 
   month?: string
 ): { pend: Payment[]; hist: Payment[] } {
-  if (timeScope === 'all') {
-    return { pend: payments, hist: history || [] };
-  }
+  // 獲取當前年份和月份
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
   
-  let pend = payments || [];
-  let hist = history || [];
+  // 過濾掉未來月份的數據
+  const filterFuture = (items: Payment[]) => {
+    return items.filter(item => {
+      if (!item.m) return false;
+      
+      // 解析月份字串 (格式: YYYY/MM)
+      const [itemYear, itemMonth] = item.m.split('/').map(Number);
+      
+      // 排除未來月份
+      if (itemYear > currentYear) return false;
+      if (itemYear === currentYear && itemMonth > currentMonth) return false;
+      
+      return true;
+    });
+  };
+  
+  let pend = filterFuture(payments || []);
+  let hist = filterFuture(history || []);
+  
+  if (timeScope === 'all') {
+    return { pend: pend, hist: hist };
+  }
   
   if (timeScope === 'year' && year) {
     const yearStr = String(year);
