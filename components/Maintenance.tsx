@@ -46,14 +46,29 @@ export default function Maintenance({ property }: MaintenanceProps) {
   // 篩選狀態
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterRoom, setFilterRoom] = useState<string>('all');
+  const [filterType, setFilterType] = useState<string>('all');
   
   // 獲取所有房間號碼
   const allRooms: string[] = Array.from(new Set((property.maintenance || []).map((m: any) => m.n)));
   
-  // 篩選報修記錄
+  // 判斷記錄類型（報修或裝修）
+  const getMaintenanceType = (maint: any): string => {
+    // 如果有 estimatedCost 或標題包含「裝修」，則視為裝修
+    if (maint.estimatedCost !== undefined || 
+        (maint.title && (maint.title.includes('裝修') || maint.title.includes('cải tạo') || maint.title.includes('renovation')))) {
+      return 'renovation';
+    }
+    return 'maintenance';
+  };
+
+  // 篩選報修/裝修記錄
   const filteredMaintenance = (property.maintenance || []).filter((maint: any) => {
     if (filterStatus !== 'all' && maint.s !== filterStatus) return false;
     if (filterRoom !== 'all' && maint.n !== filterRoom) return false;
+    if (filterType !== 'all') {
+      const type = getMaintenanceType(maint);
+      if (filterType !== type) return false;
+    }
     return true;
   });
   
@@ -134,77 +149,197 @@ export default function Maintenance({ property }: MaintenanceProps) {
               ))}
             </select>
           </div>
+          
+          <div className="flex-1 min-w-[150px]">
+            <label className="block text-sm mb-1">{t('filterByType', state.lang)}</label>
+            <select 
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="input-field"
+            >
+              <option value="all">{t('allTypes', state.lang)}</option>
+              <option value="maintenance">{t('typeMaintenance', state.lang)}</option>
+              <option value="renovation">{t('typeRenovation', state.lang)}</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      {/* 新增報修按鈕 */}
-      <button 
-        onClick={() => openModal('addMaint')}
-        className="btn btn-primary w-full"
-      >
-        ➕ {t('addMaint', state.lang)}
-      </button>
+      {/* 新增按鈕 */}
+      <div className="grid grid-cols-2 gap-2">
+        <button 
+          onClick={() => openModal('addMaint')}
+          className="btn bg-blue-600 text-white"
+        >
+          🔧 {t('addMaintenance', state.lang)}
+        </button>
+        
+        <button 
+          onClick={() => openModal('addRenovation')}
+          className="btn bg-green-600 text-white"
+        >
+          🏗️ {t('addRenovation', state.lang)}
+        </button>
+      </div>
 
-      {/* 報修列表 */}
+      {/* 報修/裝修列表 */}
       <div className="space-y-3">
-        {filteredMaintenance.map((maint: any) => (
-          <div key={maint.id} className="card">
-            <div className="flex gap-2 mb-2">
-              <span className={`badge ${
-                maint.urg === 'urgent' 
-                  ? 'bg-red-100 text-red-700' 
-                  : 'bg-yellow-100 text-yellow-700'
-              }`}>
-                {t(maint.urg, state.lang)}
-              </span>
-              <span className={`badge ${
-                maint.s === 'pending' 
-                  ? 'bg-orange-100 text-orange-700' 
-                  : maint.s === 'assigned' 
-                  ? 'bg-blue-100 text-blue-700' 
-                  : 'bg-green-100 text-green-700'
-              }`}>
-                {t(maint.s + 'Status', state.lang)}
-              </span>
-            </div>
-
-            <h3 className="font-bold text-lg mb-2">{maint.title}</h3>
-            <p className="text-gray-600 mb-2">{maint.desc}</p>
-            <div className="text-sm text-gray-500 mb-2">
-              {maint.n} - {maint.t}
-            </div>
-
-            {maint.cost && (
-              <div className="text-sm font-bold text-blue-600">
-                維修費用: ${maint.cost.toLocaleString()}
+        {filteredMaintenance.map((maint: any) => {
+          const type = getMaintenanceType(maint);
+          const isRenovation = type === 'renovation';
+          
+          return (
+            <div key={maint.id} className={`card ${isRenovation ? 'border-l-4 border-green-500' : 'border-l-4 border-blue-500'}`}>
+              <div className="flex justify-between items-start mb-2">
+                <div className="flex gap-2 flex-wrap">
+                  {/* 類型標籤 */}
+                  <span className={`badge ${
+                    isRenovation 
+                      ? 'bg-green-100 text-green-700' 
+                      : 'bg-blue-100 text-blue-700'
+                  }`}>
+                    {isRenovation ? t('typeRenovation', state.lang) : t('typeMaintenance', state.lang)}
+                  </span>
+                  
+                  {/* 緊急程度標籤 */}
+                  {!isRenovation && maint.urg && (
+                    <span className={`badge ${
+                      maint.urg === 'urgent' 
+                        ? 'bg-red-100 text-red-700' 
+                        : 'bg-yellow-100 text-yellow-700'
+                    }`}>
+                      {t(maint.urg, state.lang)}
+                    </span>
+                  )}
+                  
+                  {/* 狀態標籤 */}
+                  <span className={`badge ${
+                    maint.s === 'pending' 
+                      ? 'bg-orange-100 text-orange-700' 
+                      : maint.s === 'assigned' 
+                      ? 'bg-blue-100 text-blue-700' 
+                      : 'bg-green-100 text-green-700'
+                  }`}>
+                    {t(maint.s + 'Status', state.lang)}
+                  </span>
+                </div>
+                
+                {/* 日期 */}
+                <div className="text-xs text-gray-500">
+                  {maint.date}
+                </div>
               </div>
-            )}
-            
-            {maint.repairDate && (
-              <div className="text-xs text-gray-500">
-                維修日期: {maint.repairDate}
-              </div>
-            )}
 
-            <div className="flex gap-2 mt-3">
-              <button 
-                onClick={() => openModal('editMaint', maint.id)}
-                className="flex-1 btn bg-blue-100 text-blue-700 text-sm"
-              >
-                {t('edit', state.lang)}
-              </button>
-              <button 
-                onClick={() => deleteMaintenance(maint.id)}
-                className="flex-1 btn bg-red-100 text-red-600 text-sm"
-              >
-                {t('delete', state.lang)}
-              </button>
+              <h3 className="font-bold text-lg mb-2">{maint.title}</h3>
+              <p className="text-gray-600 mb-3">{maint.desc}</p>
+              
+              <div className="grid grid-cols-2 gap-3 text-sm mb-3">
+                <div>
+                  <div className="text-gray-500">房間</div>
+                  <div className="font-bold">{maint.n || '公共區域'}</div>
+                </div>
+                <div>
+                  <div className="text-gray-500">租客</div>
+                  <div className="font-bold">{maint.t || 'N/A'}</div>
+                </div>
+              </div>
+              
+              {/* 費用資訊 */}
+              <div className="mb-3">
+                {maint.cost ? (
+                  <div className="text-sm font-bold text-blue-600">
+                    💰 {t('cost', state.lang)}: {formatCurrency(maint.cost)}
+                    {maint.technician && ` (${t('technician', state.lang)}: ${maint.technician})`}
+                  </div>
+                ) : maint.estimatedCost ? (
+                  <div className="text-sm font-bold text-green-600">
+                    💰 {t('estimatedCost', state.lang)}: {formatCurrency(maint.estimatedCost)}
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-500">
+                    💰 {t('cost', state.lang)}: {t('notSet', state.lang)}
+                  </div>
+                )}
+                
+                {/* 裝修預計完成日期 */}
+                {isRenovation && maint.estimatedCompletion && (
+                  <div className="text-sm text-green-600 mt-1">
+                    📅 {t('estimatedCompletion', state.lang)}: {maint.estimatedCompletion}
+                  </div>
+                )}
+                
+                {/* 維修日期 */}
+                {!isRenovation && maint.repairDate && (
+                  <div className="text-sm text-blue-600 mt-1">
+                    🔧 {t('repairDate', state.lang)}: {maint.repairDate}
+                  </div>
+                )}
+              </div>
+
+              {/* 操作按鈕 */}
+              <div className="flex gap-2 mt-3">
+                <button 
+                  onClick={() => openModal('editMaint', maint.id)}
+                  className="flex-1 btn bg-blue-100 text-blue-700 text-sm"
+                >
+                  {t('edit', state.lang)}
+                </button>
+                
+                {maint.s !== 'completed' && (
+                  <button 
+                    onClick={() => markAsCompleted(maint.id)}
+                    className="flex-1 btn bg-green-100 text-green-700 text-sm"
+                  >
+                    ✅ {t('markAsCompleted', state.lang)}
+                  </button>
+                )}
+                
+                {(!maint.cost && !maint.estimatedCost) && (
+                  <button 
+                    onClick={() => openModal('updateCost', maint.id)}
+                    className="flex-1 btn bg-yellow-100 text-yellow-700 text-sm"
+                  >
+                    💰 {t('addCost', state.lang)}
+                  </button>
+                )}
+                
+                <button 
+                  onClick={() => deleteMaintenance(maint.id)}
+                  className="flex-1 btn bg-red-100 text-red-600 text-sm"
+                >
+                  {t('delete', state.lang)}
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   )
+
+  function markAsCompleted(maintId: number) {
+    if (!confirm(t('confirmComplete', state.lang))) return
+
+    const updatedProperties = state.data.properties.map(p => 
+      p.id === property.id
+        ? {
+            ...p,
+            maintenance: (p.maintenance || []).map(m => 
+              m.id === maintId
+                ? { 
+                    ...m, 
+                    s: 'completed' as const,
+                    repairDate: m.repairDate || new Date().toISOString().split('T')[0]
+                  }
+                : m
+            )
+          }
+        : p
+    )
+
+    updateData({ properties: updatedProperties })
+    alert(t('maintenanceCompleted', state.lang))
+  }
 
   function deleteMaintenance(maintId: number) {
     if (!confirm(t('confirmDelete', state.lang))) return
