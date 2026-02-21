@@ -90,6 +90,21 @@ export interface Property {
   payments: Payment[];
   history: Payment[];
   maintenance: Maintenance[];
+  meterHistory?: MeterReadingRecord[]; // 抄錶歷史記錄
+}
+
+// 抄錶記錄
+export interface MeterReadingRecord {
+  id: number;
+  date: string; // 抄錶日期
+  month: string; // 月份 (YYYY/MM)
+  readings: {
+    rid: number; // 房間ID
+    roomNumber: string; // 房號
+    reading: number; // 電錶讀數
+    usage: number; // 用電度數
+    fee: number; // 電費
+  }[];
 }
 
 // 應用資料
@@ -101,7 +116,7 @@ export interface AppData {
 
 // 應用狀態
 export interface AppState {
-  tab: 'dashboard' | 'rooms' | 'payments' | 'maintenance' | 'settings';
+  tab: 'dashboard' | 'rooms' | 'meterReading' | 'payments' | 'maintenance' | 'settings';
   lang: 'zh-TW' | 'vi-VN';
   modal: {
     type: string;

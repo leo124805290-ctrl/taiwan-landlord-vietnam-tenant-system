@@ -6,6 +6,7 @@ import Rooms from '@/components/Rooms'
 import Payments from '@/components/Payments'
 import Maintenance from '@/components/Maintenance'
 import Settings from '@/components/Settings'
+import MeterReading from '@/components/MeterReading'
 import Modal from '@/components/Modal'
 import { useApp } from '@/contexts/AppContext'
 
@@ -38,6 +39,8 @@ export default function HomePage() {
         return <Rooms property={property} />
       case 'payments':
         return <Payments property={property} />
+      case 'meterReading':
+        return <MeterReading property={property} />
       case 'maintenance':
         return <Maintenance property={property} />
       case 'settings':

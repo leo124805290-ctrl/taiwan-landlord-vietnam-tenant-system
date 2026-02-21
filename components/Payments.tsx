@@ -15,6 +15,7 @@ export default function Payments({ property }: PaymentsProps) {
 
   const filteredPayments = allPayments.filter(p => {
     if (state.filter === 'all') return true
+    if (state.filter === 'unpaid') return p.s === 'pending'
     return p.s === state.filter
   })
 

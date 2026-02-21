@@ -388,7 +388,7 @@ export default function Modal() {
                 
                 {/* 快速選擇租期 */}
                 <div className="mt-2">
-                  <div className="text-xs text-gray-500 mb-1">快速選擇租期：</div>
+                  <div className="text-xs text-gray-500 mb-1">{t('quickSelectLease', state.lang)}</div>
                   <div className="flex flex-wrap gap-2">
                     {[3, 6, 12, 24].map(months => (
                       <button
@@ -410,7 +410,7 @@ export default function Modal() {
                         }}
                         className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded"
                       >
-                        {months}個月
+                        {months} {t('months', state.lang)}
                       </button>
                     ))}
                   </div>
@@ -456,6 +456,20 @@ export default function Modal() {
                 <label className="block text-sm mb-1">{t('deposit', state.lang)}</label>
                 <input type="number" id="editDeposit" defaultValue={editRoom.d || 0} className="input-field" />
               </div>
+              
+              {/* 起租日和到期日編輯（僅限已出租房間） */}
+              {editRoom.s === 'occupied' && (
+                <>
+                  <div>
+                    <label className="block text-sm mb-1">{t('contractStart', state.lang)}</label>
+                    <input type="date" id="editContractStart" defaultValue={editRoom.in || ''} className="input-field" />
+                  </div>
+                  <div>
+                    <label className="block text-sm mb-1">{t('contractEnd', state.lang)}</label>
+                    <input type="date" id="editContractEnd" defaultValue={editRoom.out || ''} className="input-field" />
+                  </div>
+                </>
+              )}
             </div>
             <div className="flex gap-2 mt-4">
               <button onClick={closeModal} className="flex-1 btn bg-gray-200">
@@ -820,6 +834,8 @@ export default function Modal() {
     const floorInput = document.getElementById('editFloor') as HTMLInputElement
     const rentInput = document.getElementById('editRent') as HTMLInputElement
     const depositInput = document.getElementById('editDeposit') as HTMLInputElement
+    const contractStartInput = document.getElementById('editContractStart') as HTMLInputElement
+    const contractEndInput = document.getElementById('editContractEnd') as HTMLInputElement
 
     if (!roomNumInput?.value.trim()) {
       alert(t('pleaseEnterRoomNumber', state.lang))
@@ -837,7 +853,12 @@ export default function Modal() {
                     n: roomNumInput.value.trim(),
                     f: parseInt(floorInput.value) || r.f,
                     r: parseInt(rentInput.value) || r.r,
-                    d: parseInt(depositInput.value) || r.d
+                    d: parseInt(depositInput.value) || r.d,
+                    // 只有已出租房間才更新起租日和到期日
+                    ...(r.s === 'occupied' && contractStartInput && contractEndInput ? {
+                      in: contractStartInput.value || r.in,
+                      out: contractEndInput.value || r.out
+                    } : {})
                   }
                 : r
             )
