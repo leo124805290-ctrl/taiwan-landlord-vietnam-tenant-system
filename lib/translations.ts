@@ -94,7 +94,6 @@ export const translations: Translation = {
     tenantName: '租客姓名',
     phone: '電話',
     moveInDate: '入住日',
-    contractEnd: '到期日',
     meterRecords: '電錶記錄',
     lastMeter: '上期電錶',
     currentMeter: '本期電錶',
@@ -167,6 +166,9 @@ export const translations: Translation = {
     viewAll: '查看全部',
     defaultRent: '預設月租金',
     defaultDeposit: '預設押金',
+    room: '房間',
+    tenantPhone: '租客電話',
+    initialMeter: '初始電錶',
     quickSetup: '快速設定',
     roomsPerFloor: '每層房間數',
     autoGenerate: '自動生成',
@@ -222,6 +224,8 @@ export const translations: Translation = {
     inProgress: '進行中',
     finalMeter: '最後電錶',
     finalElectricityFee: '最後電費',
+    contractStart: '起租日',
+    contractEnd: '到期日',
   },
   'vi-VN': {
     system: 'Hệ thống Quản lý Đa BĐS',
@@ -316,7 +320,6 @@ export const translations: Translation = {
     tenantName: 'Tên',
     phone: 'SĐT',
     moveInDate: 'Vào',
-    contractEnd: 'HĐ hết',
     meterRecords: 'Đồng hồ',
     lastMeter: 'Kỳ trước',
     currentMeter: 'Kỳ này',
@@ -403,6 +406,9 @@ export const translations: Translation = {
     confirmPayment: 'Xác nhận thu',
     unpaidWarning: 'Phòng này có tiền chưa thu:',
     confirmMoveOutAnyway: 'Tiếp tục trả phòng?',
+    room: 'Phòng',
+    tenantPhone: 'Số điện thoại',
+    initialMeter: 'Số điện đầu',
     resetCompleted: 'Đã xóa toàn bộ dữ liệu!',
     systemCheck: 'Kiểm tra hệ thống',
     runSystemCheck: 'Chạy kiểm tra',
@@ -444,6 +450,8 @@ export const translations: Translation = {
     inProgress: 'Đang tiến hành',
     finalMeter: 'Số điện cuối',
     finalElectricityFee: 'Tiền điện cuối',
+    contractStart: 'Ngày bắt đầu',
+    contractEnd: 'Ngày kết thúc',
   }
 };
 

@@ -225,10 +225,41 @@ export default function Modal() {
                   <div className="text-sm text-gray-600">
                     {t('tenantName', state.lang)}: {room.t || 'N/A'}<br/>
                     {t('phone', state.lang)}: {room.p || 'N/A'}<br/>
-                    {t('contractPeriod', state.lang)}: {room.in || 'N/A'} ~ {room.out || 'N/A'}<br/>
-                    {t('lastMeter', state.lang)}: {room.lm || 0} {t('degree', state.lang)}<br/>
-                    {t('currentMeter', state.lang)}: {room.cm || 0} {t('degree', state.lang)}<br/>
-                    {t('electricityReceivable', state.lang)}: {formatCurrency(Math.round(((room.cm || 0) - (room.lm || 0)) * state.data.electricityRate))}
+                    
+                    {/* 出租日期和合約到期日 - 突出顯示 */}
+                    <div className="mt-2 p-3 bg-white rounded border">
+                      <div className="font-bold text-blue-700 mb-1">📅 租約資訊</div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <div className="text-xs text-gray-500">{t('contractStart', state.lang)}</div>
+                          <div className="font-bold">{room.in || 'N/A'}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-500">{t('contractEnd', state.lang)}</div>
+                          <div className="font-bold">{room.out || 'N/A'}</div>
+                        </div>
+                      </div>
+                      {room.in && room.out && (
+                        <div className="mt-2 text-xs">
+                          {(() => {
+                            const start = new Date(room.in);
+                            const end = new Date(room.out);
+                            const today = new Date();
+                            const totalDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+                            const daysLeft = Math.ceil((end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                            const months = Math.floor(totalDays / 30);
+                            return `租期: ${months}個月 (${totalDays}天), 剩餘: ${daysLeft}天`;
+                          })()}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* 電錶資訊 */}
+                    <div className="mt-3">
+                      {t('lastMeter', state.lang)}: {room.lm || 0} {t('degree', state.lang)}<br/>
+                      {t('currentMeter', state.lang)}: {room.cm || 0} {t('degree', state.lang)}<br/>
+                      {t('electricityReceivable', state.lang)}: {formatCurrency(Math.round(((room.cm || 0) - (room.lm || 0)) * state.data.electricityRate))}
+                    </div>
                   </div>
                 </div>
               )}
@@ -354,6 +385,36 @@ export default function Modal() {
               <div>
                 <label className="block text-sm mb-1">{t('contractEnd', state.lang)}</label>
                 <input type="date" id="contractEnd" className="input-field" />
+                
+                {/* 快速選擇租期 */}
+                <div className="mt-2">
+                  <div className="text-xs text-gray-500 mb-1">快速選擇租期：</div>
+                  <div className="flex flex-wrap gap-2">
+                    {[3, 6, 12, 24].map(months => (
+                      <button
+                        key={months}
+                        type="button"
+                        onClick={() => {
+                          const startInput = document.getElementById('contractStart') as HTMLInputElement;
+                          const endInput = document.getElementById('contractEnd') as HTMLInputElement;
+                          
+                          if (startInput && startInput.value) {
+                            const startDate = new Date(startInput.value);
+                            const endDate = new Date(startDate);
+                            endDate.setMonth(endDate.getMonth() + months);
+                            
+                            // 格式為 YYYY-MM-DD
+                            const endDateStr = endDate.toISOString().split('T')[0];
+                            endInput.value = endDateStr;
+                          }
+                        }}
+                        className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded"
+                      >
+                        {months}個月
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
               <div>
                 <label className="block text-sm mb-1">{t('initialMeter', state.lang)}</label>
@@ -953,30 +1014,117 @@ export default function Modal() {
       return
     }
 
+    const startDate = new Date(startInput.value)
+    const endDate = new Date(endInput.value)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0) // 清除時間部分
+    
+    // 獲取房間資訊（租金）
+    const room = property.rooms.find((r: any) => r.id === roomId)
+    if (!room) return
+    
+    // 準備更新房間
+    const updatedRoom = { 
+      ...room, 
+      s: 'occupied' as const,
+      t: nameInput.value.trim(),
+      p: phoneInput.value.trim(),
+      in: startInput.value,
+      out: endInput.value,
+      lm: parseInt(meterInput.value) || 0,
+      cm: parseInt(meterInput.value) || 0
+    }
+    
+    // 準備付款記錄
+    const newPayments: any[] = []
+    
+    // 如果出租日期在過去，為過去的月份生成待繳費
+    if (startDate < today) {
+      // 計算從出租開始到上個月的所有月份
+      const currentYear = today.getFullYear()
+      const currentMonth = today.getMonth() + 1 // 1-based
+      
+      let year = startDate.getFullYear()
+      let month = startDate.getMonth() + 1
+      
+      // 生成每個月的付款記錄，直到上個月
+      while (year < currentYear || (year === currentYear && month < currentMonth)) {
+        const monthStr = `${year}/${month.toString().padStart(2, '0')}`
+        
+        // 計算到期日（通常是該月5號）
+        const dueDate = new Date(year, month - 1, 5) // 月份是0-based
+        
+        // 生成付款記錄
+        newPayments.push({
+          id: Math.max(...property.payments.map((p: any) => p.id), ...(property.history || []).map((p: any) => p.id), 0) + newPayments.length + 1,
+          rid: roomId,
+          n: room.n,
+          t: nameInput.value.trim(),
+          m: monthStr,
+          r: room.r,
+          u: 0, // 初始用電度數為0
+          e: 0, // 初始電費為0
+          total: room.r,
+          due: dueDate.toISOString().split('T')[0],
+          s: 'pending' as const
+        })
+        
+        // 移到下個月
+        month++
+        if (month > 12) {
+          month = 1
+          year++
+        }
+      }
+    }
+    
+    // 也為當前月份生成付款記錄（如果還沒生成）
+    const currentMonthStr = `${today.getFullYear()}/${(today.getMonth() + 1).toString().padStart(2, '0')}`
+    const hasCurrentMonthPayment = newPayments.some(p => p.m === currentMonthStr) || 
+                                   property.payments.some((p: any) => p.rid === roomId && p.m === currentMonthStr)
+    
+    if (!hasCurrentMonthPayment) {
+      // 計算下個月的5號為到期日
+      const nextMonth = new Date(today)
+      nextMonth.setMonth(nextMonth.getMonth() + 1)
+      const dueDate = `${nextMonth.getFullYear()}-${(nextMonth.getMonth() + 1).toString().padStart(2, '0')}-05`
+      
+      newPayments.push({
+        id: Math.max(...property.payments.map((p: any) => p.id), ...(property.history || []).map((p: any) => p.id), 0) + newPayments.length + 1,
+        rid: roomId,
+        n: room.n,
+        t: nameInput.value.trim(),
+        m: currentMonthStr,
+        r: room.r,
+        u: 0,
+        e: 0,
+        total: room.r,
+        due: dueDate,
+        s: 'pending' as const
+      })
+    }
+
     const updatedProperties = state.data.properties.map(p => 
       p.id === property.id
         ? {
             ...p,
             rooms: p.rooms.map(r => 
-              r.id === roomId
-                ? { 
-                    ...r, 
-                    s: 'occupied' as const,
-                    t: nameInput.value.trim(),
-                    p: phoneInput.value.trim(),
-                    cs: startInput.value,
-                    ce: endInput.value,
-                    lm: parseInt(meterInput.value) || 0,
-                    cm: parseInt(meterInput.value) || 0
-                  }
-                : r
-            )
+              r.id === roomId ? updatedRoom : r
+            ),
+            payments: [...p.payments, ...newPayments]
           }
         : p
     )
 
     updateData({ properties: updatedProperties })
-    alert(t('roomRented', state.lang))
+    
+    // 顯示成功訊息，包含生成的付款記錄數量
+    if (newPayments.length > 0) {
+      alert(`${t('roomRented', state.lang)}\n已為此房間生成 ${newPayments.length} 筆待繳費記錄`)
+    } else {
+      alert(t('roomRented', state.lang))
+    }
+    
     closeModal()
   }
 
