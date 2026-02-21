@@ -1,28 +1,15 @@
 'use client'
 
-import { AppState, Room } from '@/lib/types'
+import { Room } from '@/lib/types'
 import { t } from '@/lib/translations'
 import { formatCurrency } from '@/lib/utils'
+import { useApp } from '@/contexts/AppContext'
 
-interface ModalProps {
-  type: string
-  data?: any
-  state: AppState
-  updateState: (updates: Partial<AppState>) => void
-  updateData: (updates: any) => void
-  closeModal: () => void
-  getCurrentProperty: () => any
-}
-
-export default function Modal({ 
-  type, 
-  data, 
-  state, 
-  updateState, 
-  updateData, 
-  closeModal, 
-  getCurrentProperty 
-}: ModalProps) {
+export default function Modal() {
+  const { state, updateState, updateData, closeModal, getCurrentProperty } = useApp()
+  
+  const type = state.modal?.type || ''
+  const data = state.modal?.data
   
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {

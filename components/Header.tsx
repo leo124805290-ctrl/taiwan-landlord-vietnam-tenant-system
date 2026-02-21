@@ -1,15 +1,11 @@
 'use client'
 
-import { AppState } from '@/lib/types'
 import { t } from '@/lib/translations'
+import { useApp } from '@/contexts/AppContext'
 
-interface HeaderProps {
-  state: AppState
-  updateState: (updates: Partial<AppState>) => void
-  openModal: (type: string, data?: any) => void
-}
-
-export default function Header({ state, updateState, openModal }: HeaderProps) {
+export default function Header() {
+  const { state, updateState, openModal, getCurrentProperty } = useApp()
+  const property = getCurrentProperty()
   const tabs = [
     { key: 'dashboard', icon: '📊', label: 'dashboard' },
     { key: 'rooms', icon: '🏠', label: 'roomsTab' },

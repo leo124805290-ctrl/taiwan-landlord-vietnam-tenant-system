@@ -1,16 +1,10 @@
 'use client'
 
-import { AppState } from '@/lib/types'
 import { t } from '@/lib/translations'
+import { useApp } from '@/contexts/AppContext'
 
-interface SettingsProps {
-  state: AppState
-  updateState: (updates: Partial<AppState>) => void
-  updateData: (updates: any) => void
-  openModal: (type: string, data?: any) => void
-}
-
-export default function Settings({ state, updateState, updateData, openModal }: SettingsProps) {
+export default function Settings() {
+  const { state, updateState, updateData, openModal } = useApp()
   const updateRates = () => {
     const chargeRateInput = document.getElementById('chargeRate') as HTMLInputElement
     const actualRateInput = document.getElementById('actualRate') as HTMLInputElement

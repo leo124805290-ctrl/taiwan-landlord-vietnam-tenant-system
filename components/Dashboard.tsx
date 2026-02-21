@@ -1,17 +1,15 @@
 'use client'
 
-import { AppState, Property } from '@/lib/types'
 import { t } from '@/lib/translations'
 import { calculateStats, analyzeElectricity, formatCurrency } from '@/lib/utils'
+import { useApp } from '@/contexts/AppContext'
 
 interface DashboardProps {
-  property: Property
-  state: AppState
-  updateState: (updates: Partial<AppState>) => void
-  openModal: (type: string, data?: any) => void
+  property: any
 }
 
-export default function Dashboard({ property, state, updateState, openModal }: DashboardProps) {
+export default function Dashboard({ property }: DashboardProps) {
+  const { state, updateState, openModal } = useApp()
   const stats = calculateStats(
     property, 
     state.data, 
@@ -338,8 +336,8 @@ export default function Dashboard({ property, state, updateState, openModal }: D
           
           <div className="space-y-2">
             {property.payments
-              .filter(p => p.s === 'pending')
-              .map(payment => (
+              .filter((p: any) => p.s === 'pending')
+              .map((payment: any) => (
                 <div key={payment.id} className="flex justify-between items-center p-4 bg-orange-50 rounded-lg border-2 border-orange-200">
                   <div className="flex-1">
                     <div className="font-bold text-lg">
@@ -389,7 +387,7 @@ export default function Dashboard({ property, state, updateState, openModal }: D
 
       {/* 重要提醒 */}
       {(stats.expiring > 0 || 
-        (property.maintenance || []).filter(m => m.s === 'pending' || m.s === 'assigned').length > 0 || 
+        (property.maintenance || []).filter((m: any) => m.s === 'pending' || m.s === 'assigned').length > 0 || 
         stats.available > 0) && (
         <div className="card">
           <h2 className="text-xl font-bold mb-4">
@@ -419,7 +417,7 @@ export default function Dashboard({ property, state, updateState, openModal }: D
               </div>
             )}
             
-            {(property.maintenance || []).filter(m => m.s === 'pending' || m.s === 'assigned').length > 0 && (
+            {(property.maintenance || []).filter((m: any) => m.s === 'pending' || m.s === 'assigned').length > 0 && (
               <div 
                 onClick={() => updateState({ tab: 'maintenance' })}
                 className="p-4 bg-red-50 border-l-4 border-red-500 rounded cursor-pointer hover:bg-red-100"
@@ -431,7 +429,7 @@ export default function Dashboard({ property, state, updateState, openModal }: D
                       {t('pendingMaint', state.lang)}
                     </div>
                     <div className="text-sm text-red-700 mt-1">
-                      {t('has', state.lang)} {(property.maintenance || []).filter(m => m.s === 'pending' || m.s === 'assigned').length} {t('maintCount', state.lang)}
+                      {t('has', state.lang)} {(property.maintenance || []).filter((m: any) => m.s === 'pending' || m.s === 'assigned').length} {t('maintCount', state.lang)}
                     </div>
                   </div>
                   <button className="text-sm text-red-700 underline">

@@ -1,18 +1,15 @@
 'use client'
 
-import { AppState, Property } from '@/lib/types'
 import { t } from '@/lib/translations'
 import { calculateStats, formatCurrency } from '@/lib/utils'
+import { useApp } from '@/contexts/AppContext'
 
 interface RoomsProps {
-  property: Property
-  state: AppState
-  updateState: (updates: Partial<AppState>) => void
-  updateData: (updates: any) => void
-  openModal: (type: string, data?: any) => void
+  property: any
 }
 
-export default function Rooms({ property, state, updateState, updateData, openModal }: RoomsProps) {
+export default function Rooms({ property }: RoomsProps) {
+  const { state, updateState, updateData, openModal } = useApp()
   const stats = calculateStats(
     property, 
     state.data, 
@@ -72,7 +69,7 @@ export default function Rooms({ property, state, updateState, updateData, openMo
 
       {/* 房間列表 */}
       <div className="grid md:grid-cols-2 gap-4">
-        {property.rooms.map(room => {
+        {property.rooms.map((room: any) => {
           const elecFee = room.s === 'occupied' 
             ? ((room.cm || 0) - (room.pm || 0)) * state.data.electricityRate 
             : 0

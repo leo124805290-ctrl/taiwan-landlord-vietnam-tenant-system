@@ -1,17 +1,14 @@
 'use client'
 
-import { AppState, Property } from '@/lib/types'
 import { t } from '@/lib/translations'
+import { useApp } from '@/contexts/AppContext'
 
 interface MaintenanceProps {
-  property: Property
-  state: AppState
-  updateState: (updates: Partial<AppState>) => void
-  updateData: (updates: any) => void
-  openModal: (type: string, data?: any) => void
+  property: any
 }
 
-export default function Maintenance({ property, state, updateState, updateData, openModal }: MaintenanceProps) {
+export default function Maintenance({ property }: MaintenanceProps) {
+  const { state, updateState, updateData, openModal } = useApp()
   return (
     <div className="space-y-4">
       {/* 新增報修按鈕 */}
@@ -24,7 +21,7 @@ export default function Maintenance({ property, state, updateState, updateData, 
 
       {/* 報修列表 */}
       <div className="space-y-3">
-        {(property.maintenance || []).map(maint => (
+        {(property.maintenance || []).map((maint: any) => (
           <div key={maint.id} className="card">
             <div className="flex gap-2 mb-2">
               <span className={`badge ${

@@ -1,17 +1,15 @@
 'use client'
 
-import { AppState, Property } from '@/lib/types'
 import { t } from '@/lib/translations'
 import { formatCurrency } from '@/lib/utils'
+import { useApp } from '@/contexts/AppContext'
 
 interface PaymentsProps {
-  property: Property
-  state: AppState
-  updateState: (updates: Partial<AppState>) => void
-  updateData: (updates: any) => void
+  property: any
 }
 
-export default function Payments({ property, state, updateState, updateData }: PaymentsProps) {
+export default function Payments({ property }: PaymentsProps) {
+  const { state, updateState, updateData } = useApp()
   const allPayments = [...property.payments, ...(property.history || [])]
     .sort((a, b) => (b.paid || b.due).localeCompare(a.paid || a.due))
 
@@ -96,7 +94,7 @@ export default function Payments({ property, state, updateState, updateData }: P
   )
 
   function markAsPaid(paymentId: number) {
-    const payment = property.payments.find(p => p.id === paymentId)
+    const payment = property.payments.find((p: any) => p.id === paymentId)
     if (!payment) return
 
     const updatedPayment = {
@@ -120,7 +118,7 @@ export default function Payments({ property, state, updateState, updateData }: P
   }
 
   function markAsUnpaid(paymentId: number) {
-    const payment = property.history?.find(p => p.id === paymentId)
+    const payment = property.history?.find((p: any) => p.id === paymentId)
     if (!payment) return
 
     const updatedPayment = {
