@@ -32,36 +32,20 @@ export default function MeterReading({ property }: MeterReadingProps) {
     setMeterReadings(initialReadings)
   }, [property])
   
-  // 獲取已出租的房間
-  const occupiedRooms = property.rooms.filter((room: any) => room.s === 'occupied')
+  // 獲取已出租的房間，按房間號碼排序
+  const occupiedRooms = property.rooms
+    .filter((room: any) => room.s === 'occupied')
+    .sort((a: any, b: any) => {
+      // 按樓層和房號排序
+      if (a.f !== b.f) return a.f - b.f
+      // 提取數字部分進行排序
+      const aNum = parseInt(a.n.replace(/\D/g, '')) || 0
+      const bNum = parseInt(b.n.replace(/\D/g, '')) || 0
+      return aNum - bNum
+    })
   
   // 計算待提交房間數量
   const pendingRoomsCount = occupiedRooms.length - Object.keys(meterReadings).length
-  
-  // 快速填寫全部房間
-  const quickFillAll = () => {
-    const newReadings = { ...meterReadings }
-    occupiedRooms.forEach((room: any) => {
-      if (room.s === 'occupied') {
-        // 增加10-50度作為預設值
-        const increment = Math.floor(Math.random() * 40) + 10
-        newReadings[room.id] = (room.cm || 0) + increment
-      }
-    })
-    setMeterReadings(newReadings)
-  }
-  
-  // 從上月複製
-  const copyFromPrevious = () => {
-    const newReadings = { ...meterReadings }
-    occupiedRooms.forEach((room: any) => {
-      if (room.s === 'occupied') {
-        // 使用當前電錶讀數
-        newReadings[room.id] = room.cm || 0
-      }
-    })
-    setMeterReadings(newReadings)
-  }
   
   // 計算電費
   const calculateElectricityFee = (room: any, newMeter: number) => {
@@ -210,6 +194,21 @@ export default function MeterReading({ property }: MeterReadingProps) {
   // 獲取抄錶歷史
   const meterHistory = property.meterHistory || []
   
+  // 篩選狀態
+  const [historyFilterYear, setHistoryFilterYear] = useState<string>('all')
+  const [historyFilterMonth, setHistoryFilterMonth] = useState<string>('all')
+  
+  // 獲取所有可用的年份和月份
+  const availableYears = Array.from(new Set(meterHistory.map((record: any) => record.month.split('/')[0]))).sort((a, b) => b.localeCompare(a))
+  const availableMonths = Array.from(new Set(meterHistory.map((record: any) => record.month))).sort((a, b) => b.localeCompare(a))
+  
+  // 篩選抄錶歷史
+  const filteredMeterHistory = meterHistory.filter((record: any) => {
+    if (historyFilterYear !== 'all' && !record.month.startsWith(historyFilterYear)) return false
+    if (historyFilterMonth !== 'all' && record.month !== historyFilterMonth) return false
+    return true
+  })
+  
   return (
     <div className="space-y-6">
       {/* 標題 */}
@@ -275,22 +274,6 @@ export default function MeterReading({ property }: MeterReadingProps) {
           
           <div className="flex gap-2">
             <button
-              onClick={quickFillAll}
-              className="btn bg-blue-100 text-blue-700"
-              disabled={occupiedRooms.length === 0}
-            >
-              ⚡ {t('quickFillAll', state.lang)}
-            </button>
-            
-            <button
-              onClick={copyFromPrevious}
-              className="btn bg-green-100 text-green-700"
-              disabled={occupiedRooms.length === 0}
-            >
-              📋 {t('copyFromPrevious', state.lang)}
-            </button>
-            
-            <button
               onClick={submitMeterReadings}
               className="btn btn-primary"
               disabled={isSubmitting || Object.keys(meterReadings).length === 0}
@@ -319,17 +302,25 @@ export default function MeterReading({ property }: MeterReadingProps) {
               
               return (
                 <div key={room.id} className="p-4 border rounded-lg hover:bg-gray-50">
-                  <div className="flex flex-wrap gap-4 items-center">
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
                     {/* 房間資訊 */}
-                    <div className="flex-1 min-w-[200px]">
-                      <div className="font-bold">{room.n} ({room.f}F)</div>
+                    <div className="md:col-span-1">
+                      <div className="font-bold text-lg">{room.n}</div>
                       <div className="text-sm text-gray-600">
-                        {room.t || t('noTenant', state.lang)} • {t('lastMeter', state.lang)}: {lastMeter}
+                        {room.f}F • {room.t || t('noTenant', state.lang)}
                       </div>
                     </div>
                     
-                    {/* 電錶輸入 */}
-                    <div className="flex-1 min-w-[150px]">
+                    {/* 上期電錶 */}
+                    <div>
+                      <label className="block text-sm mb-1 text-gray-500">{t('previousMonthMeter', state.lang)}</label>
+                      <div className="font-bold text-gray-700">
+                        {lastMeter} {t('degree', state.lang)}
+                      </div>
+                    </div>
+                    
+                    {/* 本期電錶輸入 */}
+                    <div>
                       <label className="block text-sm mb-1">{t('currentMonthMeter', state.lang)}</label>
                       <div className="flex items-center gap-2">
                         <input
@@ -342,7 +333,7 @@ export default function MeterReading({ property }: MeterReadingProps) {
                               [room.id]: value
                             }))
                           }}
-                          className="input-field flex-1"
+                          className="input-field w-full"
                           min={lastMeter}
                           placeholder={lastMeter.toString()}
                         />
@@ -351,18 +342,18 @@ export default function MeterReading({ property }: MeterReadingProps) {
                     </div>
                     
                     {/* 用電計算 */}
-                    <div className="flex-1 min-w-[150px]">
+                    <div>
                       <div className="text-sm text-gray-600">{t('electricityUsage', state.lang)}</div>
                       <div className="font-bold text-blue-600">
                         {usage} {t('degree', state.lang)}
                       </div>
-                      <div className="text-sm text-gray-600">
-                        {t('electricityFee', state.lang)}: {formatCurrency(electricityFee)}
+                      <div className="text-sm">
+                        {t('electricityFee', state.lang)}: <span className="font-bold">{formatCurrency(electricityFee)}</span>
                       </div>
                     </div>
                     
                     {/* 狀態指示器 */}
-                    <div className="flex-1 min-w-[100px]">
+                    <div>
                       {currentReading > 0 ? (
                         <div className="inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm">
                           ✅ {t('meterEntered', state.lang)}
@@ -384,28 +375,92 @@ export default function MeterReading({ property }: MeterReadingProps) {
       {/* 抄錶歷史 */}
       {meterHistory.length > 0 && (
         <div className="card">
-          <h2 className="text-lg font-bold mb-4">📜 {t('meterReadingHistory', state.lang)}</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-bold">📜 {t('meterReadingHistory', state.lang)}</h2>
+            <div className="text-sm text-gray-600">
+              {t('totalRecords', state.lang)}: {meterHistory.length}
+            </div>
+          </div>
+          
+          {/* 篩選器 */}
+          <div className="flex gap-4 mb-4 flex-wrap">
+            <div className="flex-1 min-w-[150px]">
+              <label className="block text-sm mb-1">{t('filterByYear', state.lang)}</label>
+              <select 
+                value={historyFilterYear}
+                onChange={(e) => setHistoryFilterYear(e.target.value)}
+                className="input-field"
+              >
+                <option value="all">{t('allYears', state.lang)}</option>
+                {availableYears.map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="flex-1 min-w-[150px]">
+              <label className="block text-sm mb-1">{t('filterByMonth', state.lang)}</label>
+              <select 
+                value={historyFilterMonth}
+                onChange={(e) => setHistoryFilterMonth(e.target.value)}
+                className="input-field"
+                disabled={historyFilterYear === 'all'}
+              >
+                <option value="all">{t('allMonths', state.lang)}</option>
+                {availableMonths
+                  .filter((month: string) => historyFilterYear === 'all' || month.startsWith(historyFilterYear))
+                  .map((month: string) => (
+                    <option key={month} value={month}>{month}</option>
+                  ))
+                }
+              </select>
+            </div>
+          </div>
+          
           <div className="space-y-3">
-            {meterHistory.slice(0, 5).map((record: any) => (
-              <div key={record.id} className="p-3 border rounded-lg">
+            {filteredMeterHistory.slice(0, 10).map((record: any) => (
+              <div key={record.id} className="p-3 border rounded-lg hover:bg-gray-50">
                 <div className="flex justify-between items-center mb-2">
                   <div className="font-bold">{record.month}</div>
                   <div className="text-sm text-gray-600">{record.date}</div>
                 </div>
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-600 mb-2">
                   {t('rooms', state.lang)}: {record.readings.length} • 
                   {t('totalElectricityFee', state.lang)}: {formatCurrency(
                     record.readings.reduce((sum: number, r: any) => sum + r.fee, 0)
                   )}
                 </div>
-                <button
-                  onClick={() => openModal('meterReadingDetail', record.id)}
-                  className="mt-2 text-sm text-blue-600 hover:text-blue-800"
-                >
-                  {t('viewDetails', state.lang)}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => openModal('meterReadingDetail', record.id)}
+                    className="text-sm text-blue-600 hover:text-blue-800"
+                  >
+                    🔍 {t('viewDetails', state.lang)}
+                  </button>
+                  <button
+                    onClick={() => {
+                      // 複製到當前抄錶
+                      const newReadings: Record<number, number> = {}
+                      record.readings.forEach((r: any) => {
+                        newReadings[r.rid] = r.reading
+                      })
+                      setMeterReadings(newReadings)
+                      setReadingDate(new Date().toISOString().split('T')[0])
+                      alert(t('copiedToCurrent', state.lang))
+                    }}
+                    className="text-sm text-green-600 hover:text-green-800"
+                  >
+                    📋 {t('copyToCurrent', state.lang)}
+                  </button>
+                </div>
               </div>
             ))}
+            
+            {filteredMeterHistory.length === 0 && (
+              <div className="text-center py-4 text-gray-500">
+                {t('noRecordsFound', state.lang)}
+              </div>
+            )}
           </div>
         </div>
       )}

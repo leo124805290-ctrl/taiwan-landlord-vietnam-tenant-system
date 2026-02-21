@@ -133,42 +133,6 @@ export default function Settings() {
         </button>
       </div>
 
-      {/* 物業管理 */}
-      <div className="card">
-        <h2 className="text-xl font-bold mb-4">{t('propertyManagement', state.lang)}</h2>
-        
-        <div className="space-y-2">
-          {state.data.properties.map(property => (
-            <div key={property.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-              <div>
-                <div className="font-bold">{property.name}</div>
-                <div className="text-sm text-gray-600">
-                  {property.rooms.length} {t('rooms', state.lang)}
-                </div>
-              </div>
-              
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => openModal('editProperty', property.id)}
-                  className="btn bg-blue-100 text-blue-700 text-sm"
-                >
-                  {t('edit', state.lang)}
-                </button>
-                
-                {state.data.properties.length > 1 && (
-                  <button 
-                    onClick={() => deleteProperty(property.id)}
-                    className="btn bg-red-100 text-red-600 text-sm"
-                  >
-                    {t('delete', state.lang)}
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* 資料管理 */}
       <div className="card">
         <h2 className="text-xl font-bold mb-4">{t('dataManagement', state.lang)}</h2>
@@ -255,15 +219,4 @@ export default function Settings() {
       </div>
     </div>
   )
-
-  function deleteProperty(propertyId: number) {
-    if (!confirm(t('confirmDeleteProperty', state.lang))) return
-
-    const updatedProperties = state.data.properties.filter(p => p.id !== propertyId)
-    updateData({ properties: updatedProperties })
-    
-    if (state.currentProperty === propertyId) {
-      updateState({ currentProperty: updatedProperties[0]?.id || null })
-    }
-  }
 }

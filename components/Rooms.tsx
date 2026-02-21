@@ -3,6 +3,7 @@
 import { t } from '@/lib/translations'
 import { calculateStats, formatCurrency } from '@/lib/utils'
 import { useApp } from '@/contexts/AppContext'
+import { useState } from 'react'
 
 interface RoomsProps {
   property: any
@@ -10,6 +11,8 @@ interface RoomsProps {
 
 export default function Rooms({ property }: RoomsProps) {
   const { state, updateState, updateData, openModal } = useApp()
+  const [viewMode, setViewMode] = useState<'card' | 'list'>('card') // 視圖模式：卡片或列表
+  
   const stats = calculateStats(
     property, 
     state.data, 
@@ -66,16 +69,35 @@ export default function Rooms({ property }: RoomsProps) {
         </div>
       </div>
 
-      {/* 新增房間按鈕 */}
-      <button 
-        onClick={() => openModal('addRoom')}
-        className="btn btn-primary w-full"
-      >
-        ➕ {t('addRoom', state.lang)}
-      </button>
+      {/* 控制面板 */}
+      <div className="flex gap-2">
+        {/* 視圖模式切換 */}
+        <div className="flex bg-gray-100 rounded-lg p-1">
+          <button
+            onClick={() => setViewMode('card')}
+            className={`px-4 py-2 rounded ${viewMode === 'card' ? 'bg-white shadow' : 'text-gray-600'}`}
+          >
+            🏠 {t('cardView', state.lang)}
+          </button>
+          <button
+            onClick={() => setViewMode('list')}
+            className={`px-4 py-2 rounded ${viewMode === 'list' ? 'bg-white shadow' : 'text-gray-600'}`}
+          >
+            📋 {t('listView', state.lang)}
+          </button>
+        </div>
+        
+        {/* 新增房間按鈕 */}
+        <button 
+          onClick={() => openModal('addRoom')}
+          className="btn btn-primary flex-1"
+        >
+          ➕ {t('addRoom', state.lang)}
+        </button>
+      </div>
 
       {/* 房間列表 */}
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className={viewMode === 'card' ? 'grid md:grid-cols-2 gap-4' : 'space-y-2'}>
         {property.rooms.map((room: any) => {
           const elecFee = room.s === 'occupied' 
             ? ((room.cm || 0) - (room.pm || 0)) * state.data.electricityRate 
