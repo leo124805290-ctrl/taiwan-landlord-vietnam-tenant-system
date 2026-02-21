@@ -2,9 +2,12 @@
 
 import { t } from '@/lib/translations'
 import { useApp } from '@/contexts/AppContext'
+import { systemSelfCheck } from '@/lib/utils'
+import { useState } from 'react'
 
 export default function Settings() {
   const { state, updateState, updateData, openModal } = useApp()
+  const [checkResults, setCheckResults] = useState<{ ok: boolean; issues: string[] } | null>(null)
   const updateRates = () => {
     const chargeRateInput = document.getElementById('chargeRate') as HTMLInputElement
     const actualRateInput = document.getElementById('actualRate') as HTMLInputElement
@@ -191,6 +194,50 @@ export default function Settings() {
           style={{ display: 'none' }}
           onChange={importData}
         />
+      </div>
+
+      {/* 系統檢查 */}
+      <div className="card">
+        <h2 className="text-xl font-bold mb-4">🔍 {t('systemCheck', state.lang)}</h2>
+        
+        <button 
+          onClick={() => {
+            const results = systemSelfCheck(state.data)
+            setCheckResults(results)
+          }}
+          className="btn bg-purple-600 text-white w-full mb-4"
+        >
+          {t('runSystemCheck', state.lang)}
+        </button>
+        
+        {checkResults && (
+          <div className={`p-4 rounded-lg ${checkResults.ok ? 'bg-green-50 border-2 border-green-200' : 'bg-yellow-50 border-2 border-yellow-200'}`}>
+            <div className="font-bold mb-2">
+              {checkResults.ok ? '✅ ' : '⚠️ '}
+              {checkResults.ok ? t('systemCheckPassed', state.lang) : t('systemCheckIssues', state.lang)}
+            </div>
+            
+            {checkResults.issues.length > 0 ? (
+              <ul className="space-y-1 text-sm">
+                {checkResults.issues.map((issue, index) => (
+                  <li key={index} className="flex items-start">
+                    <span className="mr-2">•</span>
+                    <span>{issue}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="text-green-600">✅ {t('noIssuesFound', state.lang)}</div>
+            )}
+          </div>
+        )}
+        
+        <div className="mt-4 text-sm text-gray-600">
+          <div className="font-bold mb-1">{t('dataIntegrity', state.lang)}：</div>
+          <div>• {t('contractExpiryCheck', state.lang)}</div>
+          <div>• {t('duplicateRoomNumbers', state.lang)}</div>
+          <div>• {t('paymentConsistency', state.lang)}</div>
+        </div>
       </div>
 
       {/* 危險操作 */}

@@ -1,7 +1,7 @@
 // 多物業管理系統 - 類型定義
 
 // 房間狀態
-export type RoomStatus = 'available' | 'occupied';
+export type RoomStatus = 'available' | 'occupied' | 'renovation';
 
 // 付款狀態
 export type PaymentStatus = 'pending' | 'paid';
@@ -30,6 +30,17 @@ export interface Room {
   cm?: number; // 本期電錶
   pm?: number; // 上期電錶
   lm?: number; // 上上期電錶
+  moveOutDate?: string; // 退租日期
+  finalMeter?: number; // 最後電錶
+  finalElectricityFee?: number; // 最後電費
+  previousTenant?: string; // 前租客姓名
+  previousPhone?: string; // 前租客電話
+  previousContractStart?: string; // 前合約開始日
+  previousContractEnd?: string; // 前合約結束日
+  previousTenants?: string[]; // 歷史租客（多個）
+  totalRentCollected?: number; // 總收租金
+  totalElectricityCollected?: number; // 總收電費
+  maintenanceHistory?: number[]; // 維修記錄ID列表
 }
 
 // 付款記錄
@@ -63,6 +74,10 @@ export interface Maintenance {
   date: string; // 報修日期
   cost?: number; // 維修費用
   repairDate?: string; // 維修日期
+  estimatedCost?: number; // 預計費用（用於裝修）
+  estimatedCompletion?: string; // 預計完成日期
+  technician?: string; // 師傅姓名
+  notes?: string; // 備註
 }
 
 // 物業資料

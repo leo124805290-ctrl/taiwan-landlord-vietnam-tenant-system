@@ -218,16 +218,52 @@ export default function Modal() {
                 </div>
               </div>
               
+              {/* 當前租客資訊 */}
               {room.s === 'occupied' && (
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <h3 className="font-bold mb-2">{t('tenantInfo', state.lang)}</h3>
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <h3 className="font-bold mb-2">👤 {t('currentTenant', state.lang)}</h3>
                   <div className="text-sm text-gray-600">
+                    {t('tenantName', state.lang)}: {room.t || 'N/A'}<br/>
+                    {t('phone', state.lang)}: {room.p || 'N/A'}<br/>
+                    {t('contractPeriod', state.lang)}: {room.in || 'N/A'} ~ {room.out || 'N/A'}<br/>
                     {t('lastMeter', state.lang)}: {room.lm || 0} {t('degree', state.lang)}<br/>
                     {t('currentMeter', state.lang)}: {room.cm || 0} {t('degree', state.lang)}<br/>
                     {t('electricityReceivable', state.lang)}: {formatCurrency(Math.round(((room.cm || 0) - (room.lm || 0)) * state.data.electricityRate))}
                   </div>
                 </div>
               )}
+              
+              {/* 歷史租客資訊 */}
+              {(room.previousTenant || room.moveOutDate) && (
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <h3 className="font-bold mb-2">📜 {t('previousTenant', state.lang)}</h3>
+                  <div className="text-sm text-gray-600">
+                    {room.previousTenant && (
+                      <>
+                        {t('tenantName', state.lang)}: {room.previousTenant}<br/>
+                        {room.previousPhone && `${t('phone', state.lang)}: ${room.previousPhone}<br/>`}
+                        {room.previousContractStart && room.previousContractEnd && 
+                          `${t('contractPeriod', state.lang)}: ${room.previousContractStart} ~ ${room.previousContractEnd}<br/>`
+                        }
+                      </>
+                    )}
+                    {room.moveOutDate && `${t('moveOutDate', state.lang)}: ${room.moveOutDate}<br/>`}
+                    {room.finalMeter && `${t('finalMeter', state.lang)}: ${room.finalMeter} ${t('degree', state.lang)}<br/>`}
+                    {room.finalElectricityFee && `${t('finalElectricityFee', state.lang)}: ${formatCurrency(room.finalElectricityFee)}<br/>`}
+                  </div>
+                </div>
+              )}
+              
+              {/* 房間統計 */}
+              <div className="p-4 bg-green-50 rounded-lg">
+                <h3 className="font-bold mb-2">📊 {t('roomStatistics', state.lang)}</h3>
+                <div className="text-sm text-gray-600">
+                  {t('monthlyRent', state.lang)}: {formatCurrency(room.r)}<br/>
+                  {t('deposit', state.lang)}: {formatCurrency(room.d)}<br/>
+                  {t('roomStatus', state.lang)}: {t(room.s, state.lang)}<br/>
+                  {room.s === 'renovation' && `${t('renovationStatus', state.lang)}: ${t('inProgress', state.lang)}`}
+                </div>
+              </div>
             </div>
             <div className="flex gap-2 mt-4">
               <button onClick={closeModal} className="flex-1 btn bg-gray-200">
@@ -835,8 +871,16 @@ export default function Modal() {
                 ? { 
                     ...r, 
                     s: 'available' as const,
+                    // 保留歷史租客資訊（不刪除，只是標記為歷史）
+                    previousTenant: r.t, // 保存前租客姓名
+                    previousPhone: r.p, // 保存前租客電話
+                    previousContractStart: r.in, // 保存合約開始日
+                    previousContractEnd: r.out, // 保存合約結束日
+                    // 清空當前租客資訊
                     t: undefined,
                     p: undefined,
+                    in: undefined,
+                    out: undefined,
                     cs: undefined,
                     ce: undefined,
                     cm: finalMeter,

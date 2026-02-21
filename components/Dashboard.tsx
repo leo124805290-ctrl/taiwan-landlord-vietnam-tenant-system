@@ -14,6 +14,24 @@ export default function Dashboard({ property }: DashboardProps) {
   // 檢查是否顯示全部物業
   const showAllProperties = state.currentProperty === null
   
+  // 計算即將到期的合約（30天內）
+  const calculateExpiringContracts = () => {
+    if (!property || !property.rooms) return [];
+    
+    const today = new Date();
+    const thirtyDaysLater = new Date();
+    thirtyDaysLater.setDate(today.getDate() + 30);
+    
+    return property.rooms.filter((room: any) => {
+      if (room.s !== 'occupied' || !room.out) return false;
+      
+      const outDate = new Date(room.out);
+      return outDate >= today && outDate <= thirtyDaysLater;
+    });
+  };
+  
+  const expiringContracts = calculateExpiringContracts();
+  
   // 計算統計數據
   let stats, elecAnalysis
   if (showAllProperties) {
@@ -516,7 +534,7 @@ export default function Dashboard({ property }: DashboardProps) {
       )}
 
       {/* 重要提醒 */}
-      {(stats.expiring > 0 || 
+      {(expiringContracts.length > 0 || 
         (property.maintenance || []).filter((m: any) => m.s === 'pending' || m.s === 'assigned').length > 0 || 
         stats.available > 0) && (
         <div className="card">
@@ -525,7 +543,7 @@ export default function Dashboard({ property }: DashboardProps) {
           </h2>
           
           <div className="space-y-3">
-            {stats.expiring > 0 && (
+            {expiringContracts.length > 0 && (
               <div 
                 onClick={() => openModal('expiringContracts')}
                 className="p-4 bg-yellow-50 border-l-4 border-yellow-500 rounded cursor-pointer hover:bg-yellow-100"
@@ -534,15 +552,40 @@ export default function Dashboard({ property }: DashboardProps) {
                   <span className="text-3xl">📅</span>
                   <div className="flex-1">
                     <div className="font-bold text-yellow-800">
-                      {t('contractExpiring', state.lang)}
+                      {t('contractExpiringSoon', state.lang)}
                     </div>
                     <div className="text-sm text-yellow-700 mt-1">
-                      {t('has', state.lang)} {stats.expiring} {t('contractsWillExpire', state.lang)}
+                      {t('contractExpiringCount', state.lang)}: {expiringContracts.length} 間
+                    </div>
+                    <div className="text-xs text-yellow-600 mt-2">
+                      {expiringContracts.slice(0, 3).map((room: any) => {
+                        const outDate = new Date(room.out);
+                        const today = new Date();
+                        const daysLeft = Math.ceil((outDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                        return `${room.n} (${room.t}) - ${daysLeft} ${t('daysToExpire', state.lang)}`;
+                      }).join(', ')}
+                      {expiringContracts.length > 3 && `...等 ${expiringContracts.length} 間`}
                     </div>
                   </div>
                   <button className="text-sm text-yellow-700 underline">
-                    {t('viewDetails', state.lang)}
+                    {t('viewExpiringContracts', state.lang)}
                   </button>
+                </div>
+              </div>
+            )}
+            
+            {expiringContracts.length === 0 && (
+              <div className="p-4 bg-green-50 border-l-4 border-green-500 rounded">
+                <div className="flex gap-3">
+                  <span className="text-3xl">✅</span>
+                  <div>
+                    <div className="font-bold text-green-800">
+                      {t('noContractsExpiring', state.lang)}
+                    </div>
+                    <div className="text-sm text-green-700 mt-1">
+                      {t('contractRenewalReminder', state.lang)}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
