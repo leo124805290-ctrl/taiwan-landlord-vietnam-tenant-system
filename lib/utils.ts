@@ -99,15 +99,20 @@ export function filterElecByTime(
     return { pend: payments, hist: history || [] };
   }
   
+  let pend = payments || [];
   let hist = history || [];
+  
   if (timeScope === 'year' && year) {
-    hist = hist.filter(h => h.m && h.m.startsWith(String(year)));
+    const yearStr = String(year);
+    pend = pend.filter(p => p.m && p.m.startsWith(yearStr));
+    hist = hist.filter(h => h.m && h.m.startsWith(yearStr));
   } else if (timeScope === 'month' && month) {
     const targetMonth = month.replace('-', '/');
+    pend = pend.filter(p => p.m && p.m.startsWith(targetMonth));
     hist = hist.filter(h => h.m && h.m.startsWith(targetMonth));
   }
   
-  return { pend: payments, hist: hist };
+  return { pend: pend, hist: hist };
 }
 
 // 計算統計資料
