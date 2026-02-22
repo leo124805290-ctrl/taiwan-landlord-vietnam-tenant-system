@@ -143,6 +143,13 @@ export default function Payments({ property }: PaymentsProps) {
 
   function deletePayment(paymentId: number) {
     if (!confirm(t('confirmDelete', state.lang))) return
+    
+    // 密碼驗證
+    const password = prompt(t('enterPasswordToDelete', state.lang), '')
+    if (password !== '123456') {
+      alert(t('incorrectPassword', state.lang))
+      return
+    }
 
     const updatedProperties = state.data.properties.map(p => 
       p.id === property.id
@@ -155,5 +162,6 @@ export default function Payments({ property }: PaymentsProps) {
     )
 
     updateData({ properties: updatedProperties })
+    alert(t('paymentDeleted', state.lang))
   }
 }

@@ -524,8 +524,56 @@ export default function Modal() {
               </div>
               <div>
                 <label className="block text-sm mb-1">{t('finalMeter', state.lang)}</label>
-                <input type="number" id="finalMeter" defaultValue={moveOutRoom.cm || moveOutRoom.lm || 0} className="input-field" />
+                <input 
+                  type="number" 
+                  id="finalMeter" 
+                  defaultValue={moveOutRoom.cm || moveOutRoom.lm || 0} 
+                  className="input-field" 
+                  min={moveOutRoom.lm || 0}
+                  onChange={(e) => {
+                    // 計算並顯示應付電費
+                    const finalMeter = parseInt(e.target.value) || 0
+                    const lastMeter = moveOutRoom.lm || 0
+                    const electricityUsage = Math.max(0, finalMeter - lastMeter)
+                    const electricityFee = electricityUsage * state.data.electricityRate
+                    
+                    // 更新顯示
+                    const feeDisplay = document.getElementById('electricityFeeDisplay')
+                    if (feeDisplay) {
+                      feeDisplay.textContent = `${formatCurrency(electricityFee)}`
+                    }
+                    
+                    const usageDisplay = document.getElementById('electricityUsageDisplay')
+                    if (usageDisplay) {
+                      usageDisplay.textContent = `${electricityUsage} ${t('degree', state.lang)}`
+                    }
+                  }}
+                />
+                <div className="text-xs text-gray-500 mt-1">
+                  {t('lastMeter', state.lang)}: {moveOutRoom.lm || 0} {t('degree', state.lang)}
+                </div>
               </div>
+              
+              {/* 電費計算結果顯示 */}
+              <div id="electricityFeeSection" className="p-4 bg-blue-50 rounded-lg">
+                <div className="font-bold text-blue-700 mb-2">⚡ {t('finalElectricityFee', state.lang)}</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <div className="text-sm text-gray-600">{t('electricityUsage', state.lang)}</div>
+                    <div className="text-lg font-bold" id="electricityUsageDisplay">0 {t('degree', state.lang)}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-600">{t('electricityFee', state.lang)}</div>
+                    <div className="text-2xl font-bold text-green-600" id="electricityFeeDisplay">
+                      {formatCurrency(0)}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-xs text-gray-500 mt-2">
+                  {t('electricityRate', state.lang)}: ${state.data.electricityRate} {t('perUnit', state.lang)}
+                </div>
+              </div>
+              
               <div>
                 <label className="block text-sm mb-1">{t('moveOutDate', state.lang)}</label>
                 <input type="date" id="moveOutDate" defaultValue={new Date().toISOString().split('T')[0]} className="input-field" />
@@ -1398,7 +1446,31 @@ export default function Modal() {
 
     // 計算最後電費
     const lastMeter = room.lm || 0
-    const electricityFee = Math.max(0, finalMeter - lastMeter) * state.data.electricityRate
+    const electricityUsage = Math.max(0, finalMeter - lastMeter)
+    const electricityFee = electricityUsage * state.data.electricityRate
+
+    // 創建電費繳費記錄（如果電費大於0）
+    let newPayment = null
+    if (electricityFee > 0) {
+      const paymentId = Math.max(...property.payments.map((p: any) => p.id), 0) + 1
+      const currentMonth = new Date().toISOString().slice(0, 7).replace('-', '/') // YYYY/MM
+      
+      newPayment = {
+        id: paymentId,
+        rid: roomId,
+        n: room.n,
+        t: room.t || '',
+        m: currentMonth,
+        r: 0, // 租金為0（只收電費）
+        u: electricityUsage,
+        e: electricityFee,
+        total: electricityFee,
+        due: moveOutDate,
+        s: 'pending' as const,
+        notes: `退租最後電費 - 最後讀數: ${finalMeter}, 上期讀數: ${lastMeter}`,
+        isFinalElectricity: true // 標記為最後電費
+      }
+    }
 
     const updatedProperties = state.data.properties.map(p => 
       p.id === property.id
@@ -1428,14 +1500,30 @@ export default function Modal() {
                     finalElectricityFee: electricityFee
                   }
                 : r
-            )
+            ),
+            // 添加電費繳費記錄（如果有的話）
+            payments: newPayment 
+              ? [...p.payments, newPayment]
+              : p.payments
           }
         : p
     )
 
     updateData({ properties: updatedProperties })
-    alert(t('moveOutCompleted', state.lang))
-    closeModal()
+    
+    // 顯示成功訊息
+    if (electricityFee > 0) {
+      alert(`✅ ${t('moveOutCompleted', state.lang)}\n\n⚡ ${t('finalElectricityFee', state.lang)}: ${formatCurrency(electricityFee)}\n📝 ${t('paymentCreated', state.lang)}`)
+      // 關閉模態框後，自動跳轉到繳費頁面
+      closeModal()
+      // 這裡無法直接導航到繳費頁面，但可以顯示提示
+      setTimeout(() => {
+        alert(`💡 ${t('goToPaymentsHint', state.lang)}`)
+      }, 500)
+    } else {
+      alert(t('moveOutCompleted', state.lang))
+      closeModal()
+    }
   }
 
   // 儲存快速收款
