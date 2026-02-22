@@ -16,7 +16,7 @@ export const translations: Translation = {
     dashboard: '儀表板',
     roomsTab: '房間',
     paymentsTab: '繳費',
-    maintenanceTab: '報修',
+    maintenanceTab: '報修/裝修',
     settingsTab: '設定',
     total: '總房間數',
     occupied: '已出租',

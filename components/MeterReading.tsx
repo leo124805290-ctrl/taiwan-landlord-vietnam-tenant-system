@@ -199,8 +199,8 @@ export default function MeterReading({ property }: MeterReadingProps) {
   const [historyFilterMonth, setHistoryFilterMonth] = useState<string>('all')
   
   // 獲取所有可用的年份和月份
-  const availableYears = Array.from(new Set<string>(meterHistory.map((record: any) => record.month.split('/')[0]))).sort((a: string, b: string) => b.localeCompare(a))
-  const availableMonths = Array.from(new Set<string>(meterHistory.map((record: any) => record.month))).sort((a: string, b: string) => b.localeCompare(a))
+  const availableYears = Array.from(new Set(meterHistory.map((record: any) => record.month.split('/')[0]))).sort((a, b) => (b as string).localeCompare(a as string))
+  const availableMonths = Array.from(new Set(meterHistory.map((record: any) => record.month))).sort((a, b) => (b as string).localeCompare(a as string))
   
   // 篩選抄錶歷史
   const filteredMeterHistory = meterHistory.filter((record: any) => {
@@ -392,8 +392,8 @@ export default function MeterReading({ property }: MeterReadingProps) {
                 className="input-field"
               >
                 <option value="all">{t('allYears', state.lang)}</option>
-                {availableYears.map((year: string) => (
-                  <option key={year} value={year}>{year}</option>
+                {availableYears.map((year) => (
+                  <option key={year as string} value={year as string}>{year as string}</option>
                 ))}
               </select>
             </div>
@@ -408,9 +408,9 @@ export default function MeterReading({ property }: MeterReadingProps) {
               >
                 <option value="all">{t('allMonths', state.lang)}</option>
                 {availableMonths
-                  .filter((month: string) => historyFilterYear === 'all' || month.startsWith(historyFilterYear))
-                  .map((month: string) => (
-                    <option key={month} value={month}>{month}</option>
+                  .filter((month) => historyFilterYear === 'all' || (month as string).startsWith(historyFilterYear))
+                  .map((month) => (
+                    <option key={month as string} value={month as string}>{month as string}</option>
                   ))
                 }
               </select>

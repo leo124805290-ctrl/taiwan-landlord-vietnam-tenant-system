@@ -76,7 +76,7 @@ export default function Maintenance({ property }: MaintenanceProps) {
     <div className="space-y-4">
       {/* 成本統計 */}
       <div className="card">
-        <h2 className="text-xl font-bold mb-4">💰 {t('costAnalysis', state.lang)}</h2>
+        <h2 className="text-xl font-bold mb-4">🔧 {t('maintenanceRenovation', state.lang)}</h2>
         
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div className="p-4 bg-blue-50 rounded-lg">
