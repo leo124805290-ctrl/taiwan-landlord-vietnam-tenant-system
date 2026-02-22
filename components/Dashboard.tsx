@@ -426,6 +426,7 @@ export default function Dashboard({ property }: DashboardProps) {
           </div>
         </div>
       </div>
+      </div>
 
       {/* 營收分析 */}
       <div className="card">
