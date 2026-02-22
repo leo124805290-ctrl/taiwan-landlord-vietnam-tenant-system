@@ -108,11 +108,33 @@ export interface MeterReadingRecord {
   }[];
 }
 
+// 水電支出記錄
+export interface UtilityExpense {
+  id: number;
+  type: 'taipower' | 'water'; // 台電或水費
+  period: string; // 期間，如 "2026年1-2月"
+  amount: number; // 金額
+  paidDate: string; // 繳費日期 (YYYY-MM-DD)
+  notes?: string; // 備註
+}
+
+// 補充收入記錄
+export interface AdditionalIncome {
+  id: number;
+  type: 'washing-machine' | 'other'; // 洗衣機或其他
+  month: string; // 月份，如 "2026/01"
+  amount: number; // 金額
+  description: string; // 描述
+  receivedDate: string; // 收款日期 (YYYY-MM-DD)
+}
+
 // 應用資料
 export interface AppData {
   properties: Property[];
   electricityRate: number;
   actualElectricityRate: number;
+  utilityExpenses: UtilityExpense[]; // 水電支出記錄
+  additionalIncomes: AdditionalIncome[]; // 補充收入記錄
 }
 
 // 應用狀態

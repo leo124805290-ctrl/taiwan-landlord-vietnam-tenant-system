@@ -88,6 +88,19 @@ export function initData(): AppData {
     ],
     electricityRate: 6,
     actualElectricityRate: 4.5,
+    utilityExpenses: [
+      // 範例：台電帳單
+      { id: 1, type: 'taipower', period: '2026年1-2月', amount: 8500, paidDate: '2026-03-05', notes: '冬季電費較高' },
+      { id: 2, type: 'taipower', period: '2025年11-12月', amount: 7200, paidDate: '2026-01-05' },
+      // 範例：水費帳單
+      { id: 3, type: 'water', period: '2025年12月-2026年1月', amount: 1800, paidDate: '2026-02-10' },
+    ],
+    additionalIncomes: [
+      // 範例：洗衣機收入
+      { id: 1, type: 'washing-machine', month: '2026/01', amount: 1500, description: '1月份洗衣機收入', receivedDate: '2026-02-01' },
+      { id: 2, type: 'washing-machine', month: '2025/12', amount: 1200, description: '12月份洗衣機收入', receivedDate: '2026-01-05' },
+      { id: 3, type: 'other', month: '2026/01', amount: 800, description: '其他雜項收入', receivedDate: '2026-02-10' },
+    ],
   };
 }
 
