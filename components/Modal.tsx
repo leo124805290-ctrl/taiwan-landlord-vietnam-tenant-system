@@ -728,38 +728,93 @@ export default function Modal() {
         
         return (
           <>
-            <h2 className="text-2xl font-bold mb-4">🔧 {t('edit', state.lang)} {t('maintenance', state.lang)}</h2>
+            <h2 className="text-2xl font-bold mb-4">🔧 {t('editMaintenance', state.lang)}</h2>
             <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm mb-1">{t('category', state.lang)}</label>
+                  <select id="editMaintCategory" defaultValue={maint.category || 'repair'} className="input-field">
+                    <option value="repair">{t('categoryRepair', state.lang)}</option>
+                    <option value="renovation">{t('categoryRenovation', state.lang)}</option>
+                    <option value="other">{t('categoryOther', state.lang)}</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm mb-1">{t('urgency', state.lang)}</label>
+                  <select id="editMaintUrg" defaultValue={maint.urg} className="input-field">
+                    <option value="urgent">{t('urgent', state.lang)}</option>
+                    <option value="normal">{t('normal', state.lang)}</option>
+                  </select>
+                </div>
+              </div>
+              
               <div>
                 <label className="block text-sm mb-1">{t('title', state.lang)}</label>
                 <input type="text" id="editMaintTitle" defaultValue={maint.title} className="input-field" />
               </div>
+              
               <div>
                 <label className="block text-sm mb-1">{t('description', state.lang)}</label>
                 <textarea id="editMaintDesc" defaultValue={maint.desc} className="input-field h-24" />
               </div>
-              <div>
-                <label className="block text-sm mb-1">{t('urgency', state.lang)}</label>
-                <select id="editMaintUrg" defaultValue={maint.urg} className="input-field">
-                  <option value="urgent">{t('urgent', state.lang)}</option>
-                  <option value="normal">{t('normal', state.lang)}</option>
-                </select>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm mb-1">{t('status', state.lang)}</label>
+                  <select id="editMaintStatus" defaultValue={maint.s} className="input-field">
+                    <option value="pending">{t('statusPending', state.lang)}</option>
+                    <option value="assigned">{t('statusAssigned', state.lang)}</option>
+                    <option value="in-progress">{t('statusInProgress', state.lang)}</option>
+                    <option value="completed">{t('statusCompleted', state.lang)}</option>
+                    <option value="cancelled">{t('statusCancelled', state.lang)}</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm mb-1">{t('paymentStatus', state.lang)}</label>
+                  <select id="editMaintPaymentStatus" defaultValue={maint.paymentStatus || 'unpaid'} className="input-field">
+                    <option value="unpaid">{t('unpaidStatus', state.lang)}</option>
+                    <option value="paid">{t('paidStatus', state.lang)}</option>
+                    <option value="partial">{t('partialPayment', state.lang)}</option>
+                  </select>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm mb-1">{t('status', state.lang)}</label>
-                <select id="editMaintStatus" defaultValue={maint.s} className="input-field">
-                  <option value="pending">{t('pendingStatus', state.lang)}</option>
-                  <option value="assigned">{t('assignedStatus', state.lang)}</option>
-                  <option value="completed">{t('completedStatus', state.lang)}</option>
-                </select>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm mb-1">{t('estimatedCost', state.lang)}</label>
+                  <input type="number" id="editMaintEstimatedCost" defaultValue={maint.estimatedCost || 0} className="input-field" />
+                </div>
+                <div>
+                  <label className="block text-sm mb-1">{t('actualCost', state.lang)}</label>
+                  <input type="number" id="editMaintActualCost" defaultValue={maint.actualCost || 0} className="input-field" />
+                </div>
               </div>
-              <div>
-                <label className="block text-sm mb-1">{t('cost', state.lang)}</label>
-                <input type="number" id="editMaintCost" defaultValue={maint.cost || 0} className="input-field" />
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm mb-1">{t('estimatedCompletion', state.lang)}</label>
+                  <input type="date" id="editMaintEstimatedCompletion" defaultValue={maint.estimatedCompletion || ''} className="input-field" />
+                </div>
+                <div>
+                  <label className="block text-sm mb-1">{t('actualCompletionDate', state.lang)}</label>
+                  <input type="date" id="editMaintActualCompletionDate" defaultValue={maint.actualCompletionDate || ''} className="input-field" />
+                </div>
               </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm mb-1">{t('technician', state.lang)}</label>
+                  <input type="text" id="editMaintTechnician" defaultValue={maint.technician || ''} className="input-field" />
+                </div>
+                <div>
+                  <label className="block text-sm mb-1">{t('invoiceNumber', state.lang)}</label>
+                  <input type="text" id="editMaintInvoiceNumber" defaultValue={maint.invoiceNumber || ''} className="input-field" />
+                </div>
+              </div>
+              
               <div>
-                <label className="block text-sm mb-1">{t('repairDate', state.lang)}</label>
-                <input type="date" id="editMaintDate" defaultValue={maint.repairDate || ''} className="input-field" />
+                <label className="block text-sm mb-1">{t('notes', state.lang)}</label>
+                <textarea id="editMaintNotes" defaultValue={maint.notes || ''} className="input-field h-20" />
               </div>
             </div>
             <div className="flex gap-2 mt-4">
@@ -767,7 +822,7 @@ export default function Modal() {
                 {t('cancel', state.lang)}
               </button>
               <button onClick={() => saveEditMaintenance(data)} className="flex-1 btn btn-primary">
-                {t('save', state.lang)}
+                {t('updateMaintenance', state.lang)}
               </button>
             </div>
           </>
@@ -1018,6 +1073,237 @@ export default function Modal() {
           </>
         )
 
+      case 'addUtilityExpense':
+        return (
+          <>
+            <h2 className="text-2xl font-bold mb-4">⚡ {t('addUtilityExpense', state.lang)}</h2>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm mb-1">{t('type', state.lang)}</label>
+                <select id="addUtilityType" className="input-field">
+                  <option value="taipower">{t('taipowerBill', state.lang)}</option>
+                  <option value="water">{t('waterBill', state.lang)}</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm mb-1">{t('billPeriod', state.lang)}</label>
+                <input type="text" id="addUtilityPeriod" className="input-field" placeholder="例如：2026年1-2月" />
+              </div>
+              
+              <div>
+                <label className="block text-sm mb-1">{t('amount', state.lang)}</label>
+                <input type="number" id="addUtilityAmount" className="input-field" />
+              </div>
+              
+              <div>
+                <label className="block text-sm mb-1">{t('paidDate', state.lang)}</label>
+                <input type="date" id="addUtilityPaidDate" className="input-field" />
+              </div>
+              
+              <div>
+                <label className="block text-sm mb-1">{t('notes', state.lang)} (選填)</label>
+                <textarea id="addUtilityNotes" className="input-field h-20" />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <button onClick={closeModal} className="flex-1 btn bg-gray-200">
+                {t('cancel', state.lang)}
+              </button>
+              <button onClick={saveAddUtilityExpense} className="flex-1 btn btn-primary">
+                {t('save', state.lang)}
+              </button>
+            </div>
+          </>
+        )
+        
+      case 'editUtilityExpense':
+        return (
+          <>
+            <h2 className="text-2xl font-bold mb-4">⚡ {t('editUtilityExpense', state.lang)}</h2>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm mb-1">{t('type', state.lang)}</label>
+                <select id="editUtilityType" className="input-field">
+                  <option value="taipower">{t('taipowerBill', state.lang)}</option>
+                  <option value="water">{t('waterBill', state.lang)}</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm mb-1">{t('billPeriod', state.lang)}</label>
+                <input type="text" id="editUtilityPeriod" className="input-field" />
+              </div>
+              
+              <div>
+                <label className="block text-sm mb-1">{t('amount', state.lang)}</label>
+                <input type="number" id="editUtilityAmount" className="input-field" />
+              </div>
+              
+              <div>
+                <label className="block text-sm mb-1">{t('paidDate', state.lang)}</label>
+                <input type="date" id="editUtilityPaidDate" className="input-field" />
+              </div>
+              
+              <div>
+                <label className="block text-sm mb-1">{t('notes', state.lang)} (選填)</label>
+                <textarea id="editUtilityNotes" className="input-field h-20" />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <button onClick={closeModal} className="flex-1 btn bg-gray-200">
+                {t('cancel', state.lang)}
+              </button>
+              <button onClick={() => saveEditUtilityExpense(data)} className="flex-1 btn btn-primary">
+                {t('save', state.lang)}
+              </button>
+            </div>
+          </>
+        )
+        
+      case 'addAdditionalIncome':
+        return (
+          <>
+            <h2 className="text-2xl font-bold mb-4">💰 {t('addAdditionalIncome', state.lang)}</h2>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm mb-1">{t('type', state.lang)}</label>
+                <select id="addIncomeType" className="input-field">
+                  <option value="washing-machine">{t('washingMachineIncome', state.lang)}</option>
+                  <option value="other">{t('otherIncome', state.lang)}</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm mb-1">{t('month', state.lang)}</label>
+                <input type="text" id="addIncomeMonth" className="input-field" placeholder="例如：2026/01" />
+              </div>
+              
+              <div>
+                <label className="block text-sm mb-1">{t('amount', state.lang)}</label>
+                <input type="number" id="addIncomeAmount" className="input-field" />
+              </div>
+              
+              <div>
+                <label className="block text-sm mb-1">{t('description', state.lang)}</label>
+                <input type="text" id="addIncomeDescription" className="input-field" />
+              </div>
+              
+              <div>
+                <label className="block text-sm mb-1">{t('receivedDate', state.lang)}</label>
+                <input type="date" id="addIncomeReceivedDate" className="input-field" />
+              </div>
+              
+              <div>
+                <label className="block text-sm mb-1">{t('notes', state.lang)} (選填)</label>
+                <textarea id="addIncomeNotes" className="input-field h-20" />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <button onClick={closeModal} className="flex-1 btn bg-gray-200">
+                {t('cancel', state.lang)}
+              </button>
+              <button onClick={saveAddAdditionalIncome} className="flex-1 btn btn-primary">
+                {t('save', state.lang)}
+              </button>
+            </div>
+          </>
+        )
+        
+      case 'editAdditionalIncome':
+        return (
+          <>
+            <h2 className="text-2xl font-bold mb-4">💰 {t('editAdditionalIncome', state.lang)}</h2>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm mb-1">{t('type', state.lang)}</label>
+                <select id="editIncomeType" className="input-field">
+                  <option value="washing-machine">{t('washingMachineIncome', state.lang)}</option>
+                  <option value="other">{t('otherIncome', state.lang)}</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm mb-1">{t('month', state.lang)}</label>
+                <input type="text" id="editIncomeMonth" className="input-field" />
+              </div>
+              
+              <div>
+                <label className="block text-sm mb-1">{t('amount', state.lang)}</label>
+                <input type="number" id="editIncomeAmount" className="input-field" />
+              </div>
+              
+              <div>
+                <label className="block text-sm mb-1">{t('description', state.lang)}</label>
+                <input type="text" id="editIncomeDescription" className="input-field" />
+              </div>
+              
+              <div>
+                <label className="block text-sm mb-1">{t('receivedDate', state.lang)}</label>
+                <input type="date" id="editIncomeReceivedDate" className="input-field" />
+              </div>
+              
+              <div>
+                <label className="block text-sm mb-1">{t('notes', state.lang)} (選填)</label>
+                <textarea id="editIncomeNotes" className="input-field h-20" />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <button onClick={closeModal} className="flex-1 btn bg-gray-200">
+                {t('cancel', state.lang)}
+              </button>
+              <button onClick={() => saveEditAdditionalIncome(data)} className="flex-1 btn btn-primary">
+                {t('save', state.lang)}
+              </button>
+            </div>
+          </>
+        )
+        
+      case 'updateCost':
+        return (
+          <>
+            <h2 className="text-2xl font-bold mb-4">💰 {t('updateCost', state.lang)}</h2>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm mb-1">{t('actualCost', state.lang)}</label>
+                <input type="number" id="updateCostAmount" className="input-field" placeholder="實際發生金額" />
+              </div>
+              
+              <div>
+                <label className="block text-sm mb-1">{t('paymentStatus', state.lang)}</label>
+                <select id="updateCostPaymentStatus" className="input-field">
+                  <option value="unpaid">{t('unpaid', state.lang)}</option>
+                  <option value="paid">{t('paid', state.lang)}</option>
+                  <option value="partially-paid">{t('partiallyPaid', state.lang)}</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm mb-1">{t('actualCompletionDate', state.lang)}</label>
+                <input type="date" id="updateCostCompletionDate" className="input-field" />
+              </div>
+              
+              <div>
+                <label className="block text-sm mb-1">{t('invoiceNumber', state.lang)} (選填)</label>
+                <input type="text" id="updateCostInvoiceNumber" className="input-field" placeholder="發票號碼" />
+              </div>
+              
+              <div>
+                <label className="block text-sm mb-1">{t('notes', state.lang)} (選填)</label>
+                <textarea id="updateCostNotes" className="input-field h-20" placeholder="備註說明" />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <button onClick={closeModal} className="flex-1 btn bg-gray-200">
+                {t('cancel', state.lang)}
+              </button>
+              <button onClick={() => saveUpdateCost(data)} className="flex-1 btn btn-primary">
+                {t('save', state.lang)}
+              </button>
+            </div>
+          </>
+        )
+        
       default:
         return (
           <div className="text-center py-8">
@@ -1246,12 +1532,20 @@ export default function Modal() {
     const property = getCurrentProperty()
     if (!property) return
 
+    // 獲取所有輸入元素
+    const categoryInput = document.getElementById('editMaintCategory') as HTMLSelectElement
     const titleInput = document.getElementById('editMaintTitle') as HTMLInputElement
     const descInput = document.getElementById('editMaintDesc') as HTMLTextAreaElement
     const urgInput = document.getElementById('editMaintUrg') as HTMLSelectElement
     const statusInput = document.getElementById('editMaintStatus') as HTMLSelectElement
-    const costInput = document.getElementById('editMaintCost') as HTMLInputElement
-    const dateInput = document.getElementById('editMaintDate') as HTMLInputElement
+    const paymentStatusInput = document.getElementById('editMaintPaymentStatus') as HTMLSelectElement
+    const estimatedCostInput = document.getElementById('editMaintEstimatedCost') as HTMLInputElement
+    const actualCostInput = document.getElementById('editMaintActualCost') as HTMLInputElement
+    const estimatedCompletionInput = document.getElementById('editMaintEstimatedCompletion') as HTMLInputElement
+    const actualCompletionDateInput = document.getElementById('editMaintActualCompletionDate') as HTMLInputElement
+    const technicianInput = document.getElementById('editMaintTechnician') as HTMLInputElement
+    const invoiceNumberInput = document.getElementById('editMaintInvoiceNumber') as HTMLInputElement
+    const notesInput = document.getElementById('editMaintNotes') as HTMLTextAreaElement
 
     if (!titleInput?.value.trim()) {
       alert(t('pleaseEnterTitle', state.lang))
@@ -1266,12 +1560,19 @@ export default function Modal() {
               m.id === maintId
                 ? {
                     ...m,
+                    category: categoryInput.value as any,
                     title: titleInput.value.trim(),
                     desc: descInput.value.trim(),
                     urg: urgInput.value as any,
                     s: statusInput.value as any,
-                    cost: parseInt(costInput.value) || undefined,
-                    repairDate: dateInput.value || undefined
+                    paymentStatus: paymentStatusInput.value as any,
+                    estimatedCost: parseInt(estimatedCostInput.value) || undefined,
+                    actualCost: parseInt(actualCostInput.value) || undefined,
+                    estimatedCompletion: estimatedCompletionInput.value || undefined,
+                    actualCompletionDate: actualCompletionDateInput.value || undefined,
+                    technician: technicianInput.value.trim() || undefined,
+                    invoiceNumber: invoiceNumberInput.value.trim() || undefined,
+                    notes: notesInput.value.trim() || undefined
                   }
                 : m
             )
@@ -1380,6 +1681,266 @@ export default function Modal() {
 
     updateData({ properties: updatedProperties })
     alert(t('renovationAdded', state.lang))
+    closeModal()
+  }
+
+  // 儲存新增水電支出
+  const saveAddUtilityExpense = () => {
+    const property = getCurrentProperty()
+    if (!property) return
+
+    const typeInput = document.getElementById('addUtilityType') as HTMLSelectElement
+    const periodInput = document.getElementById('addUtilityPeriod') as HTMLInputElement
+    const amountInput = document.getElementById('addUtilityAmount') as HTMLInputElement
+    const paidDateInput = document.getElementById('addUtilityPaidDate') as HTMLInputElement
+    const notesInput = document.getElementById('addUtilityNotes') as HTMLTextAreaElement
+
+    if (!periodInput?.value.trim()) {
+      alert(t('pleaseEnterPeriod', state.lang))
+      return
+    }
+
+    if (!amountInput?.value || parseFloat(amountInput.value) <= 0) {
+      alert(t('pleaseEnterAmount', state.lang))
+      return
+    }
+
+    if (!paidDateInput?.value) {
+      alert(t('pleaseEnterPaidDate', state.lang))
+      return
+    }
+
+    const newId = Math.max(...(property.utilityExpenses || []).map((e: any) => e.id), 0) + 1
+    const newExpense = {
+      id: newId,
+      type: typeInput.value as 'taipower' | 'water',
+      period: periodInput.value.trim(),
+      amount: parseFloat(amountInput.value),
+      paidDate: paidDateInput.value,
+      notes: notesInput.value.trim() || undefined,
+      propertyId: property.id
+    }
+
+    const updatedProperties = state.data.properties.map(p => 
+      p.id === property.id
+        ? {
+            ...p,
+            utilityExpenses: [...(p.utilityExpenses || []), newExpense]
+          }
+        : p
+    )
+
+    updateData({ properties: updatedProperties })
+    alert(t('utilityExpenseAdded', state.lang))
+    closeModal()
+  }
+
+  // 儲存編輯水電支出
+  const saveEditUtilityExpense = (expenseId: number) => {
+    const property = getCurrentProperty()
+    if (!property) return
+
+    const typeInput = document.getElementById('editUtilityType') as HTMLSelectElement
+    const periodInput = document.getElementById('editUtilityPeriod') as HTMLInputElement
+    const amountInput = document.getElementById('editUtilityAmount') as HTMLInputElement
+    const paidDateInput = document.getElementById('editUtilityPaidDate') as HTMLInputElement
+    const notesInput = document.getElementById('editUtilityNotes') as HTMLTextAreaElement
+
+    if (!periodInput?.value.trim()) {
+      alert(t('pleaseEnterPeriod', state.lang))
+      return
+    }
+
+    if (!amountInput?.value || parseFloat(amountInput.value) <= 0) {
+      alert(t('pleaseEnterAmount', state.lang))
+      return
+    }
+
+    if (!paidDateInput?.value) {
+      alert(t('pleaseEnterPaidDate', state.lang))
+      return
+    }
+
+    const updatedProperties = state.data.properties.map(p => 
+      p.id === property.id
+        ? {
+            ...p,
+            utilityExpenses: (p.utilityExpenses || []).map(e => 
+              e.id === expenseId
+                ? {
+                    ...e,
+                    type: typeInput.value as 'taipower' | 'water',
+                    period: periodInput.value.trim(),
+                    amount: parseFloat(amountInput.value),
+                    paidDate: paidDateInput.value,
+                    notes: notesInput.value.trim() || undefined
+                  }
+                : e
+            )
+          }
+        : p
+    )
+
+    updateData({ properties: updatedProperties })
+    alert(t('utilityExpenseUpdated', state.lang))
+    closeModal()
+  }
+
+  // 儲存新增補充收入
+  const saveAddAdditionalIncome = () => {
+    const property = getCurrentProperty()
+    if (!property) return
+
+    const typeInput = document.getElementById('addIncomeType') as HTMLSelectElement
+    const monthInput = document.getElementById('addIncomeMonth') as HTMLInputElement
+    const amountInput = document.getElementById('addIncomeAmount') as HTMLInputElement
+    const descriptionInput = document.getElementById('addIncomeDescription') as HTMLInputElement
+    const receivedDateInput = document.getElementById('addIncomeReceivedDate') as HTMLInputElement
+    const notesInput = document.getElementById('addIncomeNotes') as HTMLTextAreaElement
+
+    if (!monthInput?.value.trim()) {
+      alert(t('pleaseEnterMonth', state.lang))
+      return
+    }
+
+    if (!amountInput?.value || parseFloat(amountInput.value) <= 0) {
+      alert(t('pleaseEnterAmount', state.lang))
+      return
+    }
+
+    if (!descriptionInput?.value.trim()) {
+      alert(t('pleaseEnterDescription', state.lang))
+      return
+    }
+
+    if (!receivedDateInput?.value) {
+      alert(t('pleaseEnterReceivedDate', state.lang))
+      return
+    }
+
+    const newId = Math.max(...(property.additionalIncomes || []).map((i: any) => i.id), 0) + 1
+    const newIncome = {
+      id: newId,
+      type: typeInput.value as 'washing-machine' | 'other',
+      month: monthInput.value.trim(),
+      amount: parseFloat(amountInput.value),
+      description: descriptionInput.value.trim(),
+      receivedDate: receivedDateInput.value,
+      notes: notesInput.value.trim() || undefined,
+      propertyId: property.id
+    }
+
+    const updatedProperties = state.data.properties.map(p => 
+      p.id === property.id
+        ? {
+            ...p,
+            additionalIncomes: [...(p.additionalIncomes || []), newIncome]
+          }
+        : p
+    )
+
+    updateData({ properties: updatedProperties })
+    alert(t('additionalIncomeAdded', state.lang))
+    closeModal()
+  }
+
+  // 儲存編輯補充收入
+  const saveEditAdditionalIncome = (incomeId: number) => {
+    const property = getCurrentProperty()
+    if (!property) return
+
+    const typeInput = document.getElementById('editIncomeType') as HTMLSelectElement
+    const monthInput = document.getElementById('editIncomeMonth') as HTMLInputElement
+    const amountInput = document.getElementById('editIncomeAmount') as HTMLInputElement
+    const descriptionInput = document.getElementById('editIncomeDescription') as HTMLInputElement
+    const receivedDateInput = document.getElementById('editIncomeReceivedDate') as HTMLInputElement
+    const notesInput = document.getElementById('editIncomeNotes') as HTMLTextAreaElement
+
+    if (!monthInput?.value.trim()) {
+      alert(t('pleaseEnterMonth', state.lang))
+      return
+    }
+
+    if (!amountInput?.value || parseFloat(amountInput.value) <= 0) {
+      alert(t('pleaseEnterAmount', state.lang))
+      return
+    }
+
+    if (!descriptionInput?.value.trim()) {
+      alert(t('pleaseEnterDescription', state.lang))
+      return
+    }
+
+    if (!receivedDateInput?.value) {
+      alert(t('pleaseEnterReceivedDate', state.lang))
+      return
+    }
+
+    const updatedProperties = state.data.properties.map(p => 
+      p.id === property.id
+        ? {
+            ...p,
+            additionalIncomes: (p.additionalIncomes || []).map(i => 
+              i.id === incomeId
+                ? {
+                    ...i,
+                    type: typeInput.value as 'washing-machine' | 'other',
+                    month: monthInput.value.trim(),
+                    amount: parseFloat(amountInput.value),
+                    description: descriptionInput.value.trim(),
+                    receivedDate: receivedDateInput.value,
+                    notes: notesInput.value.trim() || undefined
+                  }
+                : i
+            )
+          }
+        : p
+    )
+
+    updateData({ properties: updatedProperties })
+    alert(t('additionalIncomeUpdated', state.lang))
+    closeModal()
+  }
+
+  // 儲存更新費用
+  const saveUpdateCost = (maintenanceId: number) => {
+    const property = getCurrentProperty()
+    if (!property) return
+
+    const amountInput = document.getElementById('updateCostAmount') as HTMLInputElement
+    const paymentStatusInput = document.getElementById('updateCostPaymentStatus') as HTMLSelectElement
+    const completionDateInput = document.getElementById('updateCostCompletionDate') as HTMLInputElement
+    const invoiceNumberInput = document.getElementById('updateCostInvoiceNumber') as HTMLInputElement
+    const notesInput = document.getElementById('updateCostNotes') as HTMLTextAreaElement
+
+    if (!amountInput?.value || parseFloat(amountInput.value) <= 0) {
+      alert(t('pleaseEnterAmount', state.lang))
+      return
+    }
+
+    const updatedProperties = state.data.properties.map(p => 
+      p.id === property.id
+        ? {
+            ...p,
+            maintenance: (p.maintenance || []).map(m => 
+              m.id === maintenanceId
+                ? {
+                    ...m,
+                    actualCost: parseFloat(amountInput.value),
+                    paymentStatus: paymentStatusInput.value as any,
+                    actualCompletionDate: completionDateInput.value || undefined,
+                    invoiceNumber: invoiceNumberInput.value.trim() || undefined,
+                    notes: notesInput.value.trim() || undefined,
+                    s: 'completed' as const // 更新費用後標記為已完成
+                  }
+                : m
+            )
+          }
+        : p
+    )
+
+    updateData({ properties: updatedProperties })
+    alert(t('costUpdated', state.lang))
     closeModal()
   }
 

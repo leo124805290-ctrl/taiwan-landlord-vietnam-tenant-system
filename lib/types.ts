@@ -10,7 +10,7 @@ export type PaymentStatus = 'pending' | 'paid';
 export type UrgencyLevel = 'normal' | 'urgent';
 
 // 維修狀態
-export type MaintenanceStatus = 'pending' | 'assigned' | 'completed';
+export type MaintenanceStatus = 'pending' | 'assigned' | 'in-progress' | 'completed' | 'cancelled';
 
 // 時間範圍
 export type TimeScope = 'all' | 'year' | 'month';
@@ -79,6 +79,12 @@ export interface Maintenance {
   estimatedCompletion?: string; // 預計完成日期
   technician?: string; // 師傅姓名
   notes?: string; // 備註
+  // 新增字段：實際發生金額相關
+  actualCost?: number; // 實際發生費用
+  actualCompletionDate?: string; // 實際完成日期
+  paymentStatus?: 'unpaid' | 'paid' | 'partial'; // 付款狀態
+  invoiceNumber?: string; // 發票號碼
+  category?: 'repair' | 'renovation' | 'other'; // 類別：報修/裝修/其他
 }
 
 // 物業資料
@@ -118,6 +124,7 @@ export interface UtilityExpense {
   amount: number; // 金額
   paidDate: string; // 繳費日期 (YYYY-MM-DD)
   notes?: string; // 備註
+  propertyId: number; // 所屬物業ID
 }
 
 // 補充收入記錄
@@ -128,6 +135,8 @@ export interface AdditionalIncome {
   amount: number; // 金額
   description: string; // 描述
   receivedDate: string; // 收款日期 (YYYY-MM-DD)
+  propertyId: number; // 所屬物業ID
+  notes?: string; // 備註（添加notes字段）
 }
 
 // 應用資料
@@ -141,7 +150,7 @@ export interface AppData {
 
 // 應用狀態
 export interface AppState {
-  tab: 'dashboard' | 'rooms' | 'meterReading' | 'payments' | 'maintenance' | 'utilities' | 'settings';
+  tab: 'dashboard' | 'rooms' | 'meterReading' | 'payments' | 'maintenance' | 'utilities' | 'reports' | 'settings';
   lang: 'zh-TW' | 'vi-VN';
   modal: {
     type: string;

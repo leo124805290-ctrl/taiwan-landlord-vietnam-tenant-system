@@ -13,6 +13,7 @@ export default function Header() {
     { key: 'payments', icon: '💰', label: 'paymentsTab' },
     { key: 'maintenance', icon: '🔧', label: 'maintenanceTab' },
     { key: 'utilities', icon: '💧', label: 'utilitiesTab' },
+    { key: 'reports', icon: '📈', label: 'reportsTab' },
     { key: 'settings', icon: '⚙️', label: 'settingsTab' },
   ]
 

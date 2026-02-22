@@ -90,16 +90,20 @@ export function initData(): AppData {
     actualElectricityRate: 4.5,
     utilityExpenses: [
       // 範例：台電帳單
-      { id: 1, type: 'taipower', period: '2026年1-2月', amount: 8500, paidDate: '2026-03-05', notes: '冬季電費較高' },
-      { id: 2, type: 'taipower', period: '2025年11-12月', amount: 7200, paidDate: '2026-01-05' },
+      { id: 1, type: 'taipower', period: '2026年1-2月', amount: 8500, paidDate: '2026-03-05', notes: '冬季電費較高', propertyId: 1 },
+      { id: 2, type: 'taipower', period: '2025年11-12月', amount: 7200, paidDate: '2026-01-05', propertyId: 1 },
       // 範例：水費帳單
-      { id: 3, type: 'water', period: '2025年12月-2026年1月', amount: 1800, paidDate: '2026-02-10' },
+      { id: 3, type: 'water', period: '2025年12月-2026年1月', amount: 1800, paidDate: '2026-02-10', propertyId: 1 },
+      { id: 4, type: 'taipower', period: '2025年9-10月', amount: 6800, paidDate: '2025-11-05', propertyId: 1 },
+      { id: 5, type: 'water', period: '2025年10-11月', amount: 1650, paidDate: '2025-12-10', propertyId: 1 },
     ],
     additionalIncomes: [
       // 範例：洗衣機收入
-      { id: 1, type: 'washing-machine', month: '2026/01', amount: 1500, description: '1月份洗衣機收入', receivedDate: '2026-02-01' },
-      { id: 2, type: 'washing-machine', month: '2025/12', amount: 1200, description: '12月份洗衣機收入', receivedDate: '2026-01-05' },
-      { id: 3, type: 'other', month: '2026/01', amount: 800, description: '其他雜項收入', receivedDate: '2026-02-10' },
+      { id: 1, type: 'washing-machine', month: '2026/01', amount: 1500, description: '1月份洗衣機收入', receivedDate: '2026-02-01', propertyId: 1, notes: '租客使用收入' },
+      { id: 2, type: 'washing-machine', month: '2025/12', amount: 1200, description: '12月份洗衣機收入', receivedDate: '2026-01-05', propertyId: 1, notes: '聖誕節期間收入較高' },
+      { id: 3, type: 'other', month: '2026/01', amount: 800, description: '其他雜項收入', receivedDate: '2026-02-10', propertyId: 1, notes: '停車位出租' },
+      { id: 4, type: 'washing-machine', month: '2025/11', amount: 1100, description: '11月份洗衣機收入', receivedDate: '2025-12-05', propertyId: 1 },
+      { id: 5, type: 'other', month: '2025/12', amount: 500, description: '年終獎金', receivedDate: '2026-01-15', propertyId: 1, notes: '公司年終獎金' },
     ],
   };
 }

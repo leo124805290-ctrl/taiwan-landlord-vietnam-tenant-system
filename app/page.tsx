@@ -6,6 +6,7 @@ import Rooms from '@/components/Rooms'
 import Payments from '@/components/Payments'
 import Maintenance from '@/components/Maintenance'
 import Utilities from '@/components/Utilities'
+import Reports from '@/components/Reports'
 import Settings from '@/components/Settings'
 import MeterReading from '@/components/MeterReading'
 import Modal from '@/components/Modal'
@@ -46,6 +47,8 @@ export default function HomePage() {
         return <Maintenance property={property} />
       case 'utilities':
         return <Utilities />
+      case 'reports':
+        return <Reports />
       case 'settings':
         return <Settings />
       default:
