@@ -1522,21 +1522,30 @@ export default function Modal() {
       feesPaid = true
     }
 
-    // 更新繳費記錄：標記所有待繳費用為「已繳費」
-    const updatedPayments = property.payments.map((p: any) => 
-      p.rid === roomId && p.s === 'pending'
-        ? {
-            ...p,
-            s: 'paid' as const,
-            paid: moveOutDate,
-            notes: p.notes ? `${p.notes} (退租時一併繳清)` : '退租時一併繳清'
-          }
-        : p
-    )
-
-    // 如果有電費，創建已繳費的電費記錄（而不是待繳費記錄）
+    // 處理繳費記錄：將所有待繳費用標記為「已繳費」並移動到 history
+    const paidPayments = property.payments
+      .filter((p: any) => p.rid === roomId && p.s === 'pending')
+      .map((p: any) => ({
+        ...p,
+        s: 'paid' as const,
+        paid: moveOutDate,
+        notes: p.notes ? `${p.notes} (退租時一併繳清)` : '退租時一併繳清'
+      }))
+    
+    // 更新 payments：移除已繳費的記錄
+    const updatedPayments = property.payments.filter((p: any) => !(p.rid === roomId && p.s === 'pending'))
+    
+    // 更新 history：添加已繳費的記錄
+    const updatedHistory = [...(property.history || []), ...paidPayments]
+    
+    // 如果有電費，創建已繳費的電費記錄並添加到 history
     if (electricityFee > 0 && feesPaid) {
-      const paymentId = Math.max(...updatedPayments.map((p: any) => p.id), 0) + 1
+      const paymentId = Math.max(
+        ...updatedPayments.map((p: any) => p.id),
+        ...updatedHistory.map((p: any) => p.id),
+        0
+      ) + 1
+      
       const currentMonth = new Date().toISOString().slice(0, 7).replace('-', '/') // YYYY/MM
       
       const finalElectricityPayment = {
@@ -1553,10 +1562,36 @@ export default function Modal() {
         paid: moveOutDate,
         s: 'paid' as const,
         notes: `退租最後電費 - 最後讀數: ${finalMeter}, 上期讀數: ${lastMeter} (退租時一併繳清)`,
-        isFinalElectricity: true // 標記為最後電費
+        isFinalElectricity: true, // 標記為最後電費
+        electricityRate: state.data.electricityRate // 保存當時的電費單價
       }
       
-      updatedPayments.push(finalElectricityPayment)
+      updatedHistory.push(finalElectricityPayment)
+    }
+    
+    // 創建電表抄寫記錄（同步電表讀數）
+    let updatedMeterHistory = property.meterHistory || []
+    if (finalMeter > 0) {
+      const meterRecordId = Math.max(...updatedMeterHistory.map((m: any) => m.id), 0) + 1
+      const today = new Date().toISOString().split('T')[0]
+      const meterMonth = new Date().toISOString().slice(0, 7).replace('-', '/')
+      
+      const finalMeterReading = {
+        id: meterRecordId,
+        date: today,
+        month: meterMonth,
+        readings: [{
+          rid: roomId,
+          roomNumber: room.n,
+          reading: finalMeter,
+          usage: electricityUsage,
+          fee: electricityFee
+        }],
+        isFinalReading: true, // 標記為最後抄錶
+        notes: `退租最後抄錶 - 租客: ${room.t || '未知'}`
+      }
+      
+      updatedMeterHistory.push(finalMeterReading)
     }
 
     const updatedProperties = state.data.properties.map(p => 
@@ -1589,7 +1624,11 @@ export default function Modal() {
                 : r
             ),
             // 更新繳費記錄
-            payments: updatedPayments
+            payments: updatedPayments,
+            // 更新歷史記錄
+            history: updatedHistory,
+            // 更新電表抄寫歷史
+            meterHistory: updatedMeterHistory
           }
         : p
     )
