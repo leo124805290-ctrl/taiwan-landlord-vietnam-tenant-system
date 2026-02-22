@@ -504,6 +504,19 @@ export default function Modal() {
         const moveOutRoom = property?.rooms.find((r: Room) => r.id === data)
         if (!moveOutRoom) return null
         
+        // 計算該房間的所有欠費
+        const pendingPayments = property?.payments?.filter((p: any) => p.rid === data && p.s === 'pending') || []
+        const totalPending = pendingPayments.reduce((sum: number, p: any) => sum + p.total, 0)
+        
+        // 計算最後電費（基於默認值）
+        const defaultFinalMeter = moveOutRoom.cm || moveOutRoom.lm || 0
+        const lastMeter = moveOutRoom.lm || 0
+        const electricityUsage = Math.max(0, defaultFinalMeter - lastMeter)
+        const electricityFee = electricityUsage * state.data.electricityRate
+        
+        // 總欠費 = 待繳費用 + 最後電費
+        const totalDue = totalPending + electricityFee
+        
         return (
           <>
             <h2 className="text-2xl font-bold mb-4">🚪 {t('moveOut', state.lang)}</h2>
@@ -516,12 +529,54 @@ export default function Modal() {
                 <div className="text-sm text-gray-600 mb-1">{t('tenantName', state.lang)}</div>
                 <div className="text-lg">{moveOutRoom.t || t('noTenant', state.lang)}</div>
               </div>
-              <div className="p-4 bg-yellow-50 border-l-4 border-yellow-500 rounded">
-                <div className="font-bold text-yellow-800">{t('warning', state.lang)}</div>
-                <div className="text-sm text-yellow-700 mt-1">
-                  {t('moveOutWarning', state.lang)}
+              {/* 欠費檢查 */}
+              {pendingPayments.length > 0 || electricityFee > 0 ? (
+                <div className="p-4 bg-red-50 border-l-4 border-red-500 rounded">
+                  <div className="font-bold text-red-800">⚠️ {t('outstandingFees', state.lang)}</div>
+                  <div className="text-sm text-red-700 mt-2">
+                    {pendingPayments.length > 0 && (
+                      <div className="mb-2">
+                        <div className="font-bold">{t('unpaidPayments', state.lang)}:</div>
+                        <ul className="ml-4 mt-1">
+                          {pendingPayments.map((p: any, index: number) => (
+                            <li key={index} className="text-xs">
+                              {p.m} - {formatCurrency(p.total)} ({t(p.s, state.lang)})
+                            </li>
+                          ))}
+                        </ul>
+                        <div className="mt-1 font-bold">
+                          {t('totalUnpaid', state.lang)}: {formatCurrency(totalPending)}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {electricityFee > 0 && (
+                      <div className="mt-2">
+                        <div className="font-bold">{t('finalElectricityFee', state.lang)}:</div>
+                        <div className="text-sm">
+                          {electricityUsage} {t('degree', state.lang)} × ${state.data.electricityRate} = {formatCurrency(electricityFee)}
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="mt-3 p-2 bg-white rounded border border-red-300">
+                      <div className="font-bold text-lg text-red-600">
+                        {t('totalDue', state.lang)}: {formatCurrency(totalDue)}
+                      </div>
+                      <div className="text-xs text-red-500 mt-1">
+                        {t('payBeforeMoveOut', state.lang)}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="p-4 bg-green-50 border-l-4 border-green-500 rounded">
+                  <div className="font-bold text-green-800">✅ {t('noOutstandingFees', state.lang)}</div>
+                  <div className="text-sm text-green-700 mt-1">
+                    {t('readyForMoveOut', state.lang)}
+                  </div>
+                </div>
+              )}
               <div>
                 <label className="block text-sm mb-1">{t('finalMeter', state.lang)}</label>
                 <input 
