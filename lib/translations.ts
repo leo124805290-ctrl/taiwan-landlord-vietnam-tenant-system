@@ -432,6 +432,10 @@ export const translations: Translation = {
     property: '物業',
     'current-year': '今年',
     'last-year': '去年',
+    // 租金支出相關翻譯
+    rentExpense: '租金支出',
+    rentExpenseDescription: '二房東支付給房東的租金，建議按月記錄',
+    addRentExpense: '新增租金支出',
   },
   'vi-VN': {
     system: 'Hệ thống Quản lý Đa BĐS',
@@ -868,6 +872,10 @@ export const translations: Translation = {
     property: 'BĐS',
     'current-year': 'Năm nay',
     'last-year': 'Năm trước',
+    // 租金支出相關翻譯（越南文）
+    rentExpense: 'Tiền thuê',
+    rentExpenseDescription: 'Tiền thuê trả cho chủ nhà (chủ thuê lại), nên ghi theo tháng',
+    addRentExpense: 'Thêm tiền thuê',
   }
 };
 

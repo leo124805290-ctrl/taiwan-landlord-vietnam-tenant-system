@@ -88,7 +88,7 @@ export default function Reports() {
   // 計算水電收支統計
   const calculateUtilityStats = () => {
     const property = currentProperty || state.data.properties[0]
-    if (!property) return { taipowerTotal: 0, waterTotal: 0, incomeTotal: 0, netProfit: 0 }
+    if (!property) return { taipowerTotal: 0, waterTotal: 0, rentTotal: 0, incomeTotal: 0, netProfit: 0 }
     
     const utilityExpenses = property.utilityExpenses || []
     const additionalIncomes = property.additionalIncomes || []
@@ -136,12 +136,16 @@ export default function Reports() {
       .filter(e => e.type === 'water')
       .reduce((sum, e) => sum + e.amount, 0)
     
+    const rentTotal = filteredExpenses
+      .filter(e => e.type === 'rent')
+      .reduce((sum, e) => sum + e.amount, 0)
+    
     const incomeTotal = filteredIncomes
       .reduce((sum, i) => sum + i.amount, 0)
     
-    const netProfit = incomeTotal - (taipowerTotal + waterTotal)
+    const netProfit = incomeTotal - (taipowerTotal + waterTotal + rentTotal)
     
-    return { taipowerTotal, waterTotal, incomeTotal, netProfit }
+    return { taipowerTotal, waterTotal, rentTotal, incomeTotal, netProfit }
   }
   
   // 計算維護裝修統計
@@ -194,7 +198,7 @@ export default function Reports() {
     const maintenanceStats = calculateMaintenanceStats()
     
     const totalIncome = rentalStats.paidAmount + utilityStats.incomeTotal
-    const totalExpense = utilityStats.taipowerTotal + utilityStats.waterTotal + maintenanceStats.totalCost
+    const totalExpense = utilityStats.taipowerTotal + utilityStats.waterTotal + utilityStats.rentTotal + maintenanceStats.totalCost
     const netProfit = totalIncome - totalExpense
     
     return {
@@ -203,7 +207,7 @@ export default function Reports() {
       netProfit,
       rentalIncome: rentalStats.paidAmount,
       utilityIncome: utilityStats.incomeTotal,
-      utilityExpense: utilityStats.taipowerTotal + utilityStats.waterTotal,
+      utilityExpense: utilityStats.taipowerTotal + utilityStats.waterTotal + utilityStats.rentTotal,
       maintenanceExpense: maintenanceStats.totalCost
     }
   }
@@ -225,14 +229,16 @@ export default function Reports() {
       labels: [
         t('taipowerBill', state.lang),
         t('waterBill', state.lang),
+        t('rentExpense', state.lang),
         t('maintenanceCost', state.lang)
       ],
       values: [
         utilityStats.taipowerTotal,
         utilityStats.waterTotal,
+        utilityStats.rentTotal,
         maintenanceStats.totalCost
       ],
-      colors: ['#ef4444', '#f59e0b', '#8b5cf6'],
+      colors: ['#ef4444', '#f59e0b', '#8b5cf6', '#ec4899'],
       type: 'bar' as const,
       title: t('expenseComposition', state.lang),
       showValues: true

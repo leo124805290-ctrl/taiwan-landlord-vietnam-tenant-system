@@ -119,7 +119,7 @@ export interface MeterReadingRecord {
 // 水電支出記錄
 export interface UtilityExpense {
   id: number;
-  type: 'taipower' | 'water'; // 台電或水費
+  type: 'taipower' | 'water' | 'rent'; // 台電、水費或租金
   period: string; // 期間，如 "2026年1-2月"
   amount: number; // 金額
   paidDate: string; // 繳費日期 (YYYY-MM-DD)

@@ -65,6 +65,7 @@ export default function Utilities() {
       if (typeFilter !== 'all') {
         if (typeFilter === 'taipower' && (item.type !== 'taipower' || itemType !== 'expense')) return false
         if (typeFilter === 'water' && (item.type !== 'water' || itemType !== 'expense')) return false
+        if (typeFilter === 'rent' && (item.type !== 'rent' || itemType !== 'expense')) return false
         if (typeFilter === 'income' && itemType !== 'income') return false
       }
       
@@ -127,6 +128,11 @@ export default function Utilities() {
     'expense'
   )
   
+  const filteredRentExpenses = filterItems(
+    allUtilityExpenses.filter(e => e.type === 'rent'),
+    'expense'
+  )
+  
   const filteredAdditionalIncomes = filterItems(
     allAdditionalIncomes,
     'income'
@@ -135,8 +141,9 @@ export default function Utilities() {
   // 計算統計
   const totalTaipower = filteredTaipowerExpenses.reduce((sum, e) => sum + e.amount, 0)
   const totalWater = filteredWaterExpenses.reduce((sum, e) => sum + e.amount, 0)
+  const totalRent = filteredRentExpenses.reduce((sum, e) => sum + e.amount, 0)
   const totalIncome = filteredAdditionalIncomes.reduce((sum, i) => sum + i.amount, 0)
-  const netBalance = totalIncome - (totalTaipower + totalWater)
+  const netBalance = totalIncome - (totalTaipower + totalWater + totalRent)
   
   // 生成年份選項
   const generateYearOptions = () => {
@@ -216,6 +223,7 @@ export default function Utilities() {
   const getTypeDisplayName = (type: string) => {
     if (type === 'taipower') return t('taipowerBill', state.lang)
     if (type === 'water') return t('waterBill', state.lang)
+    if (type === 'rent') return t('rentExpense', state.lang)
     if (type === 'washing-machine') return t('washingMachineIncome', state.lang)
     if (type === 'other') return t('otherIncome', state.lang)
     return type
@@ -234,7 +242,7 @@ export default function Utilities() {
       </div>
       
       {/* 統計卡片 */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {/* 台電總支出 */}
         <div className="stat-card bg-gradient-to-br from-blue-500 to-blue-700">
           <div className="text-4xl font-bold mb-1">{formatCurrency(totalTaipower)}</div>
@@ -250,6 +258,15 @@ export default function Utilities() {
           <div className="text-sm opacity-90">{t('waterBill', state.lang)}</div>
           <div className="text-xs opacity-75 mt-2">
             {filteredWaterExpenses.length} {t('items', state.lang)}
+          </div>
+        </div>
+        
+        {/* 租金總支出 */}
+        <div className="stat-card bg-gradient-to-br from-purple-500 to-purple-700">
+          <div className="text-4xl font-bold mb-1">{formatCurrency(totalRent)}</div>
+          <div className="text-sm opacity-90">{t('rentExpense', state.lang)}</div>
+          <div className="text-xs opacity-75 mt-2">
+            {filteredRentExpenses.length} {t('items', state.lang)}
           </div>
         </div>
         
@@ -300,6 +317,7 @@ export default function Utilities() {
               <option value="all">{t('all', state.lang)}</option>
               <option value="taipower">{t('taipowerBill', state.lang)}</option>
               <option value="water">{t('waterBill', state.lang)}</option>
+              <option value="rent">{t('rentExpense', state.lang)}</option>
               <option value="income">{t('additionalIncomes', state.lang)}</option>
             </select>
           </div>
@@ -572,6 +590,12 @@ export default function Utilities() {
             <span className="text-lg">💧</span>
             <div>
               <strong>{t('waterBill', state.lang)}</strong>：{t('waterBillingCycle', state.lang)}
+            </div>
+          </div>
+          <div className="flex items-start gap-2">
+            <span className="text-lg">🏠</span>
+            <div>
+              <strong>{t('rentExpense', state.lang)}</strong>：{t('rentExpenseDescription', state.lang)}
             </div>
           </div>
           <div className="flex items-start gap-2">

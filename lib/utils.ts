@@ -57,13 +57,13 @@ export function initData(): AppData {
         ],
         maintenance: [
           // 維修記錄
-          { id: 1, rid: 1, n: '101', t: 'Nguyen Van A', title: '熱水器故障', desc: '無法加熱', urg: 'urgent', s: 'completed', date: '2026-02-13', repairDate: '2026-02-15', cost: 3500, technician: '王師傅', notes: '更換加熱棒' },
-          { id: 2, rid: 2, n: '102', t: 'Tran Thi B', title: '冷氣不冷', desc: '夏天冷氣效果差', urg: 'normal', s: 'completed', date: '2025-11-20', repairDate: '2025-11-22', cost: 2800, technician: '李師傅', notes: '清洗濾網，補充冷媒' },
-          { id: 3, rid: 4, n: '201', t: 'Pham Thi D', title: '馬桶堵塞', desc: '馬桶沖水不順', urg: 'urgent', s: 'completed', date: '2026-01-10', repairDate: '2026-01-10', cost: 1200, technician: '張師傅', notes: '疏通管道' },
-          { id: 4, rid: 8, n: '401', t: '舊租客F', title: '牆壁油漆剝落', desc: '退租後牆壁需要重新粉刷', urg: 'normal', s: 'completed', date: '2026-02-01', repairDate: '2026-02-05', cost: 5000, technician: '陳師傅', notes: '全室重新粉刷' },
+          { id: 1, rid: 1, n: '101', t: 'Nguyen Van A', title: '熱水器故障', desc: '無法加熱', urg: 'urgent', s: 'completed', date: '2026-02-13', repairDate: '2026-02-15', cost: 3500, technician: '王師傅', notes: '更換加熱棒', category: 'repair' },
+          { id: 2, rid: 2, n: '102', t: 'Tran Thi B', title: '冷氣不冷', desc: '夏天冷氣效果差', urg: 'normal', s: 'completed', date: '2025-11-20', repairDate: '2025-11-22', cost: 2800, technician: '李師傅', notes: '清洗濾網，補充冷媒', category: 'repair' },
+          { id: 3, rid: 4, n: '201', t: 'Pham Thi D', title: '馬桶堵塞', desc: '馬桶沖水不順', urg: 'urgent', s: 'completed', date: '2026-01-10', repairDate: '2026-01-10', cost: 1200, technician: '張師傅', notes: '疏通管道', category: 'repair' },
+          { id: 4, rid: 8, n: '401', t: '舊租客F', title: '牆壁油漆剝落', desc: '退租後牆壁需要重新粉刷', urg: 'normal', s: 'completed', date: '2026-02-01', repairDate: '2026-02-05', cost: 5000, technician: '陳師傅', notes: '全室重新粉刷', category: 'repair' },
           
           // 裝修記錄
-          { id: 5, rid: 10, n: '501', t: '', title: '房間全面裝修', desc: '地板更新、牆面粉刷、衛浴設備更新', urg: 'normal', s: 'pending', date: '2026-02-20', estimatedCost: 85000, estimatedCompletion: '2026-03-31', notes: '提升租金至9500元' },
+          { id: 5, rid: 10, n: '501', t: '', title: '房間全面裝修', desc: '地板更新、牆面粉刷、衛浴設備更新', urg: 'normal', s: 'pending', date: '2026-02-20', estimatedCost: 85000, estimatedCompletion: '2026-03-31', notes: '提升租金至9500元', category: 'renovation' },
         ],
       },
       {
@@ -82,7 +82,7 @@ export function initData(): AppData {
           { id: 11, rid: 12, n: '201', t: 'Tran Van I', m: '2026/01', r: 8000, u: 60, e: 360, total: 8360, due: '2026-01-05', paid: '2026-01-04', s: 'paid', paymentMethod: 'cash' },
         ],
         maintenance: [
-          { id: 6, rid: 11, n: '101', t: 'Nguyen Thi H', title: '燈具更換', desc: '房間主燈不亮', urg: 'normal', s: 'completed', date: '2026-01-15', repairDate: '2026-01-16', cost: 800, technician: '林師傅' },
+          { id: 6, rid: 11, n: '101', t: 'Nguyen Thi H', title: '燈具更換', desc: '房間主燈不亮', urg: 'normal', s: 'completed', date: '2026-01-15', repairDate: '2026-01-16', cost: 800, technician: '林師傅', category: 'repair' },
         ],
       }
     ],
@@ -96,6 +96,10 @@ export function initData(): AppData {
       { id: 3, type: 'water', period: '2025年12月-2026年1月', amount: 1800, paidDate: '2026-02-10', propertyId: 1 },
       { id: 4, type: 'taipower', period: '2025年9-10月', amount: 6800, paidDate: '2025-11-05', propertyId: 1 },
       { id: 5, type: 'water', period: '2025年10-11月', amount: 1650, paidDate: '2025-12-10', propertyId: 1 },
+      // 範例：租金支出（二房東需要支付給房東的租金）
+      { id: 6, type: 'rent', period: '2026年1月', amount: 50000, paidDate: '2026-01-05', notes: '支付給房東的1月份租金', propertyId: 1 },
+      { id: 7, type: 'rent', period: '2025年12月', amount: 50000, paidDate: '2025-12-05', notes: '支付給房東的12月份租金', propertyId: 1 },
+      { id: 8, type: 'rent', period: '2026年1月', amount: 35000, paidDate: '2026-01-05', notes: '板橋文化路1月份租金', propertyId: 2 },
     ],
     additionalIncomes: [
       // 範例：洗衣機收入
