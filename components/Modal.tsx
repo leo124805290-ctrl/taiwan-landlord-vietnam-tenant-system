@@ -457,19 +457,37 @@ export default function Modal() {
                 <input type="number" id="editDeposit" defaultValue={editRoom.d || 0} className="input-field" />
               </div>
               
-              {/* 起租日和到期日編輯（僅限已出租房間） */}
-              {editRoom.s === 'occupied' && (
-                <>
-                  <div>
-                    <label className="block text-sm mb-1">{t('contractStart', state.lang)}</label>
-                    <input type="date" id="editContractStart" defaultValue={editRoom.in || ''} className="input-field" />
-                  </div>
-                  <div>
-                    <label className="block text-sm mb-1">{t('contractEnd', state.lang)}</label>
-                    <input type="date" id="editContractEnd" defaultValue={editRoom.out || ''} className="input-field" />
-                  </div>
-                </>
-              )}
+              {/* 起租日和到期日編輯 - 始終顯示，但根據房間狀態有不同的提示 */}
+              <div>
+                <label className="block text-sm mb-1">
+                  {t('contractStart', state.lang)}
+                  {editRoom.s !== 'occupied' && (
+                    <span className="text-xs text-gray-500 ml-2">（僅在出租時填寫）</span>
+                  )}
+                </label>
+                <input 
+                  type="date" 
+                  id="editContractStart" 
+                  defaultValue={editRoom.in || ''} 
+                  className="input-field"
+                  placeholder={editRoom.s !== 'occupied' ? '請先設定房間為已出租' : ''}
+                />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">
+                  {t('contractEnd', state.lang)}
+                  {editRoom.s !== 'occupied' && (
+                    <span className="text-xs text-gray-500 ml-2">（僅在出租時填寫）</span>
+                  )}
+                </label>
+                <input 
+                  type="date" 
+                  id="editContractEnd" 
+                  defaultValue={editRoom.out || ''} 
+                  className="input-field"
+                  placeholder={editRoom.s !== 'occupied' ? '請先設定房間為已出租' : ''}
+                />
+              </div>
             </div>
             <div className="flex gap-2 mt-4">
               <button onClick={closeModal} className="flex-1 btn bg-gray-200">
@@ -646,6 +664,119 @@ export default function Modal() {
                 {t('cancel', state.lang)}
               </button>
               <button onClick={() => saveEditMaintenance(data)} className="flex-1 btn btn-primary">
+                {t('save', state.lang)}
+              </button>
+            </div>
+          </>
+        )
+
+      case 'addMaint':
+        return (
+          <>
+            <h2 className="text-2xl font-bold mb-4">🔧 {t('addMaintenance', state.lang)}</h2>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm mb-1">{t('title', state.lang)} *</label>
+                <input type="text" id="addMaintTitle" className="input-field" placeholder={t('enterTitle', state.lang)} />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">{t('description', state.lang)}</label>
+                <textarea id="addMaintDesc" className="input-field h-24" placeholder={t('enterDescription', state.lang)} />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">{t('urgency', state.lang)}</label>
+                <select id="addMaintUrg" className="input-field" defaultValue="normal">
+                  <option value="low">{t('low', state.lang)}</option>
+                  <option value="normal">{t('normal', state.lang)}</option>
+                  <option value="high">{t('high', state.lang)}</option>
+                  <option value="urgent">{t('urgent', state.lang)}</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm mb-1">{t('status', state.lang)}</label>
+                <select id="addMaintStatus" className="input-field" defaultValue="pending">
+                  <option value="pending">{t('pending', state.lang)}</option>
+                  <option value="inProgress">{t('inProgress', state.lang)}</option>
+                  <option value="completed">{t('completed', state.lang)}</option>
+                  <option value="cancelled">{t('cancelled', state.lang)}</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm mb-1">{t('estimatedCost', state.lang)}</label>
+                <input type="number" id="addMaintCost" className="input-field" placeholder={t('enterCost', state.lang)} />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">{t('repairDate', state.lang)}</label>
+                <input type="date" id="addMaintDate" className="input-field" />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <button onClick={closeModal} className="flex-1 btn bg-gray-200">
+                {t('cancel', state.lang)}
+              </button>
+              <button onClick={() => saveAddMaintenance()} className="flex-1 btn btn-primary">
+                {t('save', state.lang)}
+              </button>
+            </div>
+          </>
+        )
+
+      case 'addRenovation':
+        return (
+          <>
+            <h2 className="text-2xl font-bold mb-4">🏗️ {t('addRenovation', state.lang)}</h2>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm mb-1">{t('projectName', state.lang)} *</label>
+                <input type="text" id="addRenovationName" className="input-field" placeholder={t('enterProjectName', state.lang)} />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">{t('description', state.lang)}</label>
+                <textarea id="addRenovationDesc" className="input-field h-24" placeholder={t('enterDescription', state.lang)} />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">{t('renovationType', state.lang)}</label>
+                <select id="addRenovationType" className="input-field" defaultValue="interior">
+                  <option value="interior">{t('interior', state.lang)}</option>
+                  <option value="exterior">{t('exterior', state.lang)}</option>
+                  <option value="plumbing">{t('plumbing', state.lang)}</option>
+                  <option value="electrical">{t('electrical', state.lang)}</option>
+                  <option value="structural">{t('structural', state.lang)}</option>
+                  <option value="other">{t('otherType', state.lang)}</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm mb-1">{t('budget', state.lang)}</label>
+                <input type="number" id="addRenovationBudget" className="input-field" placeholder={t('enterBudget', state.lang)} />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">{t('startDate', state.lang)}</label>
+                <input type="date" id="addRenovationStart" className="input-field" />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">{t('estimatedEndDate', state.lang)}</label>
+                <input type="date" id="addRenovationEnd" className="input-field" />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">{t('contractor', state.lang)}</label>
+                <input type="text" id="addRenovationContractor" className="input-field" placeholder={t('enterContractor', state.lang)} />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">{t('status', state.lang)}</label>
+                <select id="addRenovationStatus" className="input-field" defaultValue="planned">
+                  <option value="planned">{t('planned', state.lang)}</option>
+                  <option value="inProgress">{t('inProgress', state.lang)}</option>
+                  <option value="completed">{t('completed', state.lang)}</option>
+                  <option value="delayed">{t('delayed', state.lang)}</option>
+                  <option value="cancelled">{t('cancelled', state.lang)}</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <button onClick={closeModal} className="flex-1 btn bg-gray-200">
+                {t('cancel', state.lang)}
+              </button>
+              <button onClick={() => saveAddRenovation()} className="flex-1 btn btn-primary">
                 {t('save', state.lang)}
               </button>
             </div>
@@ -986,11 +1117,15 @@ export default function Modal() {
                     f: parseInt(floorInput.value) || r.f,
                     r: parseInt(rentInput.value) || r.r,
                     d: parseInt(depositInput.value) || r.d,
-                    // 只有已出租房間才更新起租日和到期日
-                    ...(r.s === 'occupied' && contractStartInput && contractEndInput ? {
-                      in: contractStartInput.value || r.in,
-                      out: contractEndInput.value || r.out
-                    } : {})
+                    // 更新起租日和到期日（如果房間是已出租狀態）
+                    ...(r.s === 'occupied' ? {
+                      in: contractStartInput?.value || r.in || '',
+                      out: contractEndInput?.value || r.out || ''
+                    } : {
+                      // 如果房間不是已出租狀態，清空日期
+                      in: undefined,
+                      out: undefined
+                    })
                   }
                 : r
             )
@@ -1043,6 +1178,105 @@ export default function Modal() {
 
     updateData({ properties: updatedProperties })
     alert(t('maintenanceUpdated', state.lang))
+    closeModal()
+  }
+
+  // 儲存新增報修
+  const saveAddMaintenance = () => {
+    const property = getCurrentProperty()
+    if (!property) return
+
+    const titleInput = document.getElementById('addMaintTitle') as HTMLInputElement
+    const descInput = document.getElementById('addMaintDesc') as HTMLTextAreaElement
+    const urgInput = document.getElementById('addMaintUrg') as HTMLSelectElement
+    const statusInput = document.getElementById('addMaintStatus') as HTMLSelectElement
+    const costInput = document.getElementById('addMaintCost') as HTMLInputElement
+    const dateInput = document.getElementById('addMaintDate') as HTMLInputElement
+
+    if (!titleInput?.value.trim()) {
+      alert(t('pleaseEnterTitle', state.lang))
+      return
+    }
+
+    const newId = Math.max(...(property.maintenance || []).map((m: any) => m.id), 0) + 1
+    const newMaintenance = {
+      id: newId,
+      rid: 0, // 默認房間ID，用戶後續可以編輯
+      n: '', // 默認房號
+      t: '', // 默認租客姓名
+      title: titleInput.value.trim(),
+      desc: descInput.value.trim(),
+      urg: urgInput.value as any,
+      s: statusInput.value as any,
+      date: new Date().toISOString().split('T')[0], // 報修日期
+      cost: costInput.value ? parseInt(costInput.value) : undefined,
+      repairDate: dateInput.value || undefined,
+      type: 'maintenance' as const
+    }
+
+    const updatedProperties = state.data.properties.map(p => 
+      p.id === property.id
+        ? {
+            ...p,
+            maintenance: [...(p.maintenance || []), newMaintenance]
+          }
+        : p
+    )
+
+    updateData({ properties: updatedProperties })
+    alert(t('maintenanceAdded', state.lang))
+    closeModal()
+  }
+
+  // 儲存新增裝修
+  const saveAddRenovation = () => {
+    const property = getCurrentProperty()
+    if (!property) return
+
+    const nameInput = document.getElementById('addRenovationName') as HTMLInputElement
+    const descInput = document.getElementById('addRenovationDesc') as HTMLTextAreaElement
+    const typeInput = document.getElementById('addRenovationType') as HTMLSelectElement
+    const budgetInput = document.getElementById('addRenovationBudget') as HTMLInputElement
+    const startInput = document.getElementById('addRenovationStart') as HTMLInputElement
+    const endInput = document.getElementById('addRenovationEnd') as HTMLInputElement
+    const contractorInput = document.getElementById('addRenovationContractor') as HTMLInputElement
+    const statusInput = document.getElementById('addRenovationStatus') as HTMLSelectElement
+
+    if (!nameInput?.value.trim()) {
+      alert(t('pleaseEnterProjectName', state.lang))
+      return
+    }
+
+    const newId = Math.max(...(property.maintenance || []).map((m: any) => m.id), 0) + 1
+    const newRenovation = {
+      id: newId,
+      rid: 0, // 默認房間ID
+      n: '', // 默認房號
+      t: '', // 默認租客姓名
+      title: nameInput.value.trim(),
+      desc: descInput.value.trim(),
+      urg: 'normal' as const, // 裝修默認緊急程度為普通
+      type: 'renovation' as const,
+      renovationType: typeInput.value,
+      date: new Date().toISOString().split('T')[0], // 創建日期
+      budget: budgetInput.value ? parseInt(budgetInput.value) : undefined,
+      startDate: startInput.value || undefined,
+      estimatedEndDate: endInput.value || undefined,
+      contractor: contractorInput.value.trim() || undefined,
+      s: statusInput.value as any
+    }
+
+    const updatedProperties = state.data.properties.map(p => 
+      p.id === property.id
+        ? {
+            ...p,
+            maintenance: [...(p.maintenance || []), newRenovation]
+          }
+        : p
+    )
+
+    updateData({ properties: updatedProperties })
+    alert(t('renovationAdded', state.lang))
     closeModal()
   }
 
