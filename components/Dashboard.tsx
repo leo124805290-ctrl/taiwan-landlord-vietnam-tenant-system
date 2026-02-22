@@ -98,6 +98,10 @@ export default function Dashboard({ property }: DashboardProps) {
     elecAnalysis = analyzeElectricity(stats.elec)
   }
 
+  // 計算待收金額（所有狀態為 pending 的繳費記錄總和）
+  const pendingPayments = property.payments.filter((p: any) => p.s === 'pending')
+  const pendingAmount = pendingPayments.reduce((sum: number, p: any) => sum + p.total, 0)
+  
   const statCards = [
     {
       title: t('total', state.lang),
@@ -126,6 +130,13 @@ export default function Dashboard({ property }: DashboardProps) {
       subText: `${(property.history || []).length} ${t('items', state.lang)}`,
       from: '#f59e0b',
       to: '#d97706'
+    },
+    {
+      title: t('pendingAmount', state.lang),
+      value: formatCurrency(pendingAmount),
+      subText: `${pendingPayments.length} ${t('items', state.lang)}`,
+      from: '#ef4444',
+      to: '#dc2626'
     }
   ]
 
@@ -262,7 +273,7 @@ export default function Dashboard({ property }: DashboardProps) {
       </div>
 
       {/* 統計卡片 */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {statCards.map((card, index) => (
           <div 
             key={index}

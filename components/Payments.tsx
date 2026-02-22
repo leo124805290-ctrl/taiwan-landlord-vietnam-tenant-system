@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { t } from '@/lib/translations'
 import { formatCurrency } from '@/lib/utils'
 import { useApp } from '@/contexts/AppContext'
@@ -13,25 +14,121 @@ export default function Payments({ property }: PaymentsProps) {
   const allPayments = [...property.payments, ...(property.history || [])]
     .sort((a, b) => (b.paid || b.due).localeCompare(a.paid || a.due))
 
+  // 獲取所有唯一的月份和房間
+  const allMonths = Array.from(new Set(allPayments.map((p: any) => p.m))).sort().reverse()
+  const allRooms = Array.from(new Set(allPayments.map((p: any) => p.n))).sort()
+  
+  // 使用本地狀態管理篩選（因為 AppState 中沒有這些屬性）
+  const [localFilter, setLocalFilter] = React.useState<'all' | 'unpaid' | 'paid'>(state.filter || 'all')
+  const [monthFilter, setMonthFilter] = React.useState('all')
+  const [roomFilter, setRoomFilter] = React.useState('all')
+  const [searchTerm, setSearchTerm] = React.useState('')
+  
   const filteredPayments = allPayments.filter(p => {
-    if (state.filter === 'all') return true
-    if (state.filter === 'unpaid') return p.s === 'pending'
-    return p.s === state.filter
+    // 狀態篩選
+    if (localFilter === 'unpaid' && p.s !== 'pending') return false
+    if (localFilter === 'paid' && p.s !== 'paid') return false
+    
+    // 月份篩選
+    if (monthFilter && monthFilter !== 'all' && p.m !== monthFilter) return false
+    
+    // 房間篩選
+    if (roomFilter && roomFilter !== 'all' && p.n !== roomFilter) return false
+    
+    // 搜索篩選
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase()
+      const roomName = p.n?.toLowerCase() || ''
+      const tenantName = p.t?.toLowerCase() || ''
+      const month = p.m?.toLowerCase() || ''
+      const notes = p.notes?.toLowerCase() || ''
+      
+      if (!roomName.includes(term) && 
+          !tenantName.includes(term) && 
+          !month.includes(term) && 
+          !notes.includes(term)) {
+        return false
+      }
+    }
+    
+    return true
   })
 
   return (
     <div className="space-y-4">
-      {/* 篩選按鈕 */}
-      <div className="flex gap-2">
-        {['all', 'unpaid', 'paid'].map(filter => (
-          <button
-            key={filter}
-            onClick={() => updateState({ filter: filter as any })}
-            className={`flex-1 btn ${state.filter === filter ? 'btn-primary' : 'bg-white'}`}
-          >
-            {t(filter, state.lang)}
-          </button>
-        ))}
+      {/* 篩選面板 */}
+      <div className="card p-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          {/* 狀態篩選 */}
+          <div>
+            <div className="text-sm text-gray-600 mb-1">{t('status', state.lang)}</div>
+            <select 
+              value={localFilter}
+              onChange={(e) => setLocalFilter(e.target.value as 'all' | 'unpaid' | 'paid')}
+              className="w-full input-field"
+            >
+              <option value="all">{t('all', state.lang)}</option>
+              <option value="unpaid">{t('unpaid', state.lang)}</option>
+              <option value="paid">{t('paid', state.lang)}</option>
+            </select>
+          </div>
+          
+          {/* 月份篩選 */}
+          <div>
+            <div className="text-sm text-gray-600 mb-1">{t('month', state.lang)}</div>
+            <select 
+              value={monthFilter}
+              onChange={(e) => setMonthFilter(e.target.value)}
+              className="w-full input-field"
+            >
+              <option value="all">{t('allMonths', state.lang)}</option>
+              {allMonths.map(month => (
+                <option key={month} value={month}>{month}</option>
+              ))}
+            </select>
+          </div>
+          
+          {/* 房間篩選 */}
+          <div>
+            <div className="text-sm text-gray-600 mb-1">{t('room', state.lang)}</div>
+            <select 
+              value={roomFilter}
+              onChange={(e) => setRoomFilter(e.target.value)}
+              className="w-full input-field"
+            >
+              <option value="all">{t('allRooms', state.lang)}</option>
+              {allRooms.map(room => (
+                <option key={room} value={room}>{room}</option>
+              ))}
+            </select>
+          </div>
+          
+          {/* 搜索 */}
+          <div>
+            <div className="text-sm text-gray-600 mb-1">{t('search', state.lang)}</div>
+            <input
+              type="text"
+              placeholder={t('searchPayments', state.lang)}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full input-field"
+            />
+          </div>
+        </div>
+        
+        {/* 統計資訊 */}
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <div className="flex justify-between text-sm">
+            <div>
+              {t('totalRecords', state.lang)}: <span className="font-bold">{filteredPayments.length}</span>
+            </div>
+            <div>
+              {t('pendingAmount', state.lang)}: <span className="font-bold text-red-600">
+                {formatCurrency(filteredPayments.filter((p: any) => p.s === 'pending').reduce((sum: number, p: any) => sum + p.total, 0))}
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* 付款列表 */}

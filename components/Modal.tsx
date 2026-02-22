@@ -1504,13 +1504,42 @@ export default function Modal() {
     const electricityUsage = Math.max(0, finalMeter - lastMeter)
     const electricityFee = electricityUsage * state.data.electricityRate
 
-    // 創建電費繳費記錄（如果電費大於0）
-    let newPayment = null
-    if (electricityFee > 0) {
-      const paymentId = Math.max(...property.payments.map((p: any) => p.id), 0) + 1
+    // 計算總費用（所有待繳費用 + 最後電費）
+    const totalPending = pendingPayments.reduce((sum: number, p: any) => sum + p.total, 0)
+    const totalDue = totalPending + electricityFee
+
+    // 確認繳費（如果總費用大於0）
+    let feesPaid = false
+    if (totalDue > 0) {
+      const confirmMessage = `💰 ${t('totalDue', state.lang)}: ${formatCurrency(totalDue)}\n\n`
+        + `${t('confirmPaymentAndMoveOut', state.lang)}`
+      
+      if (!confirm(confirmMessage)) {
+        alert(t('moveOutCancelled', state.lang))
+        return // 用戶取消退租
+      }
+      
+      feesPaid = true
+    }
+
+    // 更新繳費記錄：標記所有待繳費用為「已繳費」
+    const updatedPayments = property.payments.map((p: any) => 
+      p.rid === roomId && p.s === 'pending'
+        ? {
+            ...p,
+            s: 'paid' as const,
+            paid: moveOutDate,
+            notes: p.notes ? `${p.notes} (退租時一併繳清)` : '退租時一併繳清'
+          }
+        : p
+    )
+
+    // 如果有電費，創建已繳費的電費記錄（而不是待繳費記錄）
+    if (electricityFee > 0 && feesPaid) {
+      const paymentId = Math.max(...updatedPayments.map((p: any) => p.id), 0) + 1
       const currentMonth = new Date().toISOString().slice(0, 7).replace('-', '/') // YYYY/MM
       
-      newPayment = {
+      const finalElectricityPayment = {
         id: paymentId,
         rid: roomId,
         n: room.n,
@@ -1521,10 +1550,13 @@ export default function Modal() {
         e: electricityFee,
         total: electricityFee,
         due: moveOutDate,
-        s: 'pending' as const,
-        notes: `退租最後電費 - 最後讀數: ${finalMeter}, 上期讀數: ${lastMeter}`,
+        paid: moveOutDate,
+        s: 'paid' as const,
+        notes: `退租最後電費 - 最後讀數: ${finalMeter}, 上期讀數: ${lastMeter} (退租時一併繳清)`,
         isFinalElectricity: true // 標記為最後電費
       }
+      
+      updatedPayments.push(finalElectricityPayment)
     }
 
     const updatedProperties = state.data.properties.map(p => 
@@ -1556,10 +1588,8 @@ export default function Modal() {
                   }
                 : r
             ),
-            // 添加電費繳費記錄（如果有的話）
-            payments: newPayment 
-              ? [...p.payments, newPayment]
-              : p.payments
+            // 更新繳費記錄
+            payments: updatedPayments
           }
         : p
     )
@@ -1567,18 +1597,13 @@ export default function Modal() {
     updateData({ properties: updatedProperties })
     
     // 顯示成功訊息
-    if (electricityFee > 0) {
-      alert(`✅ ${t('moveOutCompleted', state.lang)}\n\n⚡ ${t('finalElectricityFee', state.lang)}: ${formatCurrency(electricityFee)}\n📝 ${t('paymentCreated', state.lang)}`)
-      // 關閉模態框後，自動跳轉到繳費頁面
-      closeModal()
-      // 這裡無法直接導航到繳費頁面，但可以顯示提示
-      setTimeout(() => {
-        alert(`💡 ${t('goToPaymentsHint', state.lang)}`)
-      }, 500)
+    if (totalDue > 0) {
+      alert(`✅ ${t('moveOutCompleted', state.lang)}\n\n💰 ${t('totalDue', state.lang)}: ${formatCurrency(totalDue)}\n📝 ${t('allFeesPaid', state.lang)}`)
     } else {
       alert(t('moveOutCompleted', state.lang))
-      closeModal()
     }
+    
+    closeModal()
   }
 
   // 儲存快速收款
