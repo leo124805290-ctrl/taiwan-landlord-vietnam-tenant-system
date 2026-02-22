@@ -652,6 +652,138 @@ export default function Modal() {
           </>
         )
 
+      case 'meterReadingDetail':
+        // 查找抄錶記錄
+        const meterRecord = property?.meterHistory?.find((m: any) => m.id === data)
+        if (!meterRecord) {
+          return (
+            <div className="text-center py-8">
+              <div className="text-4xl mb-4">📝</div>
+              <h2 className="text-xl font-bold mb-2">找不到抄錶記錄</h2>
+              <p className="text-gray-600 mb-4">指定的抄錶記錄不存在或已被刪除</p>
+              <button onClick={closeModal} className="btn btn-primary">
+                {t('close', state.lang)}
+              </button>
+            </div>
+          )
+        }
+        
+        return (
+          <>
+            <h2 className="text-2xl font-bold mb-4">📝 {t('meterReadingDetail', state.lang)}</h2>
+            <div className="space-y-4">
+              {/* 基本資訊 */}
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <div className="text-sm text-gray-600">抄錶月份</div>
+                    <div className="text-lg font-bold">{meterRecord.month}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-600">抄錶日期</div>
+                    <div className="text-lg font-bold">{meterRecord.date || '未記錄'}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-600">總房間數</div>
+                    <div className="text-lg font-bold">{meterRecord.readings?.length || 0} 間</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-600">總電費</div>
+                    <div className="text-lg font-bold text-green-600">
+                      ${meterRecord.readings?.reduce((sum: number, r: any) => sum + (r.fee || 0), 0) || 0}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* 房間抄錶詳情 */}
+              <div>
+                <h3 className="text-lg font-bold mb-3">房間抄錶詳情</h3>
+                <div className="space-y-3">
+                  {meterRecord.readings?.map((reading: any, index: number) => {
+                    const room = property?.rooms?.find((r: any) => r.id === reading.rid)
+                    return (
+                      <div key={index} className="p-3 border border-gray-200 rounded-lg">
+                        <div className="flex justify-between items-center mb-2">
+                          <div>
+                            <div className="font-bold">
+                              {room?.n || `房間 ${reading.rid}`} ({room?.f || '?'}F)
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              租客: {room?.t || '未出租'}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-lg font-bold text-blue-600">
+                              ${reading.fee || 0}
+                            </div>
+                            <div className="text-sm text-gray-600">電費</div>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-3 gap-2 text-sm">
+                          <div className="p-2 bg-blue-50 rounded">
+                            <div className="text-gray-600">上期讀數</div>
+                            <div className="font-bold">{reading.previous || 0}</div>
+                          </div>
+                          <div className="p-2 bg-green-50 rounded">
+                            <div className="text-gray-600">本期讀數</div>
+                            <div className="font-bold">
+                              <input 
+                                type="number"
+                                id={`reading-${reading.rid}`}
+                                defaultValue={reading.reading}
+                                min={reading.previous || 0}
+                                className="w-full px-2 py-1 border rounded text-center"
+                              />
+                            </div>
+                          </div>
+                          <div className="p-2 bg-purple-50 rounded">
+                            <div className="text-gray-600">用電度數</div>
+                            <div className="font-bold">
+                              {reading.reading - (reading.previous || 0)} 度
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-2 text-xs text-gray-500">
+                          電費單價: ${state.data.electricityRate}/度
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+              
+              {/* 操作按鈕 */}
+              <div className="flex gap-2 mt-4">
+                <button 
+                  onClick={closeModal}
+                  className="flex-1 btn bg-gray-200"
+                >
+                  {t('cancel', state.lang)}
+                </button>
+                <button 
+                  onClick={() => saveMeterReadingDetail(data)}
+                  className="flex-1 btn btn-primary"
+                >
+                  💾 儲存修改
+                </button>
+                <button 
+                  onClick={() => {
+                    if (confirm('確定要刪除這筆抄錶記錄嗎？此操作無法復原。')) {
+                      deleteMeterReading(data)
+                    }
+                  }}
+                  className="flex-1 btn bg-red-100 text-red-700 hover:bg-red-200"
+                >
+                  🗑️ 刪除記錄
+                </button>
+              </div>
+            </div>
+          </>
+        )
+
       default:
         return (
           <div className="text-center py-8">
@@ -911,6 +1043,96 @@ export default function Modal() {
 
     updateData({ properties: updatedProperties })
     alert(t('maintenanceUpdated', state.lang))
+    closeModal()
+  }
+
+  // 儲存抄錶記錄詳情修改
+  const saveMeterReadingDetail = (recordId: number) => {
+    const property = getCurrentProperty()
+    if (!property || !property.meterHistory) return
+
+    // 查找要修改的記錄
+    const recordIndex = property.meterHistory.findIndex((m: any) => m.id === recordId)
+    if (recordIndex === -1) {
+      alert('找不到抄錶記錄')
+      return
+    }
+
+    const updatedReadings = [...property.meterHistory[recordIndex].readings]
+    let hasChanges = false
+
+    // 更新每個房間的讀數
+    updatedReadings.forEach((reading: any) => {
+      const input = document.getElementById(`reading-${reading.rid}`) as HTMLInputElement
+      if (input) {
+        const newReading = parseInt(input.value)
+        if (!isNaN(newReading) && newReading !== reading.reading) {
+          // 檢查新讀數是否大於等於上期讀數
+          if (newReading < (reading.previous || 0)) {
+            alert(`房間 ${reading.rid} 的本期讀數不能小於上期讀數`)
+            return
+          }
+          
+          reading.reading = newReading
+          // 重新計算用電度和電費
+          reading.usage = newReading - (reading.previous || 0)
+          reading.fee = reading.usage * state.data.electricityRate
+          hasChanges = true
+        }
+      }
+    })
+
+    if (!hasChanges) {
+      alert('沒有修改任何讀數')
+      return
+    }
+
+    // 更新總電費
+    const totalFee = updatedReadings.reduce((sum: number, r: any) => sum + (r.fee || 0), 0)
+
+    const updatedProperties = state.data.properties.map(p => 
+      p.id === property.id
+        ? {
+            ...p,
+            meterHistory: (p.meterHistory || []).map((m: any, idx: number) => 
+              idx === recordIndex
+                ? {
+                    ...m,
+                    readings: updatedReadings,
+                    totalFee: totalFee,
+                    updatedAt: new Date().toISOString().split('T')[0]
+                  }
+                : m
+            )
+          }
+        : p
+    )
+
+    updateData({ properties: updatedProperties })
+    alert('抄錶記錄已更新')
+    closeModal()
+  }
+
+  // 刪除抄錶記錄
+  const deleteMeterReading = (recordId: number) => {
+    const property = getCurrentProperty()
+    if (!property) return
+
+    if (!confirm('確定要永久刪除這筆抄錶記錄嗎？此操作無法復原。')) {
+      return
+    }
+
+    const updatedProperties = state.data.properties.map(p => 
+      p.id === property.id
+        ? {
+            ...p,
+            meterHistory: (p.meterHistory || []).filter((m: any) => m.id !== recordId)
+          }
+        : p
+    )
+
+    updateData({ properties: updatedProperties })
+    alert('抄錶記錄已刪除')
     closeModal()
   }
 

@@ -2,6 +2,7 @@
 
 import { t } from '@/lib/translations'
 import { calculateStats, analyzeElectricity, formatCurrency } from '@/lib/utils'
+import { calculateRevenueAnalysis } from '@/lib/revenueAnalysis'
 import { useApp } from '@/contexts/AppContext'
 
 interface DashboardProps {
@@ -128,41 +129,54 @@ export default function Dashboard({ property }: DashboardProps) {
     }
   ]
 
+  // 使用新的營收分析函數
+  const revenueAnalysis = calculateRevenueAnalysis(
+    property,
+    state.revenueTimeScope,
+    state.revenueYear,
+    state.revenueMonth
+  )
+  
   const revenueCards = [
     {
       title: t('totalRent', state.lang),
-      value: formatCurrency(stats.totalRent),
-      subText: `${stats.occupied} ${t('rooms', state.lang)}`,
+      value: formatCurrency(revenueAnalysis.totalRent),
+      subText: `${revenueAnalysis.roomCount} ${t('rooms', state.lang)}`,
       bg: 'bg-blue-50',
-      text: 'text-blue-600'
+      text: 'text-blue-600',
+      icon: '💰'
     },
     {
-      title: t('avgRent', state.lang),
-      value: formatCurrency(stats.avgRent),
-      subText: t('perRoom', state.lang),
+      title: t('totalDeposit', state.lang),
+      value: formatCurrency(revenueAnalysis.totalDeposit),
+      subText: `${revenueAnalysis.paymentCount} ${t('items', state.lang)}`,
       bg: 'bg-green-50',
-      text: 'text-green-600'
+      text: 'text-green-600',
+      icon: '🏦'
     },
     {
-      title: t('monthlyElec', state.lang),
-      value: formatCurrency(Math.round(stats.totalElec)),
-      subText: `$${state.data.electricityRate}${t('perUnit', state.lang)}`,
+      title: t('totalElectricity', state.lang),
+      value: formatCurrency(revenueAnalysis.totalElectricity),
+      subText: t('electricity', state.lang),
       bg: 'bg-purple-50',
-      text: 'text-purple-600'
+      text: 'text-purple-600',
+      icon: '⚡'
     },
     {
-      title: t('pending', state.lang),
-      value: `$${Math.round(stats.pending / 1000)}K`,
-      subText: `${stats.pendingCount} ${t('items', state.lang)}`,
+      title: t('totalIncome', state.lang),
+      value: formatCurrency(revenueAnalysis.totalIncome),
+      subText: t('total', state.lang),
       bg: 'bg-indigo-50',
-      text: 'text-indigo-600'
+      text: 'text-indigo-600',
+      icon: '📈'
     },
     {
-      title: t('electricityReceivable', state.lang),
-      value: formatCurrency(Math.round(stats.elecReceivable)),
-      subText: t('monthlyElec', state.lang),
+      title: t('paymentCount', state.lang),
+      value: revenueAnalysis.paymentCount.toString(),
+      subText: t('payments', state.lang),
       bg: 'bg-emerald-50',
-      text: 'text-emerald-600'
+      text: 'text-emerald-600',
+      icon: '📋'
     }
   ]
 
@@ -334,15 +348,100 @@ export default function Dashboard({ property }: DashboardProps) {
           </div>
         </div>
 
+        {/* 時間範圍顯示 */}
+        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+          <div className="text-sm text-gray-600">
+            時間範圍: 
+            <span className="font-bold ml-2">
+              {state.revenueTimeScope === 'all' ? t('allTime', state.lang) : 
+               state.revenueTimeScope === 'year' ? `${state.revenueYear}年` :
+               `${state.revenueMonth?.replace('-', '年')}月`}
+            </span>
+          </div>
+          <div className="text-xs text-gray-500 mt-1">
+            共 {revenueAnalysis.paymentCount} 筆付款記錄，{revenueAnalysis.roomCount} 間房間有收入
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {revenueCards.map((card, index) => (
             <div key={index} className={`p-4 ${card.bg} rounded-lg`}>
-              <div className="text-xs text-gray-600 mb-1">{card.title}</div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-lg">{card.icon}</span>
+                <div className="text-xs text-gray-600">{card.title}</div>
+              </div>
               <div className={`text-2xl font-bold ${card.text}`}>{card.value}</div>
               <div className="text-xs text-gray-500 mt-1">{card.subText}</div>
             </div>
           ))}
         </div>
+        
+        {/* 詳細房間收入列表 */}
+        {revenueAnalysis.details.length > 0 && (
+          <div className="mt-6">
+            <h3 className="text-lg font-bold mb-3">📊 房間收入明細</h3>
+            <div className="overflow-x-auto">
+              <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600">房間</th>
+                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600">租客</th>
+                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600">租金收入</th>
+                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600">押金收入</th>
+                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600">電費收入</th>
+                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600">總收入</th>
+                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600">付款次數</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {revenueAnalysis.details.map((room: any, index: number) => (
+                    <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                      <td className="py-2 px-3 border-b text-sm">{room.floor}F-{room.roomNumber}</td>
+                      <td className="py-2 px-3 border-b text-sm">{room.tenantName}</td>
+                      <td className="py-2 px-3 border-b text-sm font-medium text-blue-600">
+                        {formatCurrency(room.totalRentReceived)}
+                      </td>
+                      <td className="py-2 px-3 border-b text-sm font-medium text-green-600">
+                        {formatCurrency(room.totalDepositReceived)}
+                      </td>
+                      <td className="py-2 px-3 border-b text-sm font-medium text-purple-600">
+                        {formatCurrency(room.totalElectricityReceived)}
+                      </td>
+                      <td className="py-2 px-3 border-b text-sm font-bold text-indigo-600">
+                        {formatCurrency(room.totalIncomeReceived)}
+                      </td>
+                      <td className="py-2 px-3 border-b text-sm text-center">
+                        <span className="inline-block px-2 py-1 bg-gray-100 rounded-full text-xs">
+                          {room.paymentCount} 次
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-gray-100">
+                    <td colSpan={2} className="py-2 px-3 border-t text-sm font-bold">總計</td>
+                    <td className="py-2 px-3 border-t text-sm font-bold text-blue-600">
+                      {formatCurrency(revenueAnalysis.totalRent)}
+                    </td>
+                    <td className="py-2 px-3 border-t text-sm font-bold text-green-600">
+                      {formatCurrency(revenueAnalysis.totalDeposit)}
+                    </td>
+                    <td className="py-2 px-3 border-t text-sm font-bold text-purple-600">
+                      {formatCurrency(revenueAnalysis.totalElectricity)}
+                    </td>
+                    <td className="py-2 px-3 border-t text-sm font-bold text-indigo-600">
+                      {formatCurrency(revenueAnalysis.totalIncome)}
+                    </td>
+                    <td className="py-2 px-3 border-t text-sm font-bold text-center">
+                      {revenueAnalysis.paymentCount} 次
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 電費分析 */}
