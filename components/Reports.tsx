@@ -4,6 +4,7 @@ import { t } from '@/lib/translations'
 import { useApp } from '@/contexts/AppContext'
 import { formatCurrency } from '@/lib/utils'
 import { useState } from 'react'
+import SimpleChart from './SimpleChart'
 
 export default function Reports() {
   const { state, updateState, updateData, openModal } = useApp()
@@ -204,6 +205,84 @@ export default function Reports() {
       utilityIncome: utilityStats.incomeTotal,
       utilityExpense: utilityStats.taipowerTotal + utilityStats.waterTotal,
       maintenanceExpense: maintenanceStats.totalCost
+    }
+  }
+  
+  // 生成圖表數據
+  const generateChartData = () => {
+    // 收入組成圖表數據
+    const incomeChartData = {
+      labels: [t('rentalIncome', state.lang), t('supplementaryIncome', state.lang)],
+      values: [summaryStats.rentalIncome, summaryStats.utilityIncome],
+      colors: ['#3b82f6', '#10b981'],
+      type: 'pie' as const,
+      title: t('incomeComposition', state.lang),
+      showValues: true
+    }
+    
+    // 支出組成圖表數據
+    const expenseChartData = {
+      labels: [
+        t('taipowerBill', state.lang),
+        t('waterBill', state.lang),
+        t('maintenanceCost', state.lang)
+      ],
+      values: [
+        utilityStats.taipowerTotal,
+        utilityStats.waterTotal,
+        maintenanceStats.totalCost
+      ],
+      colors: ['#ef4444', '#f59e0b', '#8b5cf6'],
+      type: 'bar' as const,
+      title: t('expenseComposition', state.lang),
+      showValues: true
+    }
+    
+    // 月度收入趨勢（示例數據）
+    const monthlyTrendData = {
+      labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+      values: Array(12).fill(0).map((_, i) => {
+        // 簡單的示例數據：基線 + 隨機波動
+        const base = summaryStats.rentalIncome / 12
+        const variation = base * 0.3 * Math.sin(i * 0.5)
+        return Math.max(0, base + variation)
+      }),
+      colors: ['#3b82f6'],
+      type: 'line' as const,
+      title: t('monthlyIncomeTrend', state.lang),
+      showValues: false,
+      maxHeight: 150
+    }
+    
+    // 財務健康度圖表
+    const financialHealthData = {
+      labels: [
+        t('collectionRate', state.lang),
+        t('completionRate', state.lang),
+        t('expenseCoverage', state.lang),
+        t('profitMargin', state.lang)
+      ],
+      values: [
+        rentalStats.totalRent > 0 ? (rentalStats.paidAmount / rentalStats.totalRent) * 100 : 0,
+        maintenanceStats.completedCount + maintenanceStats.pendingCount > 0 
+          ? (maintenanceStats.completedCount / (maintenanceStats.completedCount + maintenanceStats.pendingCount)) * 100 
+          : 0,
+        utilityStats.taipowerTotal + utilityStats.waterTotal > 0
+          ? (utilityStats.incomeTotal / (utilityStats.taipowerTotal + utilityStats.waterTotal)) * 100
+          : 100,
+        summaryStats.totalIncome > 0 ? (summaryStats.netProfit / summaryStats.totalIncome) * 100 : 0
+      ],
+      colors: ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6'],
+      type: 'bar' as const,
+      title: t('financialHealthIndicators', state.lang),
+      showValues: true
+    }
+    
+    return {
+      incomeChartData,
+      expenseChartData,
+      monthlyTrendData,
+      financialHealthData
     }
   }
   
