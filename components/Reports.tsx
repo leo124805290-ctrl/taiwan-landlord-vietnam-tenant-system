@@ -291,6 +291,7 @@ export default function Reports() {
   const utilityStats = calculateUtilityStats()
   const maintenanceStats = calculateMaintenanceStats()
   const summaryStats = calculateSummaryStats()
+  const chartData = generateChartData()
   
   return (
     <div className="space-y-6">
@@ -515,6 +516,33 @@ export default function Reports() {
                     <span className="text-lg">{formatCurrency(summaryStats.totalExpense)}</span>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* 圖表可視化 */}
+          <div className="card">
+            <h3 className="text-lg font-bold mb-4">📊 {t('dataVisualization', state.lang)}</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <SimpleChart 
+                data={chartData.incomeChartData}
+                lang={state.lang}
+              />
+              <SimpleChart 
+                data={chartData.expenseChartData}
+                lang={state.lang}
+              />
+              <div className="md:col-span-2">
+                <SimpleChart 
+                  data={chartData.monthlyTrendData}
+                  lang={state.lang}
+                />
+              </div>
+              <div className="md:col-span-2">
+                <SimpleChart 
+                  data={chartData.financialHealthData}
+                  lang={state.lang}
+                />
               </div>
             </div>
           </div>
