@@ -151,14 +151,49 @@ export default function Dashboard({ property }: DashboardProps) {
     // 計算補充總收入
     const totalAdditionalIncome = filteredAdditionalIncomes.reduce((sum, i) => sum + i.amount, 0)
     
-    // 計算淨利潤（電費收入 + 補充收入 - 台電支出 - 水費支出）
-    // 注意：這裡的電費收入需要根據時間篩選調整，但為了簡化，我們使用全部電費收入
-    const netProfit = (stats.elec.charged + totalAdditionalIncome) - (totalTaipower + totalWater)
+    // 計算篩選時間範圍內的電費收入
+    const calculateFilteredElectricityIncome = () => {
+      // 獲取所有電費收入記錄（從歷史記錄中）
+      const allElectricityPayments = (property.history || []).filter((p: any) => 
+        p.t === 'electricity' || (p.t === 'rent' && p.e > 0)
+      )
+      
+      // 根據時間篩選過濾
+      let filteredPayments = allElectricityPayments
+      if (timeFilter === 'current-year') {
+        filteredPayments = allElectricityPayments.filter((p: any) => 
+          p.paidDate && p.paidDate.startsWith(currentYear.toString())
+        )
+      } else if (timeFilter === 'last-year') {
+        filteredPayments = allElectricityPayments.filter((p: any) => 
+          p.paidDate && p.paidDate.startsWith((currentYear - 1).toString())
+        )
+      }
+      
+      // 計算電費收入總額
+      return filteredPayments.reduce((sum: number, p: any) => {
+        // 如果是純電費記錄
+        if (p.t === 'electricity') {
+          return sum + (p.total || 0)
+        }
+        // 如果是租金+電費記錄
+        if (p.t === 'rent' && p.e > 0) {
+          return sum + (p.e || 0)
+        }
+        return sum
+      }, 0)
+    }
+    
+    const filteredElectricityIncome = calculateFilteredElectricityIncome()
+    
+    // 計算淨利潤（篩選後的電費收入 + 篩選後的補充收入 - 篩選後的台電支出 - 篩選後的水費支出）
+    const netProfit = (filteredElectricityIncome + totalAdditionalIncome) - (totalTaipower + totalWater)
     
     return {
       totalTaipower,
       totalWater,
       totalAdditionalIncome,
+      filteredElectricityIncome,
       netProfit,
       filteredTaipowerExpenses,
       filteredWaterExpenses,
@@ -373,7 +408,7 @@ export default function Dashboard({ property }: DashboardProps) {
             </select>
           </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {/* 台電總支出 */}
         <div 
           className="stat-card"
@@ -410,6 +445,18 @@ export default function Dashboard({ property }: DashboardProps) {
           <div className="text-xs opacity-75 mt-2">{t('totalAdditionalIncomes', state.lang)}</div>
         </div>
         
+        {/* 租客電費收入 */}
+        <div 
+          className="stat-card"
+          style={{
+            background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)'
+          }}
+        >
+          <div className="text-4xl font-bold mb-1">{formatCurrency(utilityStats.filteredElectricityIncome)}</div>
+          <div className="text-sm opacity-90">{t('electricityIncome', state.lang)}</div>
+          <div className="text-xs opacity-75 mt-2">{t('collectedFromTenants', state.lang)}</div>
+        </div>
+        
         {/* 淨利潤 */}
         <div 
           className="stat-card"
@@ -423,6 +470,12 @@ export default function Dashboard({ property }: DashboardProps) {
           <div className="text-sm opacity-90">{t('netProfit', state.lang)}</div>
           <div className="text-xs opacity-75 mt-2">
             {utilityStats.netProfit >= 0 ? '📈 盈利' : '📉 虧損'}
+            <div className="mt-1 text-xs">
+              公式: (電費收入 {formatCurrency(utilityStats.filteredElectricityIncome)} + 
+              補充收入 {formatCurrency(utilityStats.totalAdditionalIncome)}) - 
+              (台電支出 {formatCurrency(utilityStats.totalTaipower)} + 
+              水費支出 {formatCurrency(utilityStats.totalWater)})
+            </div>
           </div>
         </div>
       </div>

@@ -349,6 +349,8 @@ export const translations: Translation = {
     finalElectricityFee: '最後電費',
     contractStart: '起租日',
     contractEnd: '到期日',
+    electricityIncome: '租客電費收入',
+    collectedFromTenants: '向租客收取',
   },
   'vi-VN': {
     system: 'Hệ thống Quản lý Đa BĐS',
@@ -698,6 +700,8 @@ export const translations: Translation = {
     finalElectricityFee: 'Tiền điện cuối',
     contractStart: 'Ngày bắt đầu',
     contractEnd: 'Ngày kết thúc',
+    electricityIncome: 'Thu tiền điện từ khách',
+    collectedFromTenants: 'Thu từ khách',
   }
 };
 
