@@ -1662,7 +1662,8 @@ export default function Modal() {
       s: 'paid' as const,
       paid: dateInput.value,
       paymentMethod: methodInput.value,
-      notes: notesInput.value.trim() || undefined
+      notes: notesInput.value.trim() || undefined,
+      electricityRate: payment.electricityRate || state.data.electricityRate // 保留原有或使用當前單價
     }
 
     const updatedProperties = state.data.properties.map(p => 
@@ -1750,7 +1751,8 @@ export default function Modal() {
           e: 0, // 初始電費為0
           total: room.r,
           due: dueDate.toISOString().split('T')[0],
-          s: 'pending' as const
+          s: 'pending' as const,
+          electricityRate: state.data.electricityRate // 保存當時的電費單價
         })
         
         // 移到下個月
@@ -1784,7 +1786,8 @@ export default function Modal() {
         e: 0,
         total: room.r,
         due: dueDate,
-        s: 'pending' as const
+        s: 'pending' as const,
+        electricityRate: state.data.electricityRate // 保存當時的電費單價
       })
     }
 

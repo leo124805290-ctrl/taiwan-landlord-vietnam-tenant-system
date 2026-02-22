@@ -59,6 +59,7 @@ export interface Payment {
   paid?: string; // 付款日期
   paymentMethod?: string; // 付款方式
   notes?: string; // 備註
+  electricityRate?: number; // 當時的電費單價（用於版本控制）
 }
 
 // 維修記錄

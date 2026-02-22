@@ -144,7 +144,7 @@ export default function Payments({ property }: PaymentsProps) {
                 <div className="text-sm mt-2">
                   {t('rent', state.lang)} {formatCurrency(payment.r)} + 
                   {t('electricity', state.lang)} {payment.u || 0}{t('degree', state.lang)}×
-                  ${state.data.electricityRate} = 
+                  ${payment.electricityRate || state.data.electricityRate} = 
                   <span className="font-bold"> {formatCurrency(payment.total)}</span>
                 </div>
                 {payment.paid && (
