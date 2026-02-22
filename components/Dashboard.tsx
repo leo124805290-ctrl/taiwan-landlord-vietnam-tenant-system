@@ -4,6 +4,7 @@ import { t } from '@/lib/translations'
 import { calculateStats, analyzeElectricity, formatCurrency } from '@/lib/utils'
 import { calculateRevenueAnalysis } from '@/lib/revenueAnalysis'
 import { useApp } from '@/contexts/AppContext'
+import { useState } from 'react'
 
 interface DashboardProps {
   property: any
@@ -102,6 +103,73 @@ export default function Dashboard({ property }: DashboardProps) {
   const pendingPayments = property.payments.filter((p: any) => p.s === 'pending')
   const pendingAmount = pendingPayments.reduce((sum: number, p: any) => sum + p.total, 0)
   
+  // 計算水電支出和補充收入（帶時間篩選）
+  const calculateUtilityStats = (timeFilter = 'all') => {
+    const currentYear = new Date().getFullYear()
+    
+    // 篩選函數
+    const filterByYear = (items: any[], year: number) => {
+      return items.filter(item => {
+        // 檢查期間或月份是否包含指定年份
+        if (item.period && item.period.includes(year.toString())) {
+          return true
+        }
+        if (item.month && item.month.startsWith(year.toString())) {
+          return true
+        }
+        if (item.paidDate && item.paidDate.startsWith(year.toString())) {
+          return true
+        }
+        if (item.receivedDate && item.receivedDate.startsWith(year.toString())) {
+          return true
+        }
+        return false
+      })
+    }
+    
+    let filteredTaipowerExpenses = state.data.utilityExpenses?.filter(e => e.type === 'taipower') || []
+    let filteredWaterExpenses = state.data.utilityExpenses?.filter(e => e.type === 'water') || []
+    let filteredAdditionalIncomes = state.data.additionalIncomes || []
+    
+    // 應用時間篩選
+    if (timeFilter === 'current-year') {
+      filteredTaipowerExpenses = filterByYear(filteredTaipowerExpenses, currentYear)
+      filteredWaterExpenses = filterByYear(filteredWaterExpenses, currentYear)
+      filteredAdditionalIncomes = filterByYear(filteredAdditionalIncomes, currentYear)
+    } else if (timeFilter === 'last-year') {
+      filteredTaipowerExpenses = filterByYear(filteredTaipowerExpenses, currentYear - 1)
+      filteredWaterExpenses = filterByYear(filteredWaterExpenses, currentYear - 1)
+      filteredAdditionalIncomes = filterByYear(filteredAdditionalIncomes, currentYear - 1)
+    }
+    
+    // 計算台電總支出
+    const totalTaipower = filteredTaipowerExpenses.reduce((sum, e) => sum + e.amount, 0)
+    
+    // 計算水費總支出
+    const totalWater = filteredWaterExpenses.reduce((sum, e) => sum + e.amount, 0)
+    
+    // 計算補充總收入
+    const totalAdditionalIncome = filteredAdditionalIncomes.reduce((sum, i) => sum + i.amount, 0)
+    
+    // 計算淨利潤（電費收入 + 補充收入 - 台電支出 - 水費支出）
+    // 注意：這裡的電費收入需要根據時間篩選調整，但為了簡化，我們使用全部電費收入
+    const netProfit = (stats.elec.charged + totalAdditionalIncome) - (totalTaipower + totalWater)
+    
+    return {
+      totalTaipower,
+      totalWater,
+      totalAdditionalIncome,
+      netProfit,
+      filteredTaipowerExpenses,
+      filteredWaterExpenses,
+      filteredAdditionalIncomes
+    }
+  }
+  
+  // 使用狀態管理時間篩選
+  const [utilityTimeFilter, setUtilityTimeFilter] = useState('all')
+  const utilityStats = calculateUtilityStats(utilityTimeFilter)
+
   const statCards = [
     {
       title: t('total', state.lang),
@@ -287,6 +355,76 @@ export default function Dashboard({ property }: DashboardProps) {
             <div className="text-xs opacity-75 mt-2">{card.subText}</div>
           </div>
         ))}
+      </div>
+
+      {/* 水電支出和補充收入統計卡片 */}
+      <div className="mb-4">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-bold">📊 {t('utilityExpenses', state.lang)} & {t('additionalIncomes', state.lang)}</h3>
+          <div className="flex gap-2">
+            <select 
+              className="px-3 py-2 border rounded-lg text-sm"
+              value={utilityTimeFilter}
+              onChange={(e) => setUtilityTimeFilter(e.target.value)}
+            >
+              <option value="all">全部時間</option>
+              <option value="current-year">今年 ({new Date().getFullYear()})</option>
+              <option value="last-year">去年 ({new Date().getFullYear() - 1})</option>
+            </select>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* 台電總支出 */}
+        <div 
+          className="stat-card"
+          style={{
+            background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)'
+          }}
+        >
+          <div className="text-4xl font-bold mb-1">{formatCurrency(utilityStats.totalTaipower)}</div>
+          <div className="text-sm opacity-90">{t('taipowerBill', state.lang)}</div>
+          <div className="text-xs opacity-75 mt-2">{t('totalUtilityExpenses', state.lang)}</div>
+        </div>
+        
+        {/* 水費總支出 */}
+        <div 
+          className="stat-card"
+          style={{
+            background: 'linear-gradient(135deg, #06b6d4, #0891b2)'
+          }}
+        >
+          <div className="text-4xl font-bold mb-1">{formatCurrency(utilityStats.totalWater)}</div>
+          <div className="text-sm opacity-90">{t('waterBill', state.lang)}</div>
+          <div className="text-xs opacity-75 mt-2">{t('totalUtilityExpenses', state.lang)}</div>
+        </div>
+        
+        {/* 補充總收入 */}
+        <div 
+          className="stat-card"
+          style={{
+            background: 'linear-gradient(135deg, #10b981, #047857)'
+          }}
+        >
+          <div className="text-4xl font-bold mb-1">{formatCurrency(utilityStats.totalAdditionalIncome)}</div>
+          <div className="text-sm opacity-90">{t('additionalIncomes', state.lang)}</div>
+          <div className="text-xs opacity-75 mt-2">{t('totalAdditionalIncomes', state.lang)}</div>
+        </div>
+        
+        {/* 淨利潤 */}
+        <div 
+          className="stat-card"
+          style={{
+            background: utilityStats.netProfit >= 0 
+              ? 'linear-gradient(135deg, #22c55e, #16a34a)' 
+              : 'linear-gradient(135deg, #ef4444, #dc2626)'
+          }}
+        >
+          <div className="text-4xl font-bold mb-1">{formatCurrency(utilityStats.netProfit)}</div>
+          <div className="text-sm opacity-90">{t('netProfit', state.lang)}</div>
+          <div className="text-xs opacity-75 mt-2">
+            {utilityStats.netProfit >= 0 ? '📈 盈利' : '📉 虧損'}
+          </div>
+        </div>
       </div>
 
       {/* 營收分析 */}
