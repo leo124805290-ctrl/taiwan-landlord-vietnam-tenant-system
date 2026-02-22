@@ -89,7 +89,15 @@ export default function Rooms({ property }: RoomsProps) {
         
         {/* 新增房間按鈕 */}
         <button 
-          onClick={() => openModal('addRoom')}
+          onClick={() => {
+            // 密碼驗證
+            const password = prompt(t('enterPasswordToAddRoom', state.lang), '')
+            if (password !== '123456') {
+              alert(t('incorrectPassword', state.lang))
+              return
+            }
+            openModal('addRoom')
+          }}
           className="btn btn-primary flex-1"
         >
           ➕ {t('addRoom', state.lang)}

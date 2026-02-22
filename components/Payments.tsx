@@ -219,6 +219,27 @@ export default function Payments({ property }: PaymentsProps) {
     const payment = property.history?.find((p: any) => p.id === paymentId)
     if (!payment) return
 
+    // 檢查該房間的當前狀態
+    const room = property.rooms.find((r: any) => r.id === payment.rid)
+    if (room && room.s !== 'occupied') {
+      // 房間已退租或空置，需要警告
+      const warningMessage = `⚠️ ${t('warning', state.lang)}\n\n`
+        + `${t('tenantMovedOutWarning', state.lang)}: ${room.n}\n`
+        + `${t('currentStatus', state.lang)}: ${t(room.s, state.lang)}\n\n`
+        + `${t('confirmChangeToUnpaid', state.lang)}`
+      
+      if (!confirm(warningMessage)) {
+        return // 用戶取消操作
+      }
+      
+      // 需要密碼驗證
+      const password = prompt(t('enterPasswordToChangeStatus', state.lang), '')
+      if (password !== '123456') {
+        alert(t('incorrectPassword', state.lang))
+        return
+      }
+    }
+
     const updatedPayment = {
       ...payment,
       s: 'pending' as const,
@@ -236,6 +257,7 @@ export default function Payments({ property }: PaymentsProps) {
     )
 
     updateData({ properties: updatedProperties })
+    alert(t('statusChangedToUnpaid', state.lang))
   }
 
   function deletePayment(paymentId: number) {
