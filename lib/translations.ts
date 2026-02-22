@@ -351,6 +351,12 @@ export const translations: Translation = {
     contractEnd: '到期日',
     electricityIncome: '租客電費收入',
     collectedFromTenants: '向租客收取',
+    utilitiesTab: '水電收支',
+    amount: '金額',
+    actions: '操作',
+    property: '物業',
+    'current-year': '今年',
+    'last-year': '去年',
   },
   'vi-VN': {
     system: 'Hệ thống Quản lý Đa BĐS',
@@ -702,6 +708,12 @@ export const translations: Translation = {
     contractEnd: 'Ngày kết thúc',
     electricityIncome: 'Thu tiền điện từ khách',
     collectedFromTenants: 'Thu từ khách',
+    utilitiesTab: 'Thu chi điện nước',
+    amount: 'Số tiền',
+    actions: 'Thao tác',
+    property: 'BĐS',
+    'current-year': 'Năm nay',
+    'last-year': 'Năm trước',
   }
 };
 

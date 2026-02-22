@@ -5,6 +5,7 @@ import Dashboard from '@/components/Dashboard'
 import Rooms from '@/components/Rooms'
 import Payments from '@/components/Payments'
 import Maintenance from '@/components/Maintenance'
+import Utilities from '@/components/Utilities'
 import Settings from '@/components/Settings'
 import MeterReading from '@/components/MeterReading'
 import Modal from '@/components/Modal'
@@ -43,6 +44,8 @@ export default function HomePage() {
         return <MeterReading property={property} />
       case 'maintenance':
         return <Maintenance property={property} />
+      case 'utilities':
+        return <Utilities />
       case 'settings':
         return <Settings />
       default:

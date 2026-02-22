@@ -12,6 +12,7 @@ export default function Header() {
     { key: 'meterReading', icon: '📝', label: 'meterReadingTab' },
     { key: 'payments', icon: '💰', label: 'paymentsTab' },
     { key: 'maintenance', icon: '🔧', label: 'maintenanceTab' },
+    { key: 'utilities', icon: '💧', label: 'utilitiesTab' },
     { key: 'settings', icon: '⚙️', label: 'settingsTab' },
   ]
 

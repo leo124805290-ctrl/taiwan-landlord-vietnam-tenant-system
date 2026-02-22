@@ -92,6 +92,8 @@ export interface Property {
   history: Payment[];
   maintenance: Maintenance[];
   meterHistory?: MeterReadingRecord[]; // 抄錶歷史記錄
+  utilityExpenses?: UtilityExpense[]; // 水電支出記錄
+  additionalIncomes?: AdditionalIncome[]; // 補充收入記錄
 }
 
 // 抄錶記錄
@@ -139,7 +141,7 @@ export interface AppData {
 
 // 應用狀態
 export interface AppState {
-  tab: 'dashboard' | 'rooms' | 'meterReading' | 'payments' | 'maintenance' | 'settings';
+  tab: 'dashboard' | 'rooms' | 'meterReading' | 'payments' | 'maintenance' | 'utilities' | 'settings';
   lang: 'zh-TW' | 'vi-VN';
   modal: {
     type: string;
