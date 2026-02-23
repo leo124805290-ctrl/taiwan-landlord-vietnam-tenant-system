@@ -1355,28 +1355,53 @@ export default function Modal() {
                   <label className="block text-sm mb-1 font-medium">選擇房間（可多選）</label>
                   <div className="border rounded-lg p-3 max-h-60 overflow-y-auto bg-gray-50">
                     {property?.rooms?.filter((r: any) => r.s === 'occupied').map((room: any) => (
-                      <div key={room.id} className="flex items-center gap-3 p-3 mb-2 bg-white rounded-lg border hover:border-green-300">
-                        <input 
-                          type="checkbox" 
-                          id={`room-${room.id}`}
-                          className="rounded h-5 w-5 text-green-600"
-                          onChange={(e) => {
-                            const roomElement = document.getElementById(`room-amount-${room.id}`)
-                            if (roomElement) {
-                              roomElement.style.display = e.target.checked ? 'block' : 'none'
-                            }
-                            calculateTotalAmount()
-                          }}
-                        />
-                        <label htmlFor={`room-${room.id}`} className="flex-1 cursor-pointer">
-                          <div className="font-medium text-gray-800">{room.n}</div>
-                          <div className="text-sm text-gray-500">
-                            租金: {formatCurrency(room.r)} | 電費: {formatCurrency(room.elecFee || 0)}
+                      <div key={room.id} className="mb-3 p-3 bg-white rounded-lg border hover:border-green-300">
+                        <div className="flex items-center gap-3 mb-2">
+                          <input 
+                            type="checkbox" 
+                            id={`room-${room.id}`}
+                            className="rounded h-5 w-5 text-green-600"
+                            onChange={(e) => {
+                              const detailsElement = document.getElementById(`room-details-${room.id}`)
+                              if (detailsElement) {
+                                detailsElement.style.display = e.target.checked ? 'block' : 'none'
+                              }
+                              calculateTotalAmount()
+                            }}
+                          />
+                          <label htmlFor={`room-${room.id}`} className="flex-1 cursor-pointer">
+                            <div className="font-medium text-gray-800">{room.n} - {room.t || '租客'}</div>
+                            <div className="text-sm text-gray-500">
+                              租金: {formatCurrency(room.r)} | 電費: {formatCurrency(room.elecFee || 0)}
+                            </div>
+                          </label>
+                        </div>
+                        
+                        <div id={`room-details-${room.id}`} className="pl-8 mt-2 hidden">
+                          <div className="grid grid-cols-2 gap-2 mb-2">
+                            <div>
+                              <label className="block text-xs text-gray-600 mb-1">本期電錶讀數</label>
+                              <input 
+                                type="number" 
+                                id={`room-meter-${room.id}`}
+                                className="w-full px-2 py-1 border rounded text-sm"
+                                placeholder="輸入讀數"
+                                min={room.lastMeter || 0}
+                                defaultValue={room.lastMeter || 0}
+                                step="1"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs text-gray-600 mb-1">用電度數</label>
+                              <div id={`room-usage-${room.id}`} className="text-sm font-medium text-blue-600">
+                                0 度
+                              </div>
+                            </div>
                           </div>
-                          <div id={`room-amount-${room.id}`} className="text-xs text-green-600 mt-1 hidden">
-                            應收: {formatCurrency(room.r + (room.elecFee || 0))}
+                          <div className="text-xs text-green-600">
+                            💰 應收總額: {formatCurrency(room.r + (room.elecFee || 0))}
                           </div>
-                        </label>
+                        </div>
                       </div>
                     ))}
                     
@@ -2699,15 +2724,29 @@ export default function Modal() {
     const property = getCurrentProperty()
     if (!property) return
 
-    // 獲取選中的房間
-    const selectedRooms: number[] = []
+    // 獲取選中的房間和電表讀數
+    const selectedRooms: Array<{roomId: number, meterReading: number, electricityCost: number}> = []
     let totalAmount = 0
     
+    const rateInput = document.getElementById('collectElectricityRate') as HTMLInputElement
+    const electricityRate = parseFloat(rateInput?.value || state.data.electricityRate.toString() || '5')
+
     property.rooms.filter((r: any) => r.s === 'occupied').forEach((room: any) => {
       const checkbox = document.getElementById(`room-${room.id}`) as HTMLInputElement
       if (checkbox?.checked) {
-        selectedRooms.push(room.id)
-        totalAmount += room.r + (room.elecFee || 0)
+        const meterInput = document.getElementById(`room-meter-${room.id}`) as HTMLInputElement
+        const currentReading = parseFloat(meterInput?.value || '0')
+        const lastReading = room.lastMeter || 0
+        const usage = Math.max(0, currentReading - lastReading)
+        const electricityCost = usage * electricityRate
+        
+        selectedRooms.push({
+          roomId: room.id,
+          meterReading: currentReading,
+          electricityCost
+        })
+        
+        totalAmount += room.r + electricityCost
       }
     })
 
@@ -2730,7 +2769,7 @@ export default function Modal() {
     const newPayments: any[] = []
     const newHistory: any[] = []
     
-    selectedRooms.forEach(roomId => {
+    selectedRooms.forEach(({roomId, meterReading, electricityCost}) => {
       const room = property.rooms.find((r: any) => r.id === roomId)
       if (!room) return
 
@@ -2740,6 +2779,9 @@ export default function Modal() {
         0
       ) + newPayments.length + 1
 
+      const lastReading = room.lastMeter || 0
+      const usage = Math.max(0, meterReading - lastReading)
+
       const payment = {
         id: paymentId,
         rid: roomId,
@@ -2747,19 +2789,36 @@ export default function Modal() {
         t: room.t || '租客',
         m: monthInput.value.trim(),
         r: room.r,
-        u: room.lastMeterUsage || 0,
-        e: room.elecFee || 0,
-        total: room.r + (room.elecFee || 0),
+        u: usage,
+        e: electricityCost,
+        total: room.r + electricityCost,
         due: dateInput.value || new Date().toISOString().split('T')[0],
         paid: dateInput.value || new Date().toISOString().split('T')[0],
         s: 'paid' as const,
         paymentMethod: methodInput?.value || 'cash',
         notes: notesInput?.value || '',
-        electricityRate: state.data.electricityRate
+        electricityRate: electricityRate,
+        meterReading: meterReading
       }
 
       newPayments.push(payment)
       newHistory.push(payment)
+    })
+
+    // 更新房間的電錶讀數和電費
+    const updatedRooms = property.rooms.map((room: any) => {
+      const selectedRoom = selectedRooms.find(r => r.roomId === room.id)
+      if (selectedRoom) {
+        return {
+          ...room,
+          lastMeter: selectedRoom.meterReading,
+          lastMeterUsage: Math.max(0, selectedRoom.meterReading - (room.lastMeter || 0)),
+          elecFee: selectedRoom.electricityCost,
+          lastMeterDate: dateInput.value || new Date().toISOString().split('T')[0],
+          lastMeterMonth: monthInput.value.trim()
+        }
+      }
+      return room
     })
 
     // 更新數據
@@ -2767,13 +2826,22 @@ export default function Modal() {
       p.id === property.id
         ? {
             ...p,
-            payments: [...p.payments, ...newPayments],
+            rooms: updatedRooms,
+            payments: [...p.payments.filter((payment: any) => {
+              // 移除待付款記錄（如果存在）
+              const isSelectedRoom = selectedRooms.some(r => r.roomId === payment.rid)
+              const isSameMonth = payment.m === monthInput.value.trim()
+              return !(isSelectedRoom && isSameMonth && payment.s === 'pending')
+            }), ...newPayments],
             history: [...(p.history || []), ...newHistory]
           }
         : p
     )
 
-    updateData({ properties: updatedProperties })
+    updateData({ 
+      properties: updatedProperties,
+      electricityRate: electricityRate
+    })
     
     // 顯示成功訊息
     alert(`✅ 成功收取 ${selectedRooms.length} 間房間的租金\n總金額：${formatCurrency(totalAmount)}`)

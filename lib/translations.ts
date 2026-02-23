@@ -15,7 +15,7 @@ export const translations: Translation = {
     addFirst: '新增第一個物業',
     dashboard: '總表',
     roomsTab: '房間',
-    paymentsTab: '繳費',
+    paymentsTab: '租客繳費',
     maintenanceTab: '報修/裝修',
     settingsTab: '設定',
     total: '總房間數',
