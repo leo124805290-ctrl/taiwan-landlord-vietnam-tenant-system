@@ -183,7 +183,7 @@ export const translations: Translation = {
     confirmMoveOutAnyway: '確定要繼續退租嗎？',
     resetCompleted: '重置完成！所有資料已清空。',
     // 水電支出管理
-    utilityExpenses: '水電支出',
+    utilityExpenses: '物業收支',
     taipowerBill: '台電帳單',
     waterBill: '水費帳單',
     billPeriod: '帳單期間',
@@ -435,6 +435,8 @@ export const translations: Translation = {
     // 租金支出相關翻譯
     rentExpense: '租金支出',
     rentExpenseDescription: '二房東支付給房東的租金，建議按月記錄',
+    propertyRentalCost: '物業租用成本',
+    propertyRentalCostDescription: '租用該物業的總成本，包含月租金和押金攤提',
     addRentExpense: '新增租金支出',
   },
   'vi-VN': {
@@ -619,7 +621,7 @@ export const translations: Translation = {
     initialMeter: 'Số điện đầu',
     resetCompleted: 'Đã xóa toàn bộ dữ liệu!',
     // 水電支出管理
-    utilityExpenses: 'Chi phí điện nước',
+    utilityExpenses: 'Thu chi tài sản',
     taipowerBill: 'Hóa đơn điện',
     waterBill: 'Hóa đơn nước',
     billPeriod: 'Kỳ hóa đơn',
@@ -875,6 +877,8 @@ export const translations: Translation = {
     // 租金支出相關翻譯（越南文）
     rentExpense: 'Tiền thuê',
     rentExpenseDescription: 'Tiền thuê trả cho chủ nhà (chủ thuê lại), nên ghi theo tháng',
+    propertyRentalCost: 'Chi phí thuê tài sản',
+    propertyRentalCostDescription: 'Tổng chi phí thuê tài sản, bao gồm tiền thuê hàng tháng và khấu hao tiền đặt cọc',
     addRentExpense: 'Thêm tiền thuê',
   }
 };

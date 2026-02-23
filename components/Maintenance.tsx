@@ -12,6 +12,20 @@ interface MaintenanceProps {
 export default function Maintenance({ property }: MaintenanceProps) {
   const { state, updateState, updateData, openModal } = useApp()
   
+  // 判斷記錄類型（報修或裝修）
+  const getMaintenanceType = (maint: any): string => {
+    // 優先使用 category 字段
+    if (maint.category) {
+      return maint.category === 'renovation' ? 'renovation' : 'maintenance';
+    }
+    // 兼容舊數據：如果有 estimatedCost 或標題包含「裝修」，則視為裝修
+    if (maint.estimatedCost !== undefined || 
+        (maint.title && (maint.title.includes('裝修') || maint.title.includes('cải tạo') || maint.title.includes('renovation')))) {
+      return 'renovation';
+    }
+    return 'maintenance';
+  };
+
   // 計算維修成本統計
   const calculateMaintenanceStats = () => {
     const allMaintenance = property.maintenance || [];
@@ -78,20 +92,6 @@ export default function Maintenance({ property }: MaintenanceProps) {
   
   // 獲取所有房間號碼
   const allRooms: string[] = Array.from(new Set((property.maintenance || []).map((m: any) => m.n)));
-  
-  // 判斷記錄類型（報修或裝修）
-  const getMaintenanceType = (maint: any): string => {
-    // 優先使用 category 字段
-    if (maint.category) {
-      return maint.category === 'renovation' ? 'renovation' : 'maintenance';
-    }
-    // 兼容舊數據：如果有 estimatedCost 或標題包含「裝修」，則視為裝修
-    if (maint.estimatedCost !== undefined || 
-        (maint.title && (maint.title.includes('裝修') || maint.title.includes('cải tạo') || maint.title.includes('renovation')))) {
-      return 'renovation';
-    }
-    return 'maintenance';
-  };
 
   // 篩選報修/裝修記錄
   const filteredMaintenance = (property.maintenance || []).filter((maint: any) => {

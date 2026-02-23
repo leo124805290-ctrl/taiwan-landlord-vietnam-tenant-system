@@ -129,16 +129,19 @@ export default function Dashboard({ property }: DashboardProps) {
     
     let filteredTaipowerExpenses = state.data.utilityExpenses?.filter(e => e.type === 'taipower') || []
     let filteredWaterExpenses = state.data.utilityExpenses?.filter(e => e.type === 'water') || []
+    let filteredRentExpenses = state.data.utilityExpenses?.filter(e => e.type === 'rent') || []
     let filteredAdditionalIncomes = state.data.additionalIncomes || []
     
     // 應用時間篩選
     if (timeFilter === 'current-year') {
       filteredTaipowerExpenses = filterByYear(filteredTaipowerExpenses, currentYear)
       filteredWaterExpenses = filterByYear(filteredWaterExpenses, currentYear)
+      filteredRentExpenses = filterByYear(filteredRentExpenses, currentYear)
       filteredAdditionalIncomes = filterByYear(filteredAdditionalIncomes, currentYear)
     } else if (timeFilter === 'last-year') {
       filteredTaipowerExpenses = filterByYear(filteredTaipowerExpenses, currentYear - 1)
       filteredWaterExpenses = filterByYear(filteredWaterExpenses, currentYear - 1)
+      filteredRentExpenses = filterByYear(filteredRentExpenses, currentYear - 1)
       filteredAdditionalIncomes = filterByYear(filteredAdditionalIncomes, currentYear - 1)
     }
     
@@ -147,6 +150,9 @@ export default function Dashboard({ property }: DashboardProps) {
     
     // 計算水費總支出
     const totalWater = filteredWaterExpenses.reduce((sum, e) => sum + e.amount, 0)
+    
+    // 計算租金總支出
+    const totalRent = filteredRentExpenses.reduce((sum, e) => sum + e.amount, 0)
     
     // 計算補充總收入
     const totalAdditionalIncome = filteredAdditionalIncomes.reduce((sum, i) => sum + i.amount, 0)
@@ -186,17 +192,44 @@ export default function Dashboard({ property }: DashboardProps) {
     
     const filteredElectricityIncome = calculateFilteredElectricityIncome()
     
-    // 計算淨利潤（篩選後的電費收入 + 篩選後的補充收入 - 篩選後的台電支出 - 篩選後的水費支出）
-    const netProfit = (filteredElectricityIncome + totalAdditionalIncome) - (totalTaipower + totalWater)
+    // 計算物業租用成本（包含押金攤提）
+    let propertyRentalCost = 0
+    if (property.propertyRentalCost) {
+      const { monthlyRent, deposit, contractStartDate, contractEndDate } = property.propertyRentalCost
+      
+      // 計算合約總月數
+      const startDate = new Date(contractStartDate)
+      const endDate = new Date(contractEndDate)
+      const totalMonths = (endDate.getFullYear() - startDate.getFullYear()) * 12 + (endDate.getMonth() - startDate.getMonth()) + 1
+      
+      // 計算每月押金攤提
+      const monthlyDepositAmortization = deposit / totalMonths
+      
+      // 根據時間篩選計算成本
+      if (timeFilter === 'current-year') {
+        propertyRentalCost = (monthlyRent + monthlyDepositAmortization) * 12
+      } else if (timeFilter === 'last-year') {
+        propertyRentalCost = (monthlyRent + monthlyDepositAmortization) * 12
+      } else {
+        // 'all' - 計算合約期間總成本
+        propertyRentalCost = (monthlyRent + monthlyDepositAmortization) * totalMonths
+      }
+    }
+    
+    // 計算淨利潤（篩選後的電費收入 + 篩選後的補充收入 - 篩選後的台電支出 - 篩選後的水費支出 - 租金支出 - 物業租用成本）
+    const netProfit = (filteredElectricityIncome + totalAdditionalIncome) - (totalTaipower + totalWater + totalRent + propertyRentalCost)
     
     return {
       totalTaipower,
       totalWater,
+      totalRent,
+      propertyRentalCost,
       totalAdditionalIncome,
       filteredElectricityIncome,
       netProfit,
       filteredTaipowerExpenses,
       filteredWaterExpenses,
+      filteredRentExpenses,
       filteredAdditionalIncomes
     }
   }
@@ -376,7 +409,7 @@ export default function Dashboard({ property }: DashboardProps) {
       </div>
 
       {/* 統計卡片 */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
         {statCards.map((card, index) => (
           <div 
             key={index}
@@ -408,7 +441,7 @@ export default function Dashboard({ property }: DashboardProps) {
             </select>
           </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
         {/* 台電總支出 */}
         <div 
           className="stat-card"
@@ -431,6 +464,30 @@ export default function Dashboard({ property }: DashboardProps) {
           <div className="text-4xl font-bold mb-1">{formatCurrency(utilityStats.totalWater)}</div>
           <div className="text-sm opacity-90">{t('waterBill', state.lang)}</div>
           <div className="text-xs opacity-75 mt-2">{t('totalUtilityExpenses', state.lang)}</div>
+        </div>
+        
+        {/* 租金總支出 */}
+        <div 
+          className="stat-card"
+          style={{
+            background: 'linear-gradient(135deg, #a855f7, #9333ea)'
+          }}
+        >
+          <div className="text-4xl font-bold mb-1">{formatCurrency(utilityStats.totalRent)}</div>
+          <div className="text-sm opacity-90">{t('rentExpense', state.lang)}</div>
+          <div className="text-xs opacity-75 mt-2">{t('rentExpenseDescription', state.lang)}</div>
+        </div>
+        
+        {/* 物業租用成本 */}
+        <div 
+          className="stat-card"
+          style={{
+            background: 'linear-gradient(135deg, #f59e0b, #d97706)'
+          }}
+        >
+          <div className="text-4xl font-bold mb-1">{formatCurrency(utilityStats.propertyRentalCost)}</div>
+          <div className="text-sm opacity-90">{t('propertyRentalCost', state.lang)}</div>
+          <div className="text-xs opacity-75 mt-2">{t('propertyRentalCostDescription', state.lang)}</div>
         </div>
         
         {/* 補充總收入 */}
@@ -566,7 +623,7 @@ export default function Dashboard({ property }: DashboardProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
           {revenueCards.map((card, index) => (
             <div key={index} className={`p-4 ${card.bg} rounded-lg`}>
               <div className="flex items-center gap-2 mb-1">
@@ -717,7 +774,7 @@ export default function Dashboard({ property }: DashboardProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
           {elecCards.map((card, index) => (
             <div key={index} className={`p-4 ${card.bg} rounded-lg`}>
               <div className="text-xs text-gray-600 mb-1">{card.title}</div>

@@ -65,6 +65,15 @@ export function initData(): AppData {
           // 裝修記錄
           { id: 5, rid: 10, n: '501', t: '', title: '房間全面裝修', desc: '地板更新、牆面粉刷、衛浴設備更新', urg: 'normal', s: 'pending', date: '2026-02-20', estimatedCost: 85000, estimatedCompletion: '2026-03-31', notes: '提升租金至9500元', category: 'renovation' },
         ],
+        // 物業租用成本（二房東需要支付給房東的成本）
+        propertyRentalCost: {
+          monthlyRent: 50000, // 月租金
+          deposit: 100000, // 押金（兩個月租金）
+          contractStartDate: '2025-01-01', // 合約開始日期
+          contractEndDate: '2027-12-31', // 合約結束日期
+          paymentDay: 5, // 每月5號付款
+          notes: '整棟租用，二房東轉租給租客'
+        },
       },
       {
         id: 2,
@@ -84,6 +93,15 @@ export function initData(): AppData {
         maintenance: [
           { id: 6, rid: 11, n: '101', t: 'Nguyen Thi H', title: '燈具更換', desc: '房間主燈不亮', urg: 'normal', s: 'completed', date: '2026-01-15', repairDate: '2026-01-16', cost: 800, technician: '林師傅', category: 'repair' },
         ],
+        // 物業租用成本（二房東需要支付給房東的成本）
+        propertyRentalCost: {
+          monthlyRent: 35000, // 月租金
+          deposit: 70000, // 押金（兩個月租金）
+          contractStartDate: '2025-03-01', // 合約開始日期
+          contractEndDate: '2027-02-28', // 合約結束日期
+          paymentDay: 10, // 每月10號付款
+          notes: '部分樓層租用'
+        },
       }
     ],
     electricityRate: 6,

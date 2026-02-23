@@ -85,10 +85,10 @@ export default function Reports() {
     return { totalRent, totalDeposit, pendingAmount, paidAmount }
   }
   
-  // 計算水電收支統計
+  // 計算水電收支統計（包含物業租用成本）
   const calculateUtilityStats = () => {
     const property = currentProperty || state.data.properties[0]
-    if (!property) return { taipowerTotal: 0, waterTotal: 0, rentTotal: 0, incomeTotal: 0, netProfit: 0 }
+    if (!property) return { taipowerTotal: 0, waterTotal: 0, rentTotal: 0, propertyRentalCost: 0, incomeTotal: 0, netProfit: 0 }
     
     const utilityExpenses = property.utilityExpenses || []
     const additionalIncomes = property.additionalIncomes || []
@@ -140,12 +140,43 @@ export default function Reports() {
       .filter(e => e.type === 'rent')
       .reduce((sum, e) => sum + e.amount, 0)
     
+    // 計算物業租用成本（包含押金攤提）
+    let propertyRentalCost = 0
+    if (property.propertyRentalCost) {
+      const { monthlyRent, deposit, contractStartDate, contractEndDate } = property.propertyRentalCost
+      
+      // 計算合約總月數
+      const startDate = new Date(contractStartDate)
+      const endDate = new Date(contractEndDate)
+      const totalMonths = (endDate.getFullYear() - startDate.getFullYear()) * 12 + (endDate.getMonth() - startDate.getMonth()) + 1
+      
+      // 計算每月押金攤提
+      const monthlyDepositAmortization = deposit / totalMonths
+      
+      // 根據時間範圍計算成本
+      if (timeRange === 'year') {
+        // 計算該年份的月數（假設合約涵蓋整個年份）
+        const monthsInYear = 12
+        propertyRentalCost = (monthlyRent + monthlyDepositAmortization) * monthsInYear
+      } else if (timeRange === 'quarter') {
+        // 計算該季度的月數
+        const monthsInQuarter = 3
+        propertyRentalCost = (monthlyRent + monthlyDepositAmortization) * monthsInQuarter
+      } else if (timeRange === 'month') {
+        // 計算該月份的成本
+        propertyRentalCost = monthlyRent + monthlyDepositAmortization
+      } else {
+        // 'all' - 計算合約期間總成本
+        propertyRentalCost = (monthlyRent + monthlyDepositAmortization) * totalMonths
+      }
+    }
+    
     const incomeTotal = filteredIncomes
       .reduce((sum, i) => sum + i.amount, 0)
     
-    const netProfit = incomeTotal - (taipowerTotal + waterTotal + rentTotal)
+    const netProfit = incomeTotal - (taipowerTotal + waterTotal + rentTotal + propertyRentalCost)
     
-    return { taipowerTotal, waterTotal, rentTotal, incomeTotal, netProfit }
+    return { taipowerTotal, waterTotal, rentTotal, propertyRentalCost, incomeTotal, netProfit }
   }
   
   // 計算維護裝修統計
@@ -191,14 +222,14 @@ export default function Reports() {
     return { totalCost, completedCount, pendingCount, avgCost }
   }
   
-  // 計算綜合統計
+  // 計算綜合統計（包含物業租用成本）
   const calculateSummaryStats = () => {
     const rentalStats = calculateRentalStats()
     const utilityStats = calculateUtilityStats()
     const maintenanceStats = calculateMaintenanceStats()
     
     const totalIncome = rentalStats.paidAmount + utilityStats.incomeTotal
-    const totalExpense = utilityStats.taipowerTotal + utilityStats.waterTotal + utilityStats.rentTotal + maintenanceStats.totalCost
+    const totalExpense = utilityStats.taipowerTotal + utilityStats.waterTotal + utilityStats.rentTotal + utilityStats.propertyRentalCost + maintenanceStats.totalCost
     const netProfit = totalIncome - totalExpense
     
     return {
@@ -207,8 +238,9 @@ export default function Reports() {
       netProfit,
       rentalIncome: rentalStats.paidAmount,
       utilityIncome: utilityStats.incomeTotal,
-      utilityExpense: utilityStats.taipowerTotal + utilityStats.waterTotal + utilityStats.rentTotal,
-      maintenanceExpense: maintenanceStats.totalCost
+      utilityExpense: utilityStats.taipowerTotal + utilityStats.waterTotal + utilityStats.rentTotal + utilityStats.propertyRentalCost,
+      maintenanceExpense: maintenanceStats.totalCost,
+      propertyRentalCost: utilityStats.propertyRentalCost
     }
   }
   
@@ -511,6 +543,15 @@ export default function Reports() {
                 <div className="flex justify-between items-center">
                   <span>{t('waterBill', state.lang)}</span>
                   <span className="font-bold text-red-600">{formatCurrency(utilityStats.waterTotal)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>{t('rentExpense', state.lang)}</span>
+                  <span className="font-bold text-red-600">{formatCurrency(utilityStats.rentTotal)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>{t('propertyRentalCost', state.lang)}</span>
+                  <span className="font-bold text-red-600">{formatCurrency(utilityStats.propertyRentalCost)}</span>
+                  <span className="text-xs text-gray-500">（含押金攤提）</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span>{t('maintenanceCost', state.lang)}</span>

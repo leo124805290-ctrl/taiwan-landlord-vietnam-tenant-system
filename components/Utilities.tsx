@@ -233,7 +233,7 @@ export default function Utilities() {
     <div className="space-y-6">
       {/* 頁面標題 */}
       <div className="flex justify-between items-center mb-2">
-        <h1 className="text-2xl font-bold">💰 {t('utilityExpenses', state.lang)} & {t('additionalIncomes', state.lang)}</h1>
+        <h1 className="text-2xl font-bold">💰 {t('utilityExpenses', state.lang)}</h1>
         <div className="text-sm text-gray-600">
           {state.currentProperty === null 
             ? `${state.data.properties.length} ${t('properties', state.lang)}`

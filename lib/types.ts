@@ -100,6 +100,15 @@ export interface Property {
   meterHistory?: MeterReadingRecord[]; // 抄錶歷史記錄
   utilityExpenses?: UtilityExpense[]; // 水電支出記錄
   additionalIncomes?: AdditionalIncome[]; // 補充收入記錄
+  // 物業租用成本（二房東需要支付給房東的成本）
+  propertyRentalCost?: {
+    monthlyRent: number; // 月租金
+    deposit: number; // 押金
+    contractStartDate: string; // 合約開始日期
+    contractEndDate: string; // 合約結束日期
+    paymentDay: number; // 每月付款日（1-31）
+    notes?: string; // 備註
+  };
 }
 
 // 抄錶記錄
