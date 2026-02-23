@@ -660,6 +660,138 @@ export default function Modal() {
                 <label className="block text-sm mb-1">{t('moveOutDate', state.lang)}</label>
                 <input type="date" id="moveOutDate" defaultValue={new Date().toISOString().split('T')[0]} className="input-field" />
               </div>
+              
+              {/* 其他扣款項目 */}
+              <div className="border-t border-gray-200 pt-4">
+                <div className="font-bold text-lg mb-3">📝 {t('otherDeductions', state.lang)}</div>
+                <div className="space-y-3">
+                  {/* 扣款項目1 */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <div className="text-sm text-gray-600 mb-1">{t('deductionReason', state.lang)}</div>
+                      <select id="deductionReason1" className="w-full input-field">
+                        <option value="">{t('selectDeductionReason', state.lang)}</option>
+                        <option value="repair">{t('repairFee', state.lang)}</option>
+                        <option value="cleaning">{t('cleaningFee', state.lang)}</option>
+                        <option value="damage">{t('damageCompensation', state.lang)}</option>
+                        <option value="late">{t('lateFee', state.lang)}</option>
+                        <option value="other">{t('otherFee', state.lang)}</option>
+                      </select>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-600 mb-1">{t('amount', state.lang)}</div>
+                      <input 
+                        type="number" 
+                        id="deductionAmount1" 
+                        className="w-full input-field" 
+                        placeholder="0"
+                        min="0"
+                      />
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-600 mb-1">{t('notes', state.lang)}</div>
+                      <input 
+                        type="text" 
+                        id="deductionNotes1" 
+                        className="w-full input-field" 
+                        placeholder={t('optionalNotes', state.lang)}
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* 扣款項目2 */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <select id="deductionReason2" className="w-full input-field">
+                        <option value="">{t('selectDeductionReason', state.lang)}</option>
+                        <option value="repair">{t('repairFee', state.lang)}</option>
+                        <option value="cleaning">{t('cleaningFee', state.lang)}</option>
+                        <option value="damage">{t('damageCompensation', state.lang)}</option>
+                        <option value="late">{t('lateFee', state.lang)}</option>
+                        <option value="other">{t('otherFee', state.lang)}</option>
+                      </select>
+                    </div>
+                    <div>
+                      <input 
+                        type="number" 
+                        id="deductionAmount2" 
+                        className="w-full input-field" 
+                        placeholder="0"
+                        min="0"
+                      />
+                    </div>
+                    <div>
+                      <input 
+                        type="text" 
+                        id="deductionNotes2" 
+                        className="w-full input-field" 
+                        placeholder={t('optionalNotes', state.lang)}
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* 扣款項目3 */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <select id="deductionReason3" className="w-full input-field">
+                        <option value="">{t('selectDeductionReason', state.lang)}</option>
+                        <option value="repair">{t('repairFee', state.lang)}</option>
+                        <option value="cleaning">{t('cleaningFee', state.lang)}</option>
+                        <option value="damage">{t('damageCompensation', state.lang)}</option>
+                        <option value="late">{t('lateFee', state.lang)}</option>
+                        <option value="other">{t('otherFee', state.lang)}</option>
+                      </select>
+                    </div>
+                    <div>
+                      <input 
+                        type="number" 
+                        id="deductionAmount3" 
+                        className="w-full input-field" 
+                        placeholder="0"
+                        min="0"
+                      />
+                    </div>
+                    <div>
+                      <input 
+                        type="text" 
+                        id="deductionNotes3" 
+                        className="w-full input-field" 
+                        placeholder={t('optionalNotes', state.lang)}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="text-xs text-gray-500 mt-2">
+                  💡 {t('deductionsWillBeRecorded', state.lang)}
+                </div>
+              </div>
+              
+              {/* 押金結算顯示 */}
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <div className="font-bold text-amber-800 mb-2">💰 {t('depositSettlement', state.lang)}</div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>{t('originalDeposit', state.lang)}:</span>
+                    <span className="font-bold">{formatCurrency(moveOutRoom.d || 0)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>{t('totalDeductions', state.lang)}:</span>
+                    <span className="font-bold text-red-600" id="totalDeductionsDisplay">
+                      {formatCurrency(totalDue)} {/* 初始顯示待付款總額 */}
+                    </span>
+                  </div>
+                  <div className="border-t border-amber-300 my-2"></div>
+                  <div className="flex justify-between text-lg font-bold">
+                    <span>{t('depositToReturn', state.lang)}:</span>
+                    <span className="text-green-600" id="depositToReturnDisplay">
+                      {formatCurrency(Math.max(0, (moveOutRoom.d || 0) - totalDue))}
+                    </span>
+                  </div>
+                  <div className="text-xs text-amber-600 mt-2">
+                    ⚠️ {t('depositReturnReminder', state.lang)}
+                  </div>
+                </div>
+              </div>
             </div>
             <div className="flex gap-2 mt-4">
               <button onClick={closeModal} className="flex-1 btn bg-gray-200">
@@ -2476,12 +2608,55 @@ export default function Modal() {
     // 計算總費用（所有待繳費用 + 最後電費）
     const totalPending = pendingPayments.reduce((sum: number, p: any) => sum + p.total, 0)
     const totalDue = totalPending + electricityFee
+    
+    // 收集其他扣款項目
+    const otherDeductions: Array<{reason: string, amount: number, notes: string}> = []
+    let totalOtherDeductions = 0
+    
+    for (let i = 1; i <= 3; i++) {
+      const reasonSelect = document.getElementById(`deductionReason${i}`) as HTMLSelectElement
+      const amountInput = document.getElementById(`deductionAmount${i}`) as HTMLInputElement
+      const notesInput = document.getElementById(`deductionNotes${i}`) as HTMLInputElement
+      
+      const reason = reasonSelect?.value || ''
+      const amount = parseFloat(amountInput?.value || '0')
+      const notes = notesInput?.value || ''
+      
+      if (reason && amount > 0) {
+        otherDeductions.push({
+          reason: getDeductionReasonText(reason, state.lang),
+          amount: amount,
+          notes: notes
+        })
+        totalOtherDeductions += amount
+      }
+    }
+    
+    // 總扣款 = 待繳費用 + 最後電費 + 其他扣款
+    const totalDeductions = totalDue + totalOtherDeductions
 
-    // 確認繳費（如果總費用大於0）
+    // 確認繳費和扣款（如果總扣款大於0）
     let feesPaid = false
-    if (totalDue > 0) {
-      const confirmMessage = `💰 ${t('totalDue', state.lang)}: ${formatCurrency(totalDue)}\n\n`
-        + `${t('confirmPaymentAndMoveOut', state.lang)}`
+    if (totalDeductions > 0) {
+      let confirmMessage = `💰 ${t('totalDeductions', state.lang)}: ${formatCurrency(totalDeductions)}\n\n`
+      
+      // 顯示詳細扣款項目
+      if (totalPending > 0) {
+        confirmMessage += `🏠 ${t('unpaidPayments', state.lang)}: ${formatCurrency(totalPending)}\n`
+      }
+      if (electricityFee > 0) {
+        confirmMessage += `⚡ ${t('finalElectricityFee', state.lang)}: ${formatCurrency(electricityFee)}\n`
+      }
+      if (totalOtherDeductions > 0) {
+        confirmMessage += `📝 ${t('otherDeductions', state.lang)}: ${formatCurrency(totalOtherDeductions)}\n`
+        otherDeductions.forEach(d => {
+          confirmMessage += `  • ${d.reason}: ${formatCurrency(d.amount)}${d.notes ? ` (${d.notes})` : ''}\n`
+        })
+      }
+      
+      confirmMessage += `\n💰 ${t('originalDeposit', state.lang)}: ${formatCurrency(room.d || 0)}\n`
+      confirmMessage += `💰 ${t('depositToReturn', state.lang)}: ${formatCurrency(Math.max(0, (room.d || 0) - totalDeductions))}\n\n`
+      confirmMessage += `${t('confirmPaymentAndMoveOut', state.lang)}`
       
       if (!confirm(confirmMessage)) {
         alert(t('moveOutCancelled', state.lang))
@@ -2536,6 +2711,27 @@ export default function Modal() {
       }
       
       updatedHistory.push(finalElectricityPayment)
+    }
+    
+    // 將其他扣款記錄到「其他收入」中
+    let updatedAdditionalIncomes = property.additionalIncomes || []
+    if (otherDeductions.length > 0) {
+      const incomeId = Math.max(...updatedAdditionalIncomes.map((i: any) => i.id), 0) + 1
+      const today = new Date().toISOString().split('T')[0]
+      
+      otherDeductions.forEach((deduction, index) => {
+        const deductionIncome = {
+          id: incomeId + index,
+          date: today,
+          type: 'other',
+          amount: deduction.amount,
+          notes: `退租扣款 - ${deduction.reason}: ${deduction.notes || '無備註'}`,
+          relatedRoom: room.n,
+          relatedTenant: room.t || '',
+          isMoveOutDeduction: true
+        }
+        updatedAdditionalIncomes.push(deductionIncome)
+      })
     }
     
     // 創建電表抄寫記錄（同步電表讀數）
@@ -2597,7 +2793,9 @@ export default function Modal() {
             // 更新歷史記錄
             history: updatedHistory,
             // 更新電表抄寫歷史
-            meterHistory: updatedMeterHistory
+            meterHistory: updatedMeterHistory,
+            // 更新其他收入（扣款記錄）
+            additionalIncomes: updatedAdditionalIncomes
           }
         : p
     )
@@ -2605,11 +2803,33 @@ export default function Modal() {
     updateData({ properties: updatedProperties })
     
     // 顯示成功訊息
-    if (totalDue > 0) {
-      alert(`✅ ${t('moveOutCompleted', state.lang)}\n\n💰 ${t('totalDue', state.lang)}: ${formatCurrency(totalDue)}\n📝 ${t('allFeesPaid', state.lang)}`)
+    let successMessage = `✅ ${t('moveOutCompleted', state.lang)}\n\n`
+    
+    if (totalDeductions > 0) {
+      successMessage += `💰 ${t('totalDeductions', state.lang)}: ${formatCurrency(totalDeductions)}\n`
+      
+      if (totalPending > 0) {
+        successMessage += `  🏠 ${t('unpaidPayments', state.lang)}: ${formatCurrency(totalPending)}\n`
+      }
+      if (electricityFee > 0) {
+        successMessage += `  ⚡ ${t('finalElectricityFee', state.lang)}: ${formatCurrency(electricityFee)}\n`
+      }
+      if (totalOtherDeductions > 0) {
+        successMessage += `  📝 ${t('otherDeductions', state.lang)}: ${formatCurrency(totalOtherDeductions)}\n`
+      }
+      
+      successMessage += `\n💰 ${t('originalDeposit', state.lang)}: ${formatCurrency(room.d || 0)}\n`
+      successMessage += `💰 ${t('depositToReturn', state.lang)}: ${formatCurrency(Math.max(0, (room.d || 0) - totalDeductions))}\n\n`
+      successMessage += `📝 ${t('allFeesPaid', state.lang)}`
+      
+      if (totalOtherDeductions > 0) {
+        successMessage += `\n\n✅ ${t('deductionsWillBeRecorded', state.lang)}`
+      }
     } else {
-      alert(t('moveOutCompleted', state.lang))
+      successMessage += t('moveOutCompleted', state.lang)
     }
+    
+    alert(successMessage)
     
     closeModal()
   }
@@ -2991,6 +3211,19 @@ export default function Modal() {
       }
     }
   }, [type, getCurrentProperty])
+
+  // 獲取扣款原因的文字描述
+  const getDeductionReasonText = (reasonCode: string, lang: string): string => {
+    const reasonMap: Record<string, Record<string, string>> = {
+      'repair': { 'zh-TW': '修復費用', 'vi-VN': 'Phí sửa chữa' },
+      'cleaning': { 'zh-TW': '清潔費用', 'vi-VN': 'Phí vệ sinh' },
+      'damage': { 'zh-TW': '損壞賠償', 'vi-VN': 'Bồi thường thiệt hại' },
+      'late': { 'zh-TW': '逾期費用', 'vi-VN': 'Phí trễ' },
+      'other': { 'zh-TW': '其他費用', 'vi-VN': 'Phí khác' }
+    }
+    
+    return reasonMap[reasonCode]?.[lang] || reasonCode
+  }
 
   // 處理單筆收款
   const processCollectPayment = (paymentId: number) => {
