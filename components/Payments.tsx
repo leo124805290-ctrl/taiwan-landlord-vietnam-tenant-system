@@ -83,6 +83,64 @@ export default function Payments({ property }: PaymentsProps) {
       alert('所有待付款記錄的電費金額已經是最新的')
     }
   }
+
+  // 更新單筆付款記錄的電費
+  const updateElectricityFee = (paymentId: number) => {
+    if (!property || !property.rooms || !property.payments) {
+      alert('無法更新電費：缺少必要數據')
+      return
+    }
+
+    // 找到要更新的付款記錄
+    const paymentToUpdate = property.payments.find((p: any) => p.id === paymentId)
+    if (!paymentToUpdate) {
+      alert('找不到要更新的付款記錄')
+      return
+    }
+
+    if (paymentToUpdate.s !== 'pending') {
+      alert('只能更新待付款記錄的電費')
+      return
+    }
+
+    // 找到對應的房間
+    const room = property.rooms.find((r: any) => r.id === paymentToUpdate.rid)
+    if (!room) {
+      alert('找不到對應的房間')
+      return
+    }
+
+    // 使用房間的最新電費數據
+    const newElectricityFee = room.elecFee || 0
+    const newUsage = room.lastMeterUsage || 0
+    const newTotal = paymentToUpdate.r + newElectricityFee
+
+    // 更新付款記錄
+    const updatedPayments = property.payments.map((payment: any) => 
+      payment.id === paymentId
+        ? {
+            ...payment,
+            u: newUsage,
+            e: newElectricityFee,
+            total: newTotal,
+            electricityRate: state.data.electricityRate
+          }
+        : payment
+    )
+
+    // 更新數據
+    const updatedProperties = state.data.properties.map(p => 
+      p.id === property.id
+        ? {
+            ...p,
+            payments: updatedPayments
+          }
+        : p
+    )
+
+    updateData({ properties: updatedProperties })
+    alert(`✅ 成功更新 ${paymentToUpdate.n} 房間的電費金額\n用電度數: ${newUsage} 度\n電費金額: ${formatCurrency(newElectricityFee)}`)
+  }
   
   const filteredPayments = allPayments.filter(p => {
     // 狀態篩選
@@ -219,7 +277,10 @@ export default function Payments({ property }: PaymentsProps) {
                   {t('rent', state.lang)} {formatCurrency(payment.r)} + 
                   {t('electricity', state.lang)} {payment.u || 0}{t('degree', state.lang)}×
                   ${payment.electricityRate || state.data.electricityRate} = 
-                  <span className="font-bold"> {formatCurrency(payment.total)}</span>
+                  <span className="font-bold text-blue-600"> {formatCurrency(payment.e || 0)}</span>
+                  <span className="ml-2">
+                    ({t('total', state.lang)}: <span className="font-bold"> {formatCurrency(payment.total)}</span>)
+                  </span>
                 </div>
                 {payment.paid && (
                   <div className="text-xs text-green-600 mt-1">
@@ -238,12 +299,23 @@ export default function Payments({ property }: PaymentsProps) {
 
             <div className="flex gap-2 mt-3">
               {payment.s === 'pending' ? (
-                <button 
-                  onClick={() => markAsPaid(payment.id)}
-                  className="flex-1 btn bg-green-600 text-white text-sm"
-                >
-                  {t('markPaid', state.lang)}
-                </button>
+                <>
+                  <button 
+                    onClick={() => markAsPaid(payment.id)}
+                    className="flex-1 btn bg-green-600 text-white text-sm"
+                  >
+                    {t('markPaid', state.lang)}
+                  </button>
+                  {(payment.e === 0 || payment.e === undefined) && (
+                    <button 
+                      onClick={() => updateElectricityFee(payment.id)}
+                      className="flex-1 btn bg-blue-100 text-blue-600 text-sm"
+                      title="從房間最新電錶數據更新電費"
+                    >
+                      ⚡ 更新電費
+                    </button>
+                  )}
+                </>
               ) : (
                 <button 
                   onClick={() => markAsUnpaid(payment.id)}
