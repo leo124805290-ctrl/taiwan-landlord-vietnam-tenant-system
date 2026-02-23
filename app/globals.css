@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 快速操作面板樣式 */
+@import '../styles/quick-actions.css';
+
 * {
   -webkit-tap-highlight-color: transparent;
   font-family: system-ui, sans-serif;

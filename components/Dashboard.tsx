@@ -5,6 +5,7 @@ import { calculateStats, analyzeElectricity, formatCurrency } from '@/lib/utils'
 import { calculateRevenueAnalysis } from '@/lib/revenueAnalysis'
 import { useApp } from '@/contexts/AppContext'
 import { useState } from 'react'
+import QuickActionsPanel from './QuickActionsPanel'
 
 interface DashboardProps {
   property: any
@@ -407,6 +408,9 @@ export default function Dashboard({ property }: DashboardProps) {
           )}
         </div>
       </div>
+
+      {/* 快速操作面板 */}
+      <QuickActionsPanel />
 
       {/* 統計卡片 */}
       <div className="grid grid-cols-2 md:grid-cols-6 gap-4">

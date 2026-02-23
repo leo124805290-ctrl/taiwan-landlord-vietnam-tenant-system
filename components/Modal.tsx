@@ -1333,6 +1333,124 @@ export default function Modal() {
           </>
         )
         
+      case 'quickCollectRent':
+        return (
+          <>
+            <h2 className="text-2xl font-bold mb-4">💰 {t('quickCollectRent', state.lang)}</h2>
+            <div className="space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-blue-600">💡</span>
+                  <span className="text-sm font-medium text-blue-800">
+                    快速收租功能開發中
+                  </span>
+                </div>
+                <p className="text-sm text-blue-700">
+                  此功能將允許您快速收取選定房間的租金，支持批量操作和多種支付方式。
+                </p>
+              </div>
+              
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm mb-1">選擇房間</label>
+                  <div className="border rounded-lg p-3 max-h-60 overflow-y-auto">
+                    {property?.rooms?.filter((r: any) => r.s === 'occupied').map((room: any) => (
+                      <div key={room.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded">
+                        <input 
+                          type="checkbox" 
+                          id={`room-${room.id}`}
+                          className="rounded"
+                        />
+                        <label htmlFor={`room-${room.id}`} className="flex-1">
+                          <div className="font-medium">{room.n}</div>
+                          <div className="text-sm text-gray-500">
+                            租金: {formatCurrency(room.r)} | 電費: {formatCurrency(room.elecFee || 0)}
+                          </div>
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm mb-1">總金額</label>
+                  <div className="text-2xl font-bold text-green-600">
+                    {formatCurrency(0)} {/* 待計算 */}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <button onClick={closeModal} className="flex-1 btn bg-gray-200">
+                {t('cancel', state.lang)}
+              </button>
+              <button onClick={closeModal} className="flex-1 btn btn-primary">
+                💰 {t('collect', state.lang)}
+              </button>
+            </div>
+          </>
+        )
+        
+      case 'batchMeterReading':
+        return (
+          <>
+            <h2 className="text-2xl font-bold mb-4">📝 {t('batchMeterReading', state.lang)}</h2>
+            <div className="space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-blue-600">💡</span>
+                  <span className="text-sm font-medium text-blue-800">
+                    批量抄錶功能開發中
+                  </span>
+                </div>
+                <p className="text-sm text-blue-700">
+                  此功能將允許您一次記錄多個房間的電錶讀數，自動計算電費。
+                </p>
+              </div>
+              
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm mb-1">選擇房間</label>
+                  <div className="border rounded-lg p-3 max-h-60 overflow-y-auto">
+                    {property?.rooms?.filter((r: any) => r.s === 'occupied').map((room: any) => (
+                      <div key={room.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded">
+                        <input 
+                          type="checkbox" 
+                          id={`meter-room-${room.id}`}
+                          className="rounded"
+                        />
+                        <label htmlFor={`meter-room-${room.id}`} className="flex-1">
+                          <div className="font-medium">{room.n}</div>
+                          <div className="text-sm text-gray-500">
+                            上期讀數: {room.lastMeter || 0} | 電費單價: {room.elecRate || 5}元/度
+                          </div>
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm mb-1">抄錶日期</label>
+                  <input 
+                    type="date" 
+                    className="input-field"
+                    defaultValue={new Date().toISOString().split('T')[0]}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <button onClick={closeModal} className="flex-1 btn bg-gray-200">
+                {t('cancel', state.lang)}
+              </button>
+              <button onClick={closeModal} className="flex-1 btn btn-primary">
+                📝 {t('record', state.lang)}
+              </button>
+            </div>
+          </>
+        )
+        
       default:
         return (
           <div className="text-center py-8">

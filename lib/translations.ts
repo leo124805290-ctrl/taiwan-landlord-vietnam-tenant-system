@@ -438,6 +438,13 @@ export const translations: Translation = {
     propertyRentalCost: '物業租用成本',
     propertyRentalCostDescription: '租用該物業的總成本，包含月租金和押金攤提',
     addRentExpense: '新增租金支出',
+    quickActions: '快速操作',
+    quickCollectRent: '快速收租',
+    batchMeterReading: '批量抄錶',
+    actionsAvailable: '個操作可用',
+    notAvailable: '暫不可用',
+    quickActionsTip: '點擊圖標快速完成日常操作',
+    record: '記錄',
   },
   'vi-VN': {
     system: 'Hệ thống Quản lý Đa BĐS',
@@ -880,6 +887,13 @@ export const translations: Translation = {
     propertyRentalCost: 'Chi phí thuê tài sản',
     propertyRentalCostDescription: 'Tổng chi phí thuê tài sản, bao gồm tiền thuê hàng tháng và khấu hao tiền đặt cọc',
     addRentExpense: 'Thêm tiền thuê',
+    quickActions: 'Thao tác nhanh',
+    quickCollectRent: 'Thu tiền thuê nhanh',
+    batchMeterReading: 'Ghi số điện hàng loạt',
+    actionsAvailable: 'thao tác khả dụng',
+    notAvailable: 'Tạm không khả dụng',
+    quickActionsTip: 'Nhấp vào biểu tượng để hoàn thành thao tác hàng ngày nhanh chóng',
+    record: 'Ghi',
   }
 };
 

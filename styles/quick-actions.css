@@ -1,0 +1,112 @@
+/* 快速操作面板樣式 */
+.quick-actions-panel {
+  animation: slideIn 0.3s ease-out;
+}
+
+.quick-action-btn {
+  position: relative;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.quick-action-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.quick-action-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.quick-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 動畫效果 */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 響應式調整 */
+@media (max-width: 640px) {
+  .quick-action-btn {
+    padding: 0.75rem !important;
+  }
+  
+  .quick-action-btn .text-2xl {
+    font-size: 1.5rem;
+  }
+  
+  .quick-action-btn .text-sm {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .quick-actions-panel .grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.5rem;
+  }
+}
+
+/* 顏色主題 */
+.bg-gradient-to-br {
+  background-size: 200% 200%;
+  background-position: 0% 0%;
+  transition: background-position 0.3s ease;
+}
+
+.quick-action-btn:hover:not(:disabled) .bg-gradient-to-br {
+  background-position: 100% 100%;
+}
+
+/* 閃爍動畫用於新功能提示 */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+  }
+}
+
+.new-feature {
+  animation: pulse-glow 2s infinite;
+}
+
+/* 工具提示樣式 */
+.quick-action-btn[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  z-index: 50;
+  margin-bottom: 0.5rem;
+}
+
+.quick-action-btn[title]:hover::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 0.5rem solid transparent;
+  border-top-color: rgba(0, 0, 0, 0.8);
+  margin-bottom: -0.5rem;
+  z-index: 50;
+}
