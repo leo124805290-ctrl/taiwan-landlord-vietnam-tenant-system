@@ -11,27 +11,103 @@ interface PaymentsProps {
 
 export default function Payments({ property }: PaymentsProps) {
   const { state, updateState, updateData } = useApp()
+  
+  // 獲取所有付款記錄（待付款 + 歷史）
   const allPayments = [...property.payments, ...(property.history || [])]
     .sort((a, b) => (b.paid || b.due).localeCompare(a.paid || a.due))
 
-  // 獲取所有唯一的月份和房間
+  // 獲取所有唯一的月份、房間和租客（用於篩選）
   const allMonths = Array.from(new Set(allPayments.map((p: any) => p.m))).sort().reverse()
   const allRooms = Array.from(new Set(allPayments.map((p: any) => p.n))).sort()
+  const allTenants = Array.from(new Set(allPayments.map((p: any) => p.t))).sort()
   
-  // 使用本地狀態管理篩選（因為 AppState 中沒有這些屬性）
-  const [localFilter, setLocalFilter] = React.useState<'all' | 'unpaid' | 'paid'>(state.filter || 'all')
+  // 篩選狀態
   const [monthFilter, setMonthFilter] = React.useState('all')
   const [roomFilter, setRoomFilter] = React.useState('all')
+  const [tenantFilter, setTenantFilter] = React.useState('all')
+  const [statusFilter, setStatusFilter] = React.useState<'all' | 'pending' | 'paid'>('pending')
   const [searchTerm, setSearchTerm] = React.useState('')
 
-  // 重新計算電費函數
+  // 篩選付款記錄
+  const filteredPayments = allPayments.filter(payment => {
+    // 月份篩選
+    if (monthFilter && monthFilter !== 'all' && payment.m !== monthFilter) return false
+    
+    // 房間篩選
+    if (roomFilter && roomFilter !== 'all' && payment.n !== roomFilter) return false
+    
+    // 租客篩選
+    if (tenantFilter && tenantFilter !== 'all' && payment.t !== tenantFilter) return false
+    
+    // 狀態篩選
+    if (statusFilter === 'pending' && payment.s !== 'pending') return false
+    if (statusFilter === 'paid' && payment.s !== 'paid') return false
+    
+    // 搜索篩選
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase()
+      const roomName = payment.n?.toLowerCase() || ''
+      const tenantName = payment.t?.toLowerCase() || ''
+      const month = payment.m?.toLowerCase() || ''
+      
+      if (!roomName.includes(term) && 
+          !tenantName.includes(term) && 
+          !month.includes(term)) {
+        return false
+      }
+    }
+    
+    return true
+  })
+
+  // 按房號排序
+  const sortedPayments = [...filteredPayments].sort((a, b) => {
+    // 先按房號排序
+    const roomCompare = (a.n || '').localeCompare(b.n || '')
+    if (roomCompare !== 0) return roomCompare
+    
+    // 房號相同時按月份排序
+    return (b.m || '').localeCompare(a.m || '')
+  })
+
+  // 計算統計
+  const pendingPayments = sortedPayments.filter(p => p.s === 'pending')
+  const totalPendingAmount = pendingPayments.reduce((sum: number, p: any) => sum + p.total, 0)
+  const totalPendingRooms = new Set(pendingPayments.map(p => p.n)).size
+
+  // 收款函數
+  const collectPayment = (payment: any) => {
+    // 設置當前要收款的記錄
+    updateState({ 
+      modal: {
+        type: 'collectPayment',
+        data: {
+          paymentId: payment.id,
+          roomNumber: payment.n,
+          tenantName: payment.t,
+          month: payment.m,
+          rentAmount: payment.r,
+          currentElectricityFee: payment.e || 0,
+          currentElectricityUsage: payment.u || 0,
+          lastMeterReading: getLastMeterReading(payment.rid)
+        }
+      }
+    })
+  }
+
+  // 獲取房間的上期電錶讀數
+  const getLastMeterReading = (roomId: number) => {
+    const room = property.rooms.find((r: any) => r.id === roomId)
+    return room?.lastMeter || room?.lm || 0
+  }
+
+  // 重新計算電費函數（保留現有功能）
   const recalculateElectricityFees = () => {
     if (!property || !property.rooms || !property.payments) {
       alert('無法重新計算電費：缺少必要數據')
       return
     }
 
-    // 獲取所有待付款記錄
     const pendingPayments = property.payments.filter((p: any) => p.s === 'pending')
     if (pendingPayments.length === 0) {
       alert('目前沒有待付款記錄需要重新計算')
@@ -39,23 +115,19 @@ export default function Payments({ property }: PaymentsProps) {
     }
 
     let updatedCount = 0
-    
-    // 更新付款記錄
     const updatedPayments = property.payments.map((payment: any) => {
       if (payment.s === 'pending') {
-        // 找到對應的房間
         const room = property.rooms.find((r: any) => r.id === payment.rid)
         if (room && room.elecFee !== undefined) {
-          // 使用房間的最新電費
           const newElectricityFee = room.elecFee || 0
+          const newUsage = room.lastMeterUsage || 0
           const newTotal = payment.r + newElectricityFee
           
-          // 如果電費有變化，則更新
           if (payment.e !== newElectricityFee) {
             updatedCount++
             return {
               ...payment,
-              u: room.lastMeterUsage || 0,
+              u: newUsage,
               e: newElectricityFee,
               total: newTotal,
               electricityRate: state.data.electricityRate
@@ -67,16 +139,11 @@ export default function Payments({ property }: PaymentsProps) {
     })
 
     if (updatedCount > 0) {
-      // 更新數據
       const updatedProperties = state.data.properties.map(p => 
         p.id === property.id
-          ? {
-              ...p,
-              payments: updatedPayments
-            }
+          ? { ...p, payments: updatedPayments }
           : p
       )
-
       updateData({ properties: updatedProperties })
       alert(`✅ 成功更新 ${updatedCount} 筆待付款記錄的電費金額`)
     } else {
@@ -84,14 +151,13 @@ export default function Payments({ property }: PaymentsProps) {
     }
   }
 
-  // 更新單筆付款記錄的電費
+  // 更新單筆電費
   const updateElectricityFee = (paymentId: number) => {
     if (!property || !property.rooms || !property.payments) {
       alert('無法更新電費：缺少必要數據')
       return
     }
 
-    // 找到要更新的付款記錄
     const paymentToUpdate = property.payments.find((p: any) => p.id === paymentId)
     if (!paymentToUpdate) {
       alert('找不到要更新的付款記錄')
@@ -103,19 +169,16 @@ export default function Payments({ property }: PaymentsProps) {
       return
     }
 
-    // 找到對應的房間
     const room = property.rooms.find((r: any) => r.id === paymentToUpdate.rid)
     if (!room) {
       alert('找不到對應的房間')
       return
     }
 
-    // 使用房間的最新電費數據
     const newElectricityFee = room.elecFee || 0
     const newUsage = room.lastMeterUsage || 0
     const newTotal = paymentToUpdate.r + newElectricityFee
 
-    // 更新付款記錄
     const updatedPayments = property.payments.map((payment: any) => 
       payment.id === paymentId
         ? {
@@ -128,69 +191,32 @@ export default function Payments({ property }: PaymentsProps) {
         : payment
     )
 
-    // 更新數據
     const updatedProperties = state.data.properties.map(p => 
       p.id === property.id
-        ? {
-            ...p,
-            payments: updatedPayments
-          }
+        ? { ...p, payments: updatedPayments }
         : p
     )
 
     updateData({ properties: updatedProperties })
     alert(`✅ 成功更新 ${paymentToUpdate.n} 房間的電費金額\n用電度數: ${newUsage} 度\n電費金額: ${formatCurrency(newElectricityFee)}`)
   }
-  
-  const filteredPayments = allPayments.filter(p => {
-    // 狀態篩選
-    if (localFilter === 'unpaid' && p.s !== 'pending') return false
-    if (localFilter === 'paid' && p.s !== 'paid') return false
-    
-    // 月份篩選
-    if (monthFilter && monthFilter !== 'all' && p.m !== monthFilter) return false
-    
-    // 房間篩選
-    if (roomFilter && roomFilter !== 'all' && p.n !== roomFilter) return false
-    
-    // 搜索篩選
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase()
-      const roomName = p.n?.toLowerCase() || ''
-      const tenantName = p.t?.toLowerCase() || ''
-      const month = p.m?.toLowerCase() || ''
-      const notes = p.notes?.toLowerCase() || ''
-      
-      if (!roomName.includes(term) && 
-          !tenantName.includes(term) && 
-          !month.includes(term) && 
-          !notes.includes(term)) {
-        return false
-      }
-    }
-    
-    return true
-  })
 
   return (
     <div className="space-y-4">
+      {/* 頁面標題 */}
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <span>💰</span>
+          {t('paymentsTab', state.lang)}
+        </h1>
+        <div className="text-sm text-gray-500">
+          {property.name} - {totalPendingRooms} {t('rooms', state.lang)} {t('pendingPayment', state.lang)}
+        </div>
+      </div>
+
       {/* 篩選面板 */}
       <div className="card p-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          {/* 狀態篩選 */}
-          <div>
-            <div className="text-sm text-gray-600 mb-1">{t('status', state.lang)}</div>
-            <select 
-              value={localFilter}
-              onChange={(e) => setLocalFilter(e.target.value as 'all' | 'unpaid' | 'paid')}
-              className="w-full input-field"
-            >
-              <option value="all">{t('all', state.lang)}</option>
-              <option value="unpaid">{t('unpaid', state.lang)}</option>
-              <option value="paid">{t('paid', state.lang)}</option>
-            </select>
-          </div>
-          
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
           {/* 月份篩選 */}
           <div>
             <div className="text-sm text-gray-600 mb-1">{t('month', state.lang)}</div>
@@ -221,6 +247,35 @@ export default function Payments({ property }: PaymentsProps) {
             </select>
           </div>
           
+          {/* 租客篩選 */}
+          <div>
+            <div className="text-sm text-gray-600 mb-1">{t('tenant', state.lang)}</div>
+            <select 
+              value={tenantFilter}
+              onChange={(e) => setTenantFilter(e.target.value)}
+              className="w-full input-field"
+            >
+              <option value="all">{t('allTenants', state.lang)}</option>
+              {allTenants.map(tenant => (
+                <option key={tenant} value={tenant}>{tenant}</option>
+              ))}
+            </select>
+          </div>
+          
+          {/* 狀態篩選 */}
+          <div>
+            <div className="text-sm text-gray-600 mb-1">{t('status', state.lang)}</div>
+            <select 
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as any)}
+              className="w-full input-field"
+            >
+              <option value="pending">{t('pending', state.lang)}</option>
+              <option value="paid">{t('paid', state.lang)}</option>
+              <option value="all">{t('all', state.lang)}</option>
+            </select>
+          </div>
+          
           {/* 搜索 */}
           <div>
             <div className="text-sm text-gray-600 mb-1">{t('search', state.lang)}</div>
@@ -234,11 +289,18 @@ export default function Payments({ property }: PaymentsProps) {
           </div>
         </div>
         
-        {/* 操作按鈕 */}
+        {/* 操作按鈕和統計 */}
         <div className="mt-4 pt-4 border-t border-gray-200">
           <div className="flex justify-between items-center">
             <div className="text-sm">
-              {t('totalRecords', state.lang)}: <span className="font-bold">{filteredPayments.length}</span>
+              {t('totalRecords', state.lang)}: <span className="font-bold">{sortedPayments.length}</span>
+              {statusFilter === 'pending' && (
+                <span className="ml-4">
+                  {t('pendingAmount', state.lang)}: <span className="font-bold text-red-600">
+                    {formatCurrency(totalPendingAmount)}
+                  </span>
+                </span>
+              )}
             </div>
             <div className="flex gap-2">
               <button
@@ -246,187 +308,121 @@ export default function Payments({ property }: PaymentsProps) {
                 className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
                 title="根據最新電錶讀數重新計算待付款電費"
               >
-                🔄 重新計算電費
+                🔄 {t('recalculateElectricity', state.lang)}
               </button>
-            </div>
-          </div>
-          <div className="flex justify-between text-sm mt-2">
-            <div>
-              {t('pendingAmount', state.lang)}: <span className="font-bold text-red-600">
-                {formatCurrency(filteredPayments.filter((p: any) => p.s === 'pending').reduce((sum: number, p: any) => sum + p.total, 0))}
-              </span>
-            </div>
-            <div className="text-xs text-gray-500">
-              點擊按鈕更新待付款電費金額
             </div>
           </div>
         </div>
       </div>
 
-      {/* 付款列表 */}
+      {/* 待收款列表 */}
       <div className="space-y-3">
-        {filteredPayments.map(payment => (
-          <div key={payment.id} className="card">
-            <div className="flex justify-between">
-              <div className="flex-1">
-                <div className="font-bold text-lg">
-                  {payment.n} - {payment.t}
-                </div>
-                <div className="text-sm text-gray-600">{payment.m}</div>
-                <div className="text-sm mt-2">
-                  {t('rent', state.lang)} {formatCurrency(payment.r)} + 
-                  {t('electricity', state.lang)} {payment.u || 0}{t('degree', state.lang)}×
-                  ${payment.electricityRate || state.data.electricityRate} = 
-                  <span className="font-bold text-blue-600"> {formatCurrency(payment.e || 0)}</span>
-                  <span className="ml-2">
-                    ({t('total', state.lang)}: <span className="font-bold"> {formatCurrency(payment.total)}</span>)
-                  </span>
-                </div>
-                {payment.paid && (
-                  <div className="text-xs text-green-600 mt-1">
-                    ✓ {payment.paid} {t('paidOn', state.lang)}
-                  </div>
-                )}
-              </div>
-              <span className={`badge ${
-                payment.s === 'paid' 
-                  ? 'bg-green-100 text-green-700' 
-                  : 'bg-yellow-100 text-yellow-700'
-              } ml-4 h-fit`}>
-                {t(payment.s, state.lang)}
-              </span>
+        {sortedPayments.length === 0 ? (
+          <div className="card text-center py-8">
+            <div className="text-4xl mb-3">📭</div>
+            <div className="text-lg font-bold text-gray-600">
+              {statusFilter === 'pending' 
+                ? t('noPendingPayments', state.lang)
+                : t('noPaymentsFound', state.lang)}
             </div>
-
-            <div className="flex gap-2 mt-3">
-              {payment.s === 'pending' ? (
-                <>
-                  <button 
-                    onClick={() => markAsPaid(payment.id)}
-                    className="flex-1 btn bg-green-600 text-white text-sm"
-                  >
-                    {t('markPaid', state.lang)}
-                  </button>
-                  {(payment.e === 0 || payment.e === undefined) && (
-                    <button 
-                      onClick={() => updateElectricityFee(payment.id)}
-                      className="flex-1 btn bg-blue-100 text-blue-600 text-sm"
-                      title="從房間最新電錶數據更新電費"
-                    >
-                      ⚡ 更新電費
-                    </button>
-                  )}
-                </>
-              ) : (
-                <button 
-                  onClick={() => markAsUnpaid(payment.id)}
-                  className="flex-1 btn bg-orange-100 text-orange-700 text-sm"
-                >
-                  {t('markUnpaid', state.lang)}
-                </button>
-              )}
-              <button 
-                onClick={() => deletePayment(payment.id)}
-                className="flex-1 btn bg-red-100 text-red-600 text-sm"
-              >
-                {t('delete', state.lang)}
-              </button>
+            <div className="text-sm text-gray-500 mt-1">
+              {statusFilter === 'pending'
+                ? t('noPendingPaymentsDescription', state.lang)
+                : t('noPaymentsFoundDescription', state.lang)}
             </div>
           </div>
-        ))}
+        ) : (
+          sortedPayments.map(payment => (
+            <div key={payment.id} className="card hover:bg-gray-50">
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  {/* 房號和租客姓名 */}
+                  <div className="font-bold text-lg">
+                    {payment.n} - {payment.t}
+                    <span className="ml-3 text-sm font-normal text-gray-600">
+                      {payment.m}
+                    </span>
+                  </div>
+                  
+                  {/* 金額明細 */}
+                  <div className="mt-2">
+                    <div className="text-sm">
+                      <span className="text-gray-700">🏠 {t('rent', state.lang)}: </span>
+                      <span className="font-bold">{formatCurrency(payment.r)}</span>
+                      
+                      <span className="mx-2">+</span>
+                      
+                      <span className="text-gray-700">⚡ {t('electricity', state.lang)}: </span>
+                      <span className="font-bold text-blue-600">{formatCurrency(payment.e || 0)}</span>
+                      
+                      <span className="mx-2">=</span>
+                      
+                      <span className="text-gray-700">💰 {t('total', state.lang)}: </span>
+                      <span className="font-bold text-green-600">{formatCurrency(payment.total)}</span>
+                    </div>
+                    
+                    {/* 電費詳細計算（如果電費為0，顯示提醒） */}
+                    <div className="text-xs text-gray-500 mt-1">
+                      {payment.e === 0 || payment.e === undefined ? (
+                        <span className="text-orange-600">
+                          ⚠️ {t('electricityNotCalculated', state.lang)}
+                        </span>
+                      ) : (
+                        <span>
+                          {t('electricityUsage', state.lang)}: {payment.u || 0}{t('degree', state.lang)} × 
+                          ${payment.electricityRate || state.data?.electricityRate || 6} = {formatCurrency(payment.e)}
+                        </span>
+                      )}
+                    </div>
+                    
+                    {/* 付款狀態和日期 */}
+                    <div className="text-xs mt-2">
+                      {payment.s === 'pending' ? (
+                        <span className="text-red-600">
+                          ⏳ {t('dueDate', state.lang)}: {payment.due}
+                        </span>
+                      ) : (
+                        <span className="text-green-600">
+                          ✓ {t('paidOn', state.lang)}: {payment.paid}
+                          {payment.paymentMethod && ` · ${t('paymentMethod', state.lang)}: ${payment.paymentMethod}`}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* 操作按鈕 */}
+                <div className="flex flex-col gap-2 ml-4">
+                  {payment.s === 'pending' ? (
+                    <>
+                      <button
+                        onClick={() => collectPayment(payment)}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+                      >
+                        💰 {t('collectPayment', state.lang)}
+                      </button>
+                      
+                      {(payment.e === 0 || payment.e === undefined) && (
+                        <button
+                          onClick={() => updateElectricityFee(payment.id)}
+                          className="px-3 py-1 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 text-sm"
+                          title="從房間最新電錶數據更新電費"
+                        >
+                          ⚡ {t('updateElectricity', state.lang)}
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <span className="badge bg-green-100 text-green-700 px-3 py-1">
+                      ✓ {t('paid', state.lang)}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   )
-
-  function markAsPaid(paymentId: number) {
-    const payment = property.payments.find((p: any) => p.id === paymentId)
-    if (!payment) return
-
-    const updatedPayment = {
-      ...payment,
-      s: 'paid' as const,
-      paid: new Date().toISOString().split('T')[0]
-    }
-
-    const updatedProperties = state.data.properties.map(p => 
-      p.id === property.id
-        ? {
-            ...p,
-            payments: p.payments.filter(pay => pay.id !== paymentId),
-            history: [...(p.history || []), updatedPayment]
-          }
-        : p
-    )
-
-    updateData({ properties: updatedProperties })
-    alert(t('collected', state.lang))
-  }
-
-  function markAsUnpaid(paymentId: number) {
-    const payment = property.history?.find((p: any) => p.id === paymentId)
-    if (!payment) return
-
-    // 檢查該房間的當前狀態
-    const room = property.rooms.find((r: any) => r.id === payment.rid)
-    if (room && room.s !== 'occupied') {
-      // 房間已退租或空置，需要警告
-      const warningMessage = `⚠️ ${t('warning', state.lang)}\n\n`
-        + `${t('tenantMovedOutWarning', state.lang)}: ${room.n}\n`
-        + `${t('currentStatus', state.lang)}: ${t(room.s, state.lang)}\n\n`
-        + `${t('confirmChangeToUnpaid', state.lang)}`
-      
-      if (!confirm(warningMessage)) {
-        return // 用戶取消操作
-      }
-      
-      // 需要密碼驗證
-      const password = prompt(t('enterPasswordToChangeStatus', state.lang), '')
-      if (password !== '123456') {
-        alert(t('incorrectPassword', state.lang))
-        return
-      }
-    }
-
-    const updatedPayment = {
-      ...payment,
-      s: 'pending' as const,
-      paid: undefined
-    }
-
-    const updatedProperties = state.data.properties.map(p => 
-      p.id === property.id
-        ? {
-            ...p,
-            payments: [...p.payments, updatedPayment],
-            history: (p.history || []).filter(pay => pay.id !== paymentId)
-          }
-        : p
-    )
-
-    updateData({ properties: updatedProperties })
-    alert(t('statusChangedToUnpaid', state.lang))
-  }
-
-  function deletePayment(paymentId: number) {
-    if (!confirm(t('confirmDelete', state.lang))) return
-    
-    // 密碼驗證
-    const password = prompt(t('enterPasswordToDelete', state.lang), '')
-    if (password !== '123456') {
-      alert(t('incorrectPassword', state.lang))
-      return
-    }
-
-    const updatedProperties = state.data.properties.map(p => 
-      p.id === property.id
-        ? {
-            ...p,
-            payments: p.payments.filter(pay => pay.id !== paymentId),
-            history: (p.history || []).filter(pay => pay.id !== paymentId)
-          }
-        : p
-    )
-
-    updateData({ properties: updatedProperties })
-    alert(t('paymentDeleted', state.lang))
-  }
 }

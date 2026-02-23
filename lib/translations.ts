@@ -43,6 +43,12 @@ export const translations: Translation = {
     selectMonth: '選擇月份',
     allTime: '全部時間',
     selectYear: '選擇年度',
+    recalculateElectricity: '重新計算電費',
+    noPendingPayments: '無待收款項',
+    noPendingPaymentsDescription: '目前沒有待收款的房間',
+    collectPayment: '收款',
+    updateElectricity: '更新電費',
+    electricityNotCalculated: '電費尚未計算',
     electricityReceivable: '電費應收',
     elecAnalysis: '電費收支分析',
     period: '期間統計',
@@ -902,6 +908,12 @@ export const translations: Translation = {
     notAvailable: 'Tạm không khả dụng',
     quickActionsTip: 'Nhấp vào biểu tượng để hoàn thành thao tác hàng ngày nhanh chóng',
     record: 'Ghi',
+    recalculateElectricity: 'Tính lại tiền điện',
+    noPendingPayments: 'Không có khoản chờ thu',
+    noPendingPaymentsDescription: 'Hiện không có phòng chờ thu tiền',
+    collectPayment: 'Thu tiền',
+    updateElectricity: 'Cập nhật tiền điện',
+    electricityNotCalculated: 'Tiền điện chưa được tính',
   }
 };
 
