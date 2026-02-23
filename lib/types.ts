@@ -167,7 +167,7 @@ export interface AppData {
 
 // 應用狀態
 export interface AppState {
-  tab: 'dashboard' | 'rooms' | 'meterReading' | 'payments' | 'maintenance' | 'utilities' | 'reports' | 'settings';
+  tab: 'dashboard' | 'rooms' | 'payments' | 'paymentHistory' | 'maintenance' | 'utilities' | 'reports' | 'settings';
   lang: 'zh-TW' | 'vi-VN';
   modal: {
     type: string;
