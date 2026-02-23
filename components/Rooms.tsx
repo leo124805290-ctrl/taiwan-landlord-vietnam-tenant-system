@@ -107,9 +107,17 @@ export default function Rooms({ property }: RoomsProps) {
       {/* 房間列表 */}
       <div className={viewMode === 'card' ? 'grid md:grid-cols-2 gap-4' : 'space-y-2'}>
         {property.rooms.map((room: any) => {
-          const elecFee = room.s === 'occupied' 
-            ? ((room.cm || 0) - (room.pm || 0)) * state.data.electricityRate 
-            : 0
+          // 計算電費：優先使用 elecFee 字段，如果不存在則使用舊公式計算
+          let elecFee = 0
+          if (room.s === 'occupied') {
+            if (room.elecFee !== undefined && room.elecFee !== null) {
+              // 使用已計算的電費
+              elecFee = room.elecFee
+            } else {
+              // 使用舊公式計算
+              elecFee = ((room.cm || 0) - (room.pm || 0)) * state.data.electricityRate
+            }
+          }
 
           return (
             <div key={room.id} className="card">
@@ -150,13 +158,24 @@ export default function Rooms({ property }: RoomsProps) {
                 <div className="p-3 bg-gray-50 rounded-lg mb-3">
                   <div className="text-sm text-gray-600 grid grid-cols-2 gap-2">
                     <div>
-                      {t('lastMeter', state.lang)}: {room.lm || 0} {t('degree', state.lang)}
+                      {t('lastMeter', state.lang)}: {room.lastMeter || room.lm || 0} {t('degree', state.lang)}
                     </div>
                     <div>
                       {t('currentMeter', state.lang)}: {room.cm || 0} {t('degree', state.lang)}
                     </div>
+                    <div>
+                      {t('electricityUsage', state.lang)}: {room.lastMeterUsage || Math.max(0, (room.cm || 0) - (room.pm || 0))} {t('degree', state.lang)}
+                    </div>
+                    <div>
+                      {t('electricityRate', state.lang)}: ${state.data.electricityRate}/{t('degree', state.lang)}
+                    </div>
                     <div className="col-span-2 font-bold text-orange-600">
                       {t('electricityReceivable', state.lang)}: {formatCurrency(Math.round(elecFee))}
+                      {room.lastMeterMonth && (
+                        <span className="text-xs font-normal text-gray-500 ml-2">
+                          ({room.lastMeterMonth})
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
