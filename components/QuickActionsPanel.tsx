@@ -19,24 +19,6 @@ export default function QuickActionsPanel() {
 
   const quickActions: QuickAction[] = [
     {
-      id: 'collect-rent',
-      icon: '💰',
-      label: 'quickCollectRent',
-      description: '收取選定房間的租金',
-      color: 'bg-gradient-to-br from-green-500 to-emerald-600',
-      onClick: () => openModal('quickCollectRent'),
-      enabled: property?.rooms?.some((r: any) => r.s === 'occupied') || false
-    },
-    {
-      id: 'record-meter',
-      icon: '📝',
-      label: 'batchMeterReading',
-      description: '一次記錄多個房間電錶',
-      color: 'bg-gradient-to-br from-blue-500 to-indigo-600',
-      onClick: () => openModal('batchMeterReading'),
-      enabled: property?.rooms?.some((r: any) => r.s === 'occupied') || false
-    },
-    {
       id: 'add-expense',
       icon: '💸',
       label: 'addUtilityExpense',
@@ -93,7 +75,7 @@ export default function QuickActionsPanel() {
         </div>
       </div>
       
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3">
         {quickActions.map(action => (
           <button
             key={action.id}

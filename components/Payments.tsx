@@ -23,6 +23,66 @@ export default function Payments({ property }: PaymentsProps) {
   const [monthFilter, setMonthFilter] = React.useState('all')
   const [roomFilter, setRoomFilter] = React.useState('all')
   const [searchTerm, setSearchTerm] = React.useState('')
+
+  // 重新計算電費函數
+  const recalculateElectricityFees = () => {
+    if (!property || !property.rooms || !property.payments) {
+      alert('無法重新計算電費：缺少必要數據')
+      return
+    }
+
+    // 獲取所有待付款記錄
+    const pendingPayments = property.payments.filter((p: any) => p.s === 'pending')
+    if (pendingPayments.length === 0) {
+      alert('目前沒有待付款記錄需要重新計算')
+      return
+    }
+
+    let updatedCount = 0
+    
+    // 更新付款記錄
+    const updatedPayments = property.payments.map((payment: any) => {
+      if (payment.s === 'pending') {
+        // 找到對應的房間
+        const room = property.rooms.find((r: any) => r.id === payment.rid)
+        if (room && room.elecFee !== undefined) {
+          // 使用房間的最新電費
+          const newElectricityFee = room.elecFee || 0
+          const newTotal = payment.r + newElectricityFee
+          
+          // 如果電費有變化，則更新
+          if (payment.e !== newElectricityFee) {
+            updatedCount++
+            return {
+              ...payment,
+              u: room.lastMeterUsage || 0,
+              e: newElectricityFee,
+              total: newTotal,
+              electricityRate: state.data.electricityRate
+            }
+          }
+        }
+      }
+      return payment
+    })
+
+    if (updatedCount > 0) {
+      // 更新數據
+      const updatedProperties = state.data.properties.map(p => 
+        p.id === property.id
+          ? {
+              ...p,
+              payments: updatedPayments
+            }
+          : p
+      )
+
+      updateData({ properties: updatedProperties })
+      alert(`✅ 成功更新 ${updatedCount} 筆待付款記錄的電費金額`)
+    } else {
+      alert('所有待付款記錄的電費金額已經是最新的')
+    }
+  }
   
   const filteredPayments = allPayments.filter(p => {
     // 狀態篩選
@@ -116,16 +176,30 @@ export default function Payments({ property }: PaymentsProps) {
           </div>
         </div>
         
-        {/* 統計資訊 */}
+        {/* 操作按鈕 */}
         <div className="mt-4 pt-4 border-t border-gray-200">
-          <div className="flex justify-between text-sm">
-            <div>
+          <div className="flex justify-between items-center">
+            <div className="text-sm">
               {t('totalRecords', state.lang)}: <span className="font-bold">{filteredPayments.length}</span>
             </div>
+            <div className="flex gap-2">
+              <button
+                onClick={recalculateElectricityFees}
+                className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                title="根據最新電錶讀數重新計算待付款電費"
+              >
+                🔄 重新計算電費
+              </button>
+            </div>
+          </div>
+          <div className="flex justify-between text-sm mt-2">
             <div>
               {t('pendingAmount', state.lang)}: <span className="font-bold text-red-600">
                 {formatCurrency(filteredPayments.filter((p: any) => p.s === 'pending').reduce((sum: number, p: any) => sum + p.total, 0))}
               </span>
+            </div>
+            <div className="text-xs text-gray-500">
+              點擊按鈕更新待付款電費金額
             </div>
           </div>
         </div>

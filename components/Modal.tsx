@@ -2957,12 +2957,29 @@ export default function Modal() {
       return room
     })
 
+    // 更新付款記錄中的電費金額
+    const updatedPayments = property.payments.map((payment: any) => {
+      const reading = meterReadings.find(r => r.roomId === payment.rid)
+      if (reading && payment.s === 'pending') {
+        // 只更新待付款記錄的電費
+        return {
+          ...payment,
+          u: reading.usage,
+          e: reading.cost,
+          total: payment.r + reading.cost,
+          electricityRate: electricityRate
+        }
+      }
+      return payment
+    })
+
     // 更新數據
     const updatedProperties = state.data.properties.map(p => 
       p.id === property.id
         ? {
             ...p,
-            rooms: updatedRooms
+            rooms: updatedRooms,
+            payments: updatedPayments
           }
         : p
     )
@@ -2973,7 +2990,7 @@ export default function Modal() {
     })
     
     // 顯示成功訊息
-    alert(`✅ 成功記錄 ${selectedCount} 間房間的電錶讀數\n總用電度數：${totalUsage} 度\n總電費：${formatCurrency(totalCost)}`)
+    alert(`✅ 成功記錄 ${selectedCount} 間房間的電錶讀數\n總用電度數：${totalUsage} 度\n總電費：${formatCurrency(totalCost)}\n\n📝 已更新對應房間的待付款電費金額`)
     closeModal()
   }
 
