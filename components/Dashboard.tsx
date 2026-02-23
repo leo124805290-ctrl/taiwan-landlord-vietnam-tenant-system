@@ -866,8 +866,8 @@ export default function Dashboard({ property }: DashboardProps) {
                     </div>
                     <div className="text-sm text-gray-600 mt-1">
                       🏠 {t('rent', state.lang)} {formatCurrency(payment.r)} + 
-                      ⚡ {t('electricity', state.lang)} {payment.u}{t('degree', state.lang)} × 
-                      ${state.data.electricityRate} = {formatCurrency(payment.e)}
+                      ⚡ {t('electricity', state.lang)} {payment.u || 0}{t('degree', state.lang)} 
+                      (單價: ${payment.electricityRate || state.data.electricityRate}) = {formatCurrency(payment.e || 0)}
                     </div>
                     <div className="text-xs text-gray-500 mt-1">
                       {t('dueDate', state.lang)}: {payment.due}
