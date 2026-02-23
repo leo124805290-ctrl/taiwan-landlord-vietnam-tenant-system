@@ -14,7 +14,7 @@ export default function Utilities() {
     : state.data.properties.find(p => p.id === state.currentProperty)
   
   // 篩選狀態
-  const [typeFilter, setTypeFilter] = useState('all') // all, taipower, water, income
+  const [typeFilter, setTypeFilter] = useState('all') // all, taipower, water, rent, income
   const [yearFilter, setYearFilter] = useState('all') // all, current-year, last-year, specific-year
   const [searchTerm, setSearchTerm] = useState('')
   
@@ -589,6 +589,84 @@ export default function Utilities() {
                 className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
               >
                 ＋ {t('addAdditionalIncome', state.lang)}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+      
+      {/* 租金支出列表 */}
+      {(typeFilter === 'all' || typeFilter === 'rent') && (
+        <div className="card">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold">🏠 {t('rentExpense', state.lang)}</h2>
+            <span className="badge bg-purple-100 text-purple-700">
+              {filteredRentExpenses.length} {t('items', state.lang)}
+            </span>
+          </div>
+          
+          {filteredRentExpenses.length > 0 ? (
+            <div className="table-container">
+              <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600">{t('billPeriod', state.lang)}</th>
+                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600 mobile-hide">{t('amount', state.lang)}</th>
+                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600 mobile-hide">{t('paidDate', state.lang)}</th>
+                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600 mobile-hide-sm">{t('notes', state.lang)}</th>
+                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600 mobile-hide">{t('property', state.lang)}</th>
+                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600">{t('actions', state.lang)}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredRentExpenses.map((expense, index) => (
+                    <tr key={expense.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                      <td className="py-2 px-3 border-b text-sm">
+                        <div className="font-medium">{expense.period}</div>
+                        <div className="text-xs text-gray-500 md:hidden">
+                          {formatCurrency(expense.amount)} • {expense.paidDate}
+                        </div>
+                      </td>
+                      <td className="py-2 px-3 border-b text-sm font-bold text-purple-600 mobile-hide">
+                        {formatCurrency(expense.amount)}
+                      </td>
+                      <td className="py-2 px-3 border-b text-sm mobile-hide">{expense.paidDate}</td>
+                      <td className="py-2 px-3 border-b text-sm text-gray-600 mobile-hide-sm">{expense.notes || '-'}</td>
+                      <td className="py-2 px-3 border-b text-sm mobile-hide">
+                        {expense.propertyName || '-'}
+                      </td>
+                      <td className="py-2 px-3 border-b text-sm">
+                        <div className="table-actions">
+                          <button
+                            onClick={() => openModal('editUtilityExpense', expense.id)}
+                            className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 text-xs"
+                            title={t('edit', state.lang)}
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUtilityExpense(expense.id)}
+                            className="px-2 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs"
+                            title={t('delete', state.lang)}
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <div className="text-4xl mb-3">🏠</div>
+              <div>尚未記錄租金支出</div>
+              <button
+                onClick={() => openModal('addUtilityExpense')}
+                className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm"
+              >
+                ＋ 新增租金支出
               </button>
             </div>
           )}

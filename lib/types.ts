@@ -41,6 +41,14 @@ export interface Room {
   totalRentCollected?: number; // 總收租金
   totalElectricityCollected?: number; // 總收電費
   maintenanceHistory?: number[]; // 維修記錄ID列表
+  // 電費相關屬性
+  elecRate?: number; // 電費單價
+  lastMeter?: number; // 上期電錶讀數
+  elecFee?: number; // 本期電費
+  lastMeterDate?: string; // 上期抄表日期
+  lastMeterMonth?: string; // 上期抄表月份
+  lastMeterUsage?: number; // 上期用電度數
+  deposit?: number; // 押金（兼容舊代碼，建議使用 d）
 }
 
 // 付款記錄

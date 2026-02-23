@@ -1338,44 +1338,110 @@ export default function Modal() {
           <>
             <h2 className="text-2xl font-bold mb-4">💰 {t('quickCollectRent', state.lang)}</h2>
             <div className="space-y-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-blue-600">💡</span>
-                  <span className="text-sm font-medium text-blue-800">
-                    快速收租功能開發中
+                  <span className="text-green-600">💰</span>
+                  <span className="text-sm font-medium text-green-800">
+                    快速收取租金
                   </span>
                 </div>
-                <p className="text-sm text-blue-700">
-                  此功能將允許您快速收取選定房間的租金，支持批量操作和多種支付方式。
+                <p className="text-sm text-green-700">
+                  選擇要收取租金的房間，系統會自動計算總金額並生成收據。
                 </p>
               </div>
               
               <div className="space-y-3">
                 <div>
-                  <label className="block text-sm mb-1">選擇房間</label>
-                  <div className="border rounded-lg p-3 max-h-60 overflow-y-auto">
+                  <label className="block text-sm mb-1 font-medium">選擇房間（可多選）</label>
+                  <div className="border rounded-lg p-3 max-h-60 overflow-y-auto bg-gray-50">
                     {property?.rooms?.filter((r: any) => r.s === 'occupied').map((room: any) => (
-                      <div key={room.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded">
+                      <div key={room.id} className="flex items-center gap-3 p-3 mb-2 bg-white rounded-lg border hover:border-green-300">
                         <input 
                           type="checkbox" 
                           id={`room-${room.id}`}
-                          className="rounded"
+                          className="rounded h-5 w-5 text-green-600"
+                          onChange={(e) => {
+                            const roomElement = document.getElementById(`room-amount-${room.id}`)
+                            if (roomElement) {
+                              roomElement.style.display = e.target.checked ? 'block' : 'none'
+                            }
+                            calculateTotalAmount()
+                          }}
                         />
-                        <label htmlFor={`room-${room.id}`} className="flex-1">
-                          <div className="font-medium">{room.n}</div>
+                        <label htmlFor={`room-${room.id}`} className="flex-1 cursor-pointer">
+                          <div className="font-medium text-gray-800">{room.n}</div>
                           <div className="text-sm text-gray-500">
                             租金: {formatCurrency(room.r)} | 電費: {formatCurrency(room.elecFee || 0)}
+                          </div>
+                          <div id={`room-amount-${room.id}`} className="text-xs text-green-600 mt-1 hidden">
+                            應收: {formatCurrency(room.r + (room.elecFee || 0))}
                           </div>
                         </label>
                       </div>
                     ))}
+                    
+                    {(!property?.rooms || property.rooms.filter((r: any) => r.s === 'occupied').length === 0) && (
+                      <div className="text-center py-4 text-gray-500">
+                        🏠 目前沒有已出租的房間
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm mb-1 font-medium">收款月份</label>
+                    <input 
+                      type="text" 
+                      id="collectMonth"
+                      className="input-field"
+                      placeholder="例如：2026年2月"
+                      defaultValue={`${new Date().getFullYear()}年${new Date().getMonth() + 1}月`}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm mb-1 font-medium">收款日期</label>
+                    <input 
+                      type="date" 
+                      id="collectDate"
+                      className="input-field"
+                      defaultValue={new Date().toISOString().split('T')[0]}
+                    />
                   </div>
                 </div>
                 
                 <div>
-                  <label className="block text-sm mb-1">總金額</label>
-                  <div className="text-2xl font-bold text-green-600">
-                    {formatCurrency(0)} {/* 待計算 */}
+                  <label className="block text-sm mb-1 font-medium">付款方式</label>
+                  <select id="paymentMethod" className="input-field">
+                    <option value="cash">現金</option>
+                    <option value="transfer">銀行轉帳</option>
+                    <option value="linepay">LINE Pay</option>
+                    <option value="other">其他</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm mb-1 font-medium">備註</label>
+                  <textarea 
+                    id="collectNotes"
+                    className="input-field h-20"
+                    placeholder="可填寫收款備註或特殊事項"
+                  />
+                </div>
+                
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="text-sm text-green-700">總金額</div>
+                      <div id="totalAmount" className="text-3xl font-bold text-green-600">
+                        {formatCurrency(0)}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm text-gray-600">已選擇</div>
+                      <div id="selectedCount" className="text-xl font-bold text-gray-800">0 間房</div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1384,8 +1450,8 @@ export default function Modal() {
               <button onClick={closeModal} className="flex-1 btn bg-gray-200">
                 {t('cancel', state.lang)}
               </button>
-              <button onClick={closeModal} className="flex-1 btn btn-primary">
-                💰 {t('collect', state.lang)}
+              <button onClick={processQuickCollectRent} className="flex-1 btn btn-primary">
+                💰 確認收款
               </button>
             </div>
           </>
@@ -1398,45 +1464,115 @@ export default function Modal() {
             <div className="space-y-4">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-blue-600">💡</span>
+                  <span className="text-blue-600">📝</span>
                   <span className="text-sm font-medium text-blue-800">
-                    批量抄錶功能開發中
+                    批量記錄電錶讀數
                   </span>
                 </div>
                 <p className="text-sm text-blue-700">
-                  此功能將允許您一次記錄多個房間的電錶讀數，自動計算電費。
+                  一次記錄多個房間的電錶讀數，系統會自動計算用電度數和電費。
                 </p>
               </div>
               
               <div className="space-y-3">
                 <div>
-                  <label className="block text-sm mb-1">選擇房間</label>
-                  <div className="border rounded-lg p-3 max-h-60 overflow-y-auto">
+                  <label className="block text-sm mb-1 font-medium">選擇房間（可多選）</label>
+                  <div className="border rounded-lg p-3 max-h-60 overflow-y-auto bg-gray-50">
                     {property?.rooms?.filter((r: any) => r.s === 'occupied').map((room: any) => (
-                      <div key={room.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded">
-                        <input 
-                          type="checkbox" 
-                          id={`meter-room-${room.id}`}
-                          className="rounded"
-                        />
-                        <label htmlFor={`meter-room-${room.id}`} className="flex-1">
-                          <div className="font-medium">{room.n}</div>
-                          <div className="text-sm text-gray-500">
-                            上期讀數: {room.lastMeter || 0} | 電費單價: {room.elecRate || 5}元/度
+                      <div key={room.id} className="mb-3 p-3 bg-white rounded-lg border hover:border-blue-300">
+                        <div className="flex items-center gap-3 mb-2">
+                          <input 
+                            type="checkbox" 
+                            id={`meter-room-${room.id}`}
+                            className="rounded h-5 w-5 text-blue-600"
+                          />
+                          <label htmlFor={`meter-room-${room.id}`} className="flex-1 cursor-pointer">
+                            <div className="font-medium text-gray-800">{room.n}</div>
+                            <div className="text-sm text-gray-500">
+                              上期讀數: {room.lastMeter || 0} | 電費單價: {room.elecRate || state.data.electricityRate || 5}元/度
+                            </div>
+                          </label>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-2 mt-2 pl-8">
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">本期讀數</label>
+                            <input 
+                              type="number" 
+                              id={`meter-reading-${room.id}`}
+                              className="w-full px-2 py-1 border rounded text-sm"
+                              placeholder="輸入讀數"
+                              min={room.lastMeter || 0}
+                              defaultValue={room.lastMeter || 0}
+                            />
                           </div>
-                        </label>
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">用電度數</label>
+                            <div id={`meter-usage-${room.id}`} className="text-sm font-medium text-blue-600">
+                              0 度
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     ))}
+                    
+                    {(!property?.rooms || property.rooms.filter((r: any) => r.s === 'occupied').length === 0) && (
+                      <div className="text-center py-4 text-gray-500">
+                        🏠 目前沒有已出租的房間
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm mb-1 font-medium">抄錶月份</label>
+                    <input 
+                      type="text" 
+                      id="meterMonth"
+                      className="input-field"
+                      placeholder="例如：2026年2月"
+                      defaultValue={`${new Date().getFullYear()}年${new Date().getMonth() + 1}月`}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm mb-1 font-medium">抄錶日期</label>
+                    <input 
+                      type="date" 
+                      id="meterDate"
+                      className="input-field"
+                      defaultValue={new Date().toISOString().split('T')[0]}
+                    />
                   </div>
                 </div>
                 
                 <div>
-                  <label className="block text-sm mb-1">抄錶日期</label>
+                  <label className="block text-sm mb-1 font-medium">電費單價（元/度）</label>
                   <input 
-                    type="date" 
+                    type="number" 
+                    id="electricityRate"
                     className="input-field"
-                    defaultValue={new Date().toISOString().split('T')[0]}
+                    defaultValue={state.data.electricityRate || 5}
+                    step="0.1"
+                    min="1"
                   />
+                </div>
+                
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="text-sm text-blue-700">總用電度數</div>
+                      <div id="totalUsage" className="text-2xl font-bold text-blue-600">0 度</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm text-gray-600">總電費</div>
+                      <div id="totalElectricityCost" className="text-2xl font-bold text-green-600">{formatCurrency(0)}</div>
+                    </div>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-2">
+                    已選擇 <span id="meterSelectedCount">0</span> 間房間
+                  </div>
                 </div>
               </div>
             </div>
@@ -1444,8 +1580,8 @@ export default function Modal() {
               <button onClick={closeModal} className="flex-1 btn bg-gray-200">
                 {t('cancel', state.lang)}
               </button>
-              <button onClick={closeModal} className="flex-1 btn btn-primary">
-                📝 {t('record', state.lang)}
+              <button onClick={processBatchMeterReading} className="flex-1 btn btn-primary">
+                📝 確認記錄
               </button>
             </div>
           </>
@@ -2557,6 +2693,304 @@ export default function Modal() {
     updateData({ properties: updatedProperties })
     closeModal()
   }
+
+  // 處理快速收租
+  const processQuickCollectRent = () => {
+    const property = getCurrentProperty()
+    if (!property) return
+
+    // 獲取選中的房間
+    const selectedRooms: number[] = []
+    let totalAmount = 0
+    
+    property.rooms.filter((r: any) => r.s === 'occupied').forEach((room: any) => {
+      const checkbox = document.getElementById(`room-${room.id}`) as HTMLInputElement
+      if (checkbox?.checked) {
+        selectedRooms.push(room.id)
+        totalAmount += room.r + (room.elecFee || 0)
+      }
+    })
+
+    if (selectedRooms.length === 0) {
+      alert('請選擇至少一個房間')
+      return
+    }
+
+    const monthInput = document.getElementById('collectMonth') as HTMLInputElement
+    const dateInput = document.getElementById('collectDate') as HTMLInputElement
+    const methodInput = document.getElementById('paymentMethod') as HTMLSelectElement
+    const notesInput = document.getElementById('collectNotes') as HTMLTextAreaElement
+
+    if (!monthInput?.value.trim()) {
+      alert('請填寫收款月份')
+      return
+    }
+
+    // 為每個選中的房間創建付款記錄
+    const newPayments: any[] = []
+    const newHistory: any[] = []
+    
+    selectedRooms.forEach(roomId => {
+      const room = property.rooms.find((r: any) => r.id === roomId)
+      if (!room) return
+
+      const paymentId = Math.max(
+        ...property.payments.map((p: any) => p.id),
+        ...(property.history || []).map((p: any) => p.id),
+        0
+      ) + newPayments.length + 1
+
+      const payment = {
+        id: paymentId,
+        rid: roomId,
+        n: room.n,
+        t: room.t || '租客',
+        m: monthInput.value.trim(),
+        r: room.r,
+        u: room.lastMeterUsage || 0,
+        e: room.elecFee || 0,
+        total: room.r + (room.elecFee || 0),
+        due: dateInput.value || new Date().toISOString().split('T')[0],
+        paid: dateInput.value || new Date().toISOString().split('T')[0],
+        s: 'paid' as const,
+        paymentMethod: methodInput?.value || 'cash',
+        notes: notesInput?.value || '',
+        electricityRate: state.data.electricityRate
+      }
+
+      newPayments.push(payment)
+      newHistory.push(payment)
+    })
+
+    // 更新數據
+    const updatedProperties = state.data.properties.map(p => 
+      p.id === property.id
+        ? {
+            ...p,
+            payments: [...p.payments, ...newPayments],
+            history: [...(p.history || []), ...newHistory]
+          }
+        : p
+    )
+
+    updateData({ properties: updatedProperties })
+    
+    // 顯示成功訊息
+    alert(`✅ 成功收取 ${selectedRooms.length} 間房間的租金\n總金額：${formatCurrency(totalAmount)}`)
+    closeModal()
+  }
+
+  // 計算總金額的函數
+  const calculateTotalAmount = () => {
+    const property = getCurrentProperty()
+    if (!property) return
+
+    let total = 0
+    let selectedCount = 0
+    
+    property.rooms.filter((r: any) => r.s === 'occupied').forEach((room: any) => {
+      const checkbox = document.getElementById(`room-${room.id}`) as HTMLInputElement
+      if (checkbox?.checked) {
+        total += room.r + (room.elecFee || 0)
+        selectedCount++
+      }
+    })
+
+    const totalElement = document.getElementById('totalAmount')
+    const countElement = document.getElementById('selectedCount')
+    
+    if (totalElement) totalElement.textContent = formatCurrency(total)
+    if (countElement) countElement.textContent = `${selectedCount} 間房`
+  }
+
+  // 計算總金額的函數（在模態框渲染後調用）
+  useEffect(() => {
+    if (type === 'quickCollectRent') {
+
+      // 綁定事件監聽器
+      const checkboxes = document.querySelectorAll('input[type="checkbox"]')
+      checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', calculateTotalAmount)
+      })
+
+      // 初始計算
+      calculateTotalAmount()
+
+      return () => {
+        checkboxes.forEach(checkbox => {
+          checkbox.removeEventListener('change', calculateTotalAmount)
+        })
+      }
+    }
+  }, [type, getCurrentProperty])
+
+  // 處理批量抄表
+  const processBatchMeterReading = () => {
+    const property = getCurrentProperty()
+    if (!property) return
+
+    // 獲取選中的房間和讀數
+    const meterReadings: Array<{roomId: number, reading: number, usage: number, cost: number}> = []
+    let totalUsage = 0
+    let totalCost = 0
+    let selectedCount = 0
+    
+    const rateInput = document.getElementById('electricityRate') as HTMLInputElement
+    const electricityRate = parseFloat(rateInput?.value || state.data.electricityRate.toString() || '5')
+
+    property.rooms.filter((r: any) => r.s === 'occupied').forEach((room: any) => {
+      const checkbox = document.getElementById(`meter-room-${room.id}`) as HTMLInputElement
+      if (checkbox?.checked) {
+        const readingInput = document.getElementById(`meter-reading-${room.id}`) as HTMLInputElement
+        const currentReading = parseFloat(readingInput?.value || '0')
+        const lastReading = room.lastMeter || 0
+        const usage = Math.max(0, currentReading - lastReading)
+        const cost = usage * electricityRate
+        
+        meterReadings.push({
+          roomId: room.id,
+          reading: currentReading,
+          usage,
+          cost
+        })
+        
+        totalUsage += usage
+        totalCost += cost
+        selectedCount++
+      }
+    })
+
+    if (selectedCount === 0) {
+      alert('請選擇至少一個房間')
+      return
+    }
+
+    const monthInput = document.getElementById('meterMonth') as HTMLInputElement
+    const dateInput = document.getElementById('meterDate') as HTMLInputElement
+
+    if (!monthInput?.value.trim()) {
+      alert('請填寫抄錶月份')
+      return
+    }
+
+    // 更新房間的電錶讀數和電費
+    const updatedRooms = property.rooms.map((room: any) => {
+      const reading = meterReadings.find(r => r.roomId === room.id)
+      if (reading) {
+        return {
+          ...room,
+          lastMeter: reading.reading,
+          lastMeterUsage: reading.usage,
+          elecFee: reading.cost,
+          lastMeterDate: dateInput.value || new Date().toISOString().split('T')[0],
+          lastMeterMonth: monthInput.value.trim()
+        }
+      }
+      return room
+    })
+
+    // 更新數據
+    const updatedProperties = state.data.properties.map(p => 
+      p.id === property.id
+        ? {
+            ...p,
+            rooms: updatedRooms
+          }
+        : p
+    )
+
+    updateData({ 
+      properties: updatedProperties,
+      electricityRate
+    })
+    
+    // 顯示成功訊息
+    alert(`✅ 成功記錄 ${selectedCount} 間房間的電錶讀數\n總用電度數：${totalUsage} 度\n總電費：${formatCurrency(totalCost)}`)
+    closeModal()
+  }
+
+  // 批量抄表的計算函數
+  useEffect(() => {
+    if (type === 'batchMeterReading') {
+      const calculateMeterTotals = () => {
+        const property = getCurrentProperty()
+        if (!property) return
+
+        const rateInput = document.getElementById('electricityRate') as HTMLInputElement
+        const electricityRate = parseFloat(rateInput?.value || state.data.electricityRate.toString() || '5')
+
+        let totalUsage = 0
+        let totalCost = 0
+        let selectedCount = 0
+        
+        property.rooms.filter((r: any) => r.s === 'occupied').forEach((room: any) => {
+          const checkbox = document.getElementById(`meter-room-${room.id}`) as HTMLInputElement
+          if (checkbox?.checked) {
+            const readingInput = document.getElementById(`meter-reading-${room.id}`) as HTMLInputElement
+            const currentReading = parseFloat(readingInput?.value || '0')
+            const lastReading = room.lastMeter || 0
+            const usage = Math.max(0, currentReading - lastReading)
+            const cost = usage * electricityRate
+            
+            totalUsage += usage
+            totalCost += cost
+            selectedCount++
+
+            // 更新單個房間的用電度數顯示
+            const usageElement = document.getElementById(`meter-usage-${room.id}`)
+            if (usageElement) {
+              usageElement.textContent = `${usage} 度`
+            }
+          }
+        })
+
+        // 更新總計顯示
+        const totalUsageElement = document.getElementById('totalUsage')
+        const totalCostElement = document.getElementById('totalElectricityCost')
+        const selectedCountElement = document.getElementById('meterSelectedCount')
+        
+        if (totalUsageElement) totalUsageElement.textContent = `${totalUsage} 度`
+        if (totalCostElement) totalCostElement.textContent = formatCurrency(totalCost)
+        if (selectedCountElement) selectedCountElement.textContent = selectedCount.toString()
+      }
+
+      // 綁定事件監聽器
+      const checkboxes = document.querySelectorAll('input[type="checkbox"][id^="meter-room-"]')
+      const readingInputs = document.querySelectorAll('input[type="number"][id^="meter-reading-"]')
+      const rateInput = document.getElementById('electricityRate')
+
+      const updateCalculations = () => calculateMeterTotals()
+
+      checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateCalculations)
+      })
+      
+      readingInputs.forEach(input => {
+        input.addEventListener('input', updateCalculations)
+      })
+      
+      if (rateInput) {
+        rateInput.addEventListener('input', updateCalculations)
+      }
+
+      // 初始計算
+      calculateMeterTotals()
+
+      return () => {
+        checkboxes.forEach(checkbox => {
+          checkbox.removeEventListener('change', updateCalculations)
+        })
+        
+        readingInputs.forEach(input => {
+          input.removeEventListener('input', updateCalculations)
+        })
+        
+        if (rateInput) {
+          rateInput.removeEventListener('input', updateCalculations)
+        }
+      }
+    }
+  }, [type, getCurrentProperty, state.data.electricityRate])
 
   return (
     <div 
