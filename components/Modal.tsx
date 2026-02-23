@@ -1612,6 +1612,106 @@ export default function Modal() {
           </>
         )
         
+      case 'collectPayment':
+        return (
+          <>
+            <h2 className="text-2xl font-bold mb-4">💰 {t('collectPayment', state.lang)}</h2>
+            
+            {/* 收款資訊 */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <div className="text-sm text-blue-700">{t('room', state.lang)}</div>
+                  <div className="font-bold text-lg">{data?.roomNumber || ''}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-blue-700">{t('tenant', state.lang)}</div>
+                  <div className="font-bold text-lg">{data?.tenantName || ''}</div>
+                </div>
+                <div className="col-span-2">
+                  <div className="text-sm text-blue-700">{t('month', state.lang)}</div>
+                  <div className="font-bold text-lg">{data?.month || ''}</div>
+                </div>
+              </div>
+            </div>
+            
+            {/* 電錶讀數輸入 */}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  ⚡ {t('currentMeterReading', state.lang)}
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    id="collectMeterReading"
+                    defaultValue={data?.lastMeterReading || 0}
+                    className="flex-1 input-field"
+                    placeholder="輸入本期電錶讀數"
+                    min="0"
+                    step="1"
+                  />
+                  <span className="text-gray-500">{t('degree', state.lang)}</span>
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {t('lastMeter', state.lang)}: {data?.lastMeterReading || 0} {t('degree', state.lang)}
+                </div>
+              </div>
+              
+              {/* 自動計算顯示 */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="text-sm font-medium mb-2">📊 {t('calculation', state.lang)}</div>
+                
+                <div className="space-y-2">
+                  {/* 用電度數計算 */}
+                  <div className="flex justify-between text-sm">
+                    <span>{t('electricityUsage', state.lang)}:</span>
+                    <span className="font-bold" id="electricityUsageDisplay">0 {t('degree', state.lang)}</span>
+                  </div>
+                  
+                  {/* 電費計算 */}
+                  <div className="flex justify-between text-sm">
+                    <span>{t('electricityFee', state.lang)}:</span>
+                    <span className="font-bold text-blue-600" id="electricityFeeDisplay">
+                      {formatCurrency(0)}
+                    </span>
+                  </div>
+                  
+                  {/* 租金 */}
+                  <div className="flex justify-between text-sm">
+                    <span>🏠 {t('rent', state.lang)}:</span>
+                    <span className="font-bold">{formatCurrency(data?.rentAmount || 0)}</span>
+                  </div>
+                  
+                  {/* 分隔線 */}
+                  <div className="border-t border-gray-300 my-2"></div>
+                  
+                  {/* 總金額 */}
+                  <div className="flex justify-between text-lg font-bold">
+                    <span>💰 {t('total', state.lang)}:</span>
+                    <span className="text-green-600" id="totalAmountDisplay">
+                      {formatCurrency((data?.rentAmount || 0) + (data?.currentElectricityFee || 0))}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* 操作按鈕 */}
+            <div className="flex gap-2 mt-6">
+              <button onClick={closeModal} className="flex-1 btn bg-gray-200">
+                {t('cancel', state.lang)}
+              </button>
+              <button 
+                onClick={() => processCollectPayment(data?.paymentId)}
+                className="flex-1 btn bg-green-600 text-white hover:bg-green-700"
+              >
+                💰 {t('confirmPayment', state.lang)}
+              </button>
+            </div>
+          </>
+        )
+        
       default:
         return (
           <div className="text-center py-8">
@@ -2891,6 +2991,114 @@ export default function Modal() {
       }
     }
   }, [type, getCurrentProperty])
+
+  // 處理單筆收款
+  const processCollectPayment = (paymentId: number) => {
+    const property = getCurrentProperty()
+    if (!property || !paymentId) {
+      alert('無法處理收款：缺少必要數據')
+      return
+    }
+
+    // 獲取輸入的電錶讀數
+    const meterInput = document.getElementById('collectMeterReading') as HTMLInputElement
+    const currentMeterReading = parseFloat(meterInput?.value || '0')
+    
+    if (!currentMeterReading && currentMeterReading !== 0) {
+      alert('請輸入本期電錶讀數')
+      return
+    }
+
+    // 找到要更新的付款記錄
+    const paymentToUpdate = property.payments.find((p: any) => p.id === paymentId)
+    if (!paymentToUpdate) {
+      alert('找不到要收款的付款記錄')
+      return
+    }
+
+    if (paymentToUpdate.s !== 'pending') {
+      alert('此筆款項已經收款完成')
+      return
+    }
+
+    // 找到對應的房間
+    const room = property.rooms.find((r: any) => r.id === paymentToUpdate.rid)
+    if (!room) {
+      alert('找不到對應的房間')
+      return
+    }
+
+    // 計算用電度數和電費
+    const lastMeterReading = room.lastMeter || room.lm || 0
+    const electricityUsage = Math.max(0, currentMeterReading - lastMeterReading)
+    const electricityRate = state.data.electricityRate || 6
+    const electricityFee = electricityUsage * electricityRate
+    
+    // 驗證用電度數合理性
+    if (electricityUsage > 1000) {
+      if (!confirm(`用電度數異常：${electricityUsage} 度\n是否確定要繼續？`)) {
+        return
+      }
+    }
+
+    // 更新房間電錶數據
+    const updatedRooms = property.rooms.map((r: any) => 
+      r.id === room.id
+        ? {
+            ...r,
+            lastMeter: currentMeterReading,
+            lastMeterUsage: electricityUsage,
+            elecFee: electricityFee,
+            lastMeterDate: new Date().toISOString().split('T')[0],
+            lastMeterMonth: paymentToUpdate.m
+          }
+        : r
+    )
+
+    // 更新付款記錄（標記為已付款）
+    const updatedPayments = property.payments.map((p: any) => 
+      p.id === paymentId
+        ? {
+            ...p,
+            u: electricityUsage,
+            e: electricityFee,
+            total: p.r + electricityFee,
+            electricityRate: electricityRate,
+            paid: new Date().toISOString().split('T')[0],
+            s: 'paid',
+            paymentMethod: 'cash', // 預設為現金，可以擴展選擇
+            notes: `電錶讀數: ${lastMeterReading} → ${currentMeterReading} (${electricityUsage}度)`
+          }
+        : p
+    )
+
+    // 移動到歷史記錄
+    const paidPayment = updatedPayments.find((p: any) => p.id === paymentId && p.s === 'paid')
+    const remainingPayments = updatedPayments.filter((p: any) => p.id !== paymentId)
+    const updatedHistory = [...(property.history || []), paidPayment].filter(Boolean)
+
+    // 更新數據
+    const updatedProperties = state.data.properties.map(p => 
+      p.id === property.id
+        ? {
+            ...p,
+            rooms: updatedRooms,
+            payments: remainingPayments,
+            history: updatedHistory
+          }
+        : p
+    )
+
+    updateData({ properties: updatedProperties })
+    
+    // 顯示成功訊息
+    alert(`✅ 成功收款 ${paymentToUpdate.n} - ${paymentToUpdate.t}\n` +
+          `💰 總金額: ${formatCurrency(paymentToUpdate.r + electricityFee)}\n` +
+          `🏠 租金: ${formatCurrency(paymentToUpdate.r)}\n` +
+          `⚡ 電費: ${formatCurrency(electricityFee)} (${electricityUsage}度 × ${electricityRate}元)`)
+    
+    closeModal()
+  }
 
   // 處理批量抄表
   const processBatchMeterReading = () => {

@@ -49,6 +49,8 @@ export const translations: Translation = {
     collectPayment: '收款',
     updateElectricity: '更新電費',
     electricityNotCalculated: '電費尚未計算',
+    currentMeterReading: '本期電錶讀數',
+    calculation: '計算結果',
     electricityReceivable: '電費應收',
     elecAnalysis: '電費收支分析',
     period: '期間統計',
@@ -914,6 +916,8 @@ export const translations: Translation = {
     collectPayment: 'Thu tiền',
     updateElectricity: 'Cập nhật tiền điện',
     electricityNotCalculated: 'Tiền điện chưa được tính',
+    currentMeterReading: 'Số điện kỳ này',
+    calculation: 'Kết quả tính toán',
   }
 };
 
