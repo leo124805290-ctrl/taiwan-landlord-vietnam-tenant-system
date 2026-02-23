@@ -370,43 +370,50 @@ export default function Utilities() {
           </div>
           
           {filteredTaipowerExpenses.length > 0 ? (
-            <div className="overflow-x-auto">
+            <div className="table-container">
               <table className="min-w-full bg-white border border-gray-200 rounded-lg">
                 <thead>
                   <tr className="bg-gray-50">
                     <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600">{t('billPeriod', state.lang)}</th>
-                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600">{t('amount', state.lang)}</th>
-                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600">{t('paidDate', state.lang)}</th>
-                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600">{t('notes', state.lang)}</th>
-                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600">{t('property', state.lang)}</th>
+                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600 mobile-hide">{t('amount', state.lang)}</th>
+                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600 mobile-hide">{t('paidDate', state.lang)}</th>
+                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600 mobile-hide-sm">{t('notes', state.lang)}</th>
+                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600 mobile-hide">{t('property', state.lang)}</th>
                     <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600">{t('actions', state.lang)}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredTaipowerExpenses.map((expense, index) => (
                     <tr key={expense.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                      <td className="py-2 px-3 border-b text-sm">{expense.period}</td>
-                      <td className="py-2 px-3 border-b text-sm font-bold text-blue-600">
+                      <td className="py-2 px-3 border-b text-sm">
+                        <div className="font-medium">{expense.period}</div>
+                        <div className="text-xs text-gray-500 md:hidden">
+                          {formatCurrency(expense.amount)} • {expense.paidDate}
+                        </div>
+                      </td>
+                      <td className="py-2 px-3 border-b text-sm font-bold text-blue-600 mobile-hide">
                         {formatCurrency(expense.amount)}
                       </td>
-                      <td className="py-2 px-3 border-b text-sm">{expense.paidDate}</td>
-                      <td className="py-2 px-3 border-b text-sm text-gray-600">{expense.notes || '-'}</td>
-                      <td className="py-2 px-3 border-b text-sm">
+                      <td className="py-2 px-3 border-b text-sm mobile-hide">{expense.paidDate}</td>
+                      <td className="py-2 px-3 border-b text-sm text-gray-600 mobile-hide-sm">{expense.notes || '-'}</td>
+                      <td className="py-2 px-3 border-b text-sm mobile-hide">
                         {expense.propertyName || '-'}
                       </td>
                       <td className="py-2 px-3 border-b text-sm">
-                        <div className="flex gap-2">
+                        <div className="table-actions">
                           <button
                             onClick={() => openModal('editUtilityExpense', expense.id)}
-                            className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 text-xs"
+                            className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 text-xs"
+                            title={t('edit', state.lang)}
                           >
-                            {t('edit', state.lang)}
+                            ✏️
                           </button>
                           <button
                             onClick={() => handleDeleteUtilityExpense(expense.id)}
-                            className="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs"
+                            className="px-2 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs"
+                            title={t('delete', state.lang)}
                           >
-                            {t('delete', state.lang)}
+                            🗑️
                           </button>
                         </div>
                       </td>
@@ -441,43 +448,50 @@ export default function Utilities() {
           </div>
           
           {filteredWaterExpenses.length > 0 ? (
-            <div className="overflow-x-auto">
+            <div className="table-container">
               <table className="min-w-full bg-white border border-gray-200 rounded-lg">
                 <thead>
                   <tr className="bg-gray-50">
                     <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600">{t('billPeriod', state.lang)}</th>
-                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600">{t('amount', state.lang)}</th>
-                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600">{t('paidDate', state.lang)}</th>
-                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600">{t('notes', state.lang)}</th>
-                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600">{t('property', state.lang)}</th>
+                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600 mobile-hide">{t('amount', state.lang)}</th>
+                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600 mobile-hide">{t('paidDate', state.lang)}</th>
+                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600 mobile-hide-sm">{t('notes', state.lang)}</th>
+                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600 mobile-hide">{t('property', state.lang)}</th>
                     <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600">{t('actions', state.lang)}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredWaterExpenses.map((expense, index) => (
                     <tr key={expense.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                      <td className="py-2 px-3 border-b text-sm">{expense.period}</td>
-                      <td className="py-2 px-3 border-b text-sm font-bold text-cyan-600">
+                      <td className="py-2 px-3 border-b text-sm">
+                        <div className="font-medium">{expense.period}</div>
+                        <div className="text-xs text-gray-500 md:hidden">
+                          {formatCurrency(expense.amount)} • {expense.paidDate}
+                        </div>
+                      </td>
+                      <td className="py-2 px-3 border-b text-sm font-bold text-cyan-600 mobile-hide">
                         {formatCurrency(expense.amount)}
                       </td>
-                      <td className="py-2 px-3 border-b text-sm">{expense.paidDate}</td>
-                      <td className="py-2 px-3 border-b text-sm text-gray-600">{expense.notes || '-'}</td>
-                      <td className="py-2 px-3 border-b text-sm">
+                      <td className="py-2 px-3 border-b text-sm mobile-hide">{expense.paidDate}</td>
+                      <td className="py-2 px-3 border-b text-sm text-gray-600 mobile-hide-sm">{expense.notes || '-'}</td>
+                      <td className="py-2 px-3 border-b text-sm mobile-hide">
                         {expense.propertyName || '-'}
                       </td>
                       <td className="py-2 px-3 border-b text-sm">
-                        <div className="flex gap-2">
+                        <div className="table-actions">
                           <button
                             onClick={() => openModal('editUtilityExpense', expense.id)}
-                            className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 text-xs"
+                            className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 text-xs"
+                            title={t('edit', state.lang)}
                           >
-                            {t('edit', state.lang)}
+                            ✏️
                           </button>
                           <button
                             onClick={() => handleDeleteUtilityExpense(expense.id)}
-                            className="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs"
+                            className="px-2 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs"
+                            title={t('delete', state.lang)}
                           >
-                            {t('delete', state.lang)}
+                            🗑️
                           </button>
                         </div>
                       </td>
@@ -512,16 +526,16 @@ export default function Utilities() {
           </div>
           
           {filteredAdditionalIncomes.length > 0 ? (
-            <div className="overflow-x-auto">
+            <div className="table-container">
               <table className="min-w-full bg-white border border-gray-200 rounded-lg">
                 <thead>
                   <tr className="bg-gray-50">
                     <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600">{t('type', state.lang)}</th>
-                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600">{t('month', state.lang)}</th>
-                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600">{t('amount', state.lang)}</th>
-                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600">{t('receivedDate', state.lang)}</th>
-                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600">{t('description', state.lang)}</th>
-                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600">{t('property', state.lang)}</th>
+                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600 mobile-hide">{t('month', state.lang)}</th>
+                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600 mobile-hide">{t('amount', state.lang)}</th>
+                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600 mobile-hide">{t('receivedDate', state.lang)}</th>
+                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600 mobile-hide-sm">{t('description', state.lang)}</th>
+                    <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600 mobile-hide">{t('property', state.lang)}</th>
                     <th className="py-2 px-3 border-b text-left text-sm font-medium text-gray-600">{t('actions', state.lang)}</th>
                   </tr>
                 </thead>
@@ -529,30 +543,35 @@ export default function Utilities() {
                   {filteredAdditionalIncomes.map((income, index) => (
                     <tr key={income.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                       <td className="py-2 px-3 border-b text-sm">
-                        {getTypeDisplayName(income.type)}
+                        <div className="font-medium">{getTypeDisplayName(income.type)}</div>
+                        <div className="text-xs text-gray-500 md:hidden">
+                          {income.month} • {formatCurrency(income.amount)}
+                        </div>
                       </td>
-                      <td className="py-2 px-3 border-b text-sm">{income.month}</td>
-                      <td className="py-2 px-3 border-b text-sm font-bold text-green-600">
+                      <td className="py-2 px-3 border-b text-sm mobile-hide">{income.month}</td>
+                      <td className="py-2 px-3 border-b text-sm font-bold text-green-600 mobile-hide">
                         {formatCurrency(income.amount)}
                       </td>
-                      <td className="py-2 px-3 border-b text-sm">{income.receivedDate}</td>
-                      <td className="py-2 px-3 border-b text-sm text-gray-600">{income.description}</td>
-                      <td className="py-2 px-3 border-b text-sm">
+                      <td className="py-2 px-3 border-b text-sm mobile-hide">{income.receivedDate}</td>
+                      <td className="py-2 px-3 border-b text-sm text-gray-600 mobile-hide-sm">{income.description}</td>
+                      <td className="py-2 px-3 border-b text-sm mobile-hide">
                         {income.propertyName || '-'}
                       </td>
                       <td className="py-2 px-3 border-b text-sm">
-                        <div className="flex gap-2">
+                        <div className="table-actions">
                           <button
                             onClick={() => openModal('editAdditionalIncome', income.id)}
-                            className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 text-xs"
+                            className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 text-xs"
+                            title={t('edit', state.lang)}
                           >
-                            {t('edit', state.lang)}
+                            ✏️
                           </button>
                           <button
                             onClick={() => handleDeleteAdditionalIncome(income.id)}
-                            className="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs"
+                            className="px-2 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs"
+                            title={t('delete', state.lang)}
                           >
-                            {t('delete', state.lang)}
+                            🗑️
                           </button>
                         </div>
                       </td>

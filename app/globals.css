@@ -5,6 +5,9 @@
 /* 快速操作面板樣式 */
 @import '../styles/quick-actions.css';
 
+/* 移動端響應式優化 */
+@import '../styles/responsive.css';
+
 * {
   -webkit-tap-highlight-color: transparent;
   font-family: system-ui, sans-serif;
