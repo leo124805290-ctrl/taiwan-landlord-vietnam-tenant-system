@@ -187,8 +187,8 @@ export const translations: Translation = {
     taipowerBill: '台電帳單',
     waterBill: '水費帳單',
     billPeriod: '帳單期間',
-    addUtilityExpense: '新增水電支出',
-    editUtilityExpense: '編輯水電支出',
+    addUtilityExpense: '新增支出',
+    editUtilityExpense: '編輯支出',
     deleteUtilityExpense: '刪除水電支出',
     // 補充收入管理
     additionalIncomes: '補充收入',
@@ -625,7 +625,7 @@ export const translations: Translation = {
     taipowerBill: 'Hóa đơn điện',
     waterBill: 'Hóa đơn nước',
     billPeriod: 'Kỳ hóa đơn',
-    addUtilityExpense: 'Thêm chi phí điện nước',
+    addUtilityExpense: 'Thêm chi phí',
     editUtilityExpense: 'Sửa chi phí',
     deleteUtilityExpense: 'Xóa chi phí',
     // 補充收入管理

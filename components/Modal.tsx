@@ -4,6 +4,7 @@ import { Room } from '@/lib/types'
 import { t } from '@/lib/translations'
 import { formatCurrency } from '@/lib/utils'
 import { useApp } from '@/contexts/AppContext'
+import { useEffect, useRef } from 'react'
 
 export default function Modal() {
   const { state, updateState, updateData, closeModal, getCurrentProperty } = useApp()
@@ -16,6 +17,32 @@ export default function Modal() {
       closeModal()
     }
   }
+
+  // 初始化模態框輸入字段
+  useEffect(() => {
+    if (!type || !data) return
+
+    const property = getCurrentProperty()
+    if (!property) return
+
+    // 初始化編輯水電支出
+    if (type === 'editUtilityExpense') {
+      const expense = property.utilityExpenses?.find((e: any) => e.id === data)
+      if (expense) {
+        const typeInput = document.getElementById('editUtilityType') as HTMLSelectElement
+        const periodInput = document.getElementById('editUtilityPeriod') as HTMLInputElement
+        const amountInput = document.getElementById('editUtilityAmount') as HTMLInputElement
+        const paidDateInput = document.getElementById('editUtilityPaidDate') as HTMLInputElement
+        const notesInput = document.getElementById('editUtilityNotes') as HTMLTextAreaElement
+
+        if (typeInput) typeInput.value = expense.type || 'taipower'
+        if (periodInput) periodInput.value = expense.period || ''
+        if (amountInput) amountInput.value = expense.amount?.toString() || ''
+        if (paidDateInput) paidDateInput.value = expense.paidDate || ''
+        if (notesInput) notesInput.value = expense.notes || ''
+      }
+    }
+  }, [type, data, getCurrentProperty])
 
   const renderModalContent = () => {
     const property = getCurrentProperty()
@@ -1083,6 +1110,7 @@ export default function Modal() {
                 <select id="addUtilityType" className="input-field">
                   <option value="taipower">{t('taipowerBill', state.lang)}</option>
                   <option value="water">{t('waterBill', state.lang)}</option>
+                  <option value="rent">{t('rentExpense', state.lang)}</option>
                 </select>
               </div>
               
@@ -1127,6 +1155,7 @@ export default function Modal() {
                 <select id="editUtilityType" className="input-field">
                   <option value="taipower">{t('taipowerBill', state.lang)}</option>
                   <option value="water">{t('waterBill', state.lang)}</option>
+                  <option value="rent">{t('rentExpense', state.lang)}</option>
                 </select>
               </div>
               
@@ -1713,7 +1742,7 @@ export default function Modal() {
     const newId = Math.max(...(property.utilityExpenses || []).map((e: any) => e.id), 0) + 1
     const newExpense = {
       id: newId,
-      type: typeInput.value as 'taipower' | 'water',
+      type: typeInput.value as 'taipower' | 'water' | 'rent',
       period: periodInput.value.trim(),
       amount: parseFloat(amountInput.value),
       paidDate: paidDateInput.value,
@@ -1769,7 +1798,7 @@ export default function Modal() {
               e.id === expenseId
                 ? {
                     ...e,
-                    type: typeInput.value as 'taipower' | 'water',
+                    type: typeInput.value as 'taipower' | 'water' | 'rent',
                     period: periodInput.value.trim(),
                     amount: parseFloat(amountInput.value),
                     paidDate: paidDateInput.value,
