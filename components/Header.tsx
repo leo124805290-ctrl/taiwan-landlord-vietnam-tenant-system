@@ -9,8 +9,8 @@ export default function Header() {
   const tabs = [
     { key: 'dashboard', icon: '📊', label: 'dashboard' },
     { key: 'rooms', icon: '🏠', label: 'roomsTab' },
-    { key: 'meterReading', icon: '📝', label: 'meterReadingTab' },
     { key: 'payments', icon: '💰', label: 'paymentsTab' },
+    { key: 'paymentHistory', icon: '📜', label: 'paymentHistoryTab' },
     { key: 'maintenance', icon: '🔧', label: 'maintenanceTab' },
     { key: 'utilities', icon: '💧', label: 'utilitiesTab' },
     { key: 'reports', icon: '📈', label: 'reportsTab' },

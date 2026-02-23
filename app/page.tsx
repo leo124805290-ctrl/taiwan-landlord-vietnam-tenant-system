@@ -8,7 +8,7 @@ import Maintenance from '@/components/Maintenance'
 import Utilities from '@/components/Utilities'
 import Reports from '@/components/Reports'
 import Settings from '@/components/Settings'
-import MeterReading from '@/components/MeterReading'
+import PaymentHistory from '@/components/PaymentHistory'
 import Modal from '@/components/Modal'
 import { useApp } from '@/contexts/AppContext'
 
@@ -41,8 +41,8 @@ export default function HomePage() {
         return <Rooms property={property} />
       case 'payments':
         return <Payments property={property} />
-      case 'meterReading':
-        return <MeterReading property={property} />
+      case 'paymentHistory':
+        return <PaymentHistory property={property} />
       case 'maintenance':
         return <Maintenance property={property} />
       case 'utilities':
