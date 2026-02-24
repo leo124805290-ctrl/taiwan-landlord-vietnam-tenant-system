@@ -18,6 +18,86 @@ export default function Modal() {
     }
   }
 
+  // 退房結算計算函數
+  const calculateElectricityCost = () => {
+    if (type !== 'checkOut') return
+
+    const initialMeterInput = document.getElementById('checkOutInitialMeter') as HTMLInputElement
+    const finalMeterInput = document.getElementById('checkOutFinalMeter') as HTMLInputElement
+    const rateInput = document.getElementById('checkOutElectricityRate') as HTMLInputElement
+    const usageDisplay = document.getElementById('electricityUsageDisplay')
+    const costDisplay = document.getElementById('electricityCostDisplay')
+
+    if (!initialMeterInput || !finalMeterInput || !rateInput) return
+
+    const initialMeter = parseInt(initialMeterInput.value) || 0
+    const finalMeter = parseInt(finalMeterInput.value) || 0
+    const rate = parseFloat(rateInput.value) || 6
+
+    if (finalMeter < initialMeter) {
+      alert('最後電錶讀數不能小於初始讀數')
+      return
+    }
+
+    const usage = finalMeter - initialMeter
+    const cost = usage * rate
+
+    if (usageDisplay) {
+      usageDisplay.textContent = `${usage} 度`
+    }
+    if (costDisplay) {
+      costDisplay.textContent = formatCurrency(cost)
+    }
+
+    // 更新隱藏的電費輸入
+    const electricityCostInput = document.getElementById('checkOutElectricityCost') as HTMLInputElement
+    if (electricityCostInput) {
+      electricityCostInput.value = cost.toString()
+    }
+    
+    // 觸發總額計算
+    calculateTotalSettlement()
+  }
+
+  const calculateTotalSettlement = () => {
+    if (type !== 'checkOut') return
+
+    const damageInput = document.getElementById('checkOutDamageDeduction') as HTMLInputElement
+    const cleaningInput = document.getElementById('checkOutCleaningFee') as HTMLInputElement
+    const otherInput = document.getElementById('checkOutOtherDeductions') as HTMLInputElement
+    const electricityCostInput = document.getElementById('checkOutElectricityCost') as HTMLInputElement
+    const deductionsDisplay = document.getElementById('totalDeductionsDisplay')
+    const refundDisplay = document.getElementById('depositRefundDisplay')
+
+    if (!damageInput || !cleaningInput || !otherInput) return
+
+    const damage = parseFloat(damageInput.value) || 0
+    const cleaning = parseFloat(cleaningInput.value) || 0
+    const other = parseFloat(otherInput.value) || 0
+    const electricity = parseFloat(electricityCostInput?.value || '0') || 0
+
+    const totalDeductions = damage + cleaning + other + electricity
+    
+    // 獲取房間資訊
+    const property = getCurrentProperty()
+    const checkOutRoom = property?.rooms.find((r: Room) => r.id === data)
+    const deposit = checkOutRoom?.d || 0
+    const depositRefund = Math.max(0, deposit - totalDeductions)
+
+    if (deductionsDisplay) {
+      deductionsDisplay.textContent = formatCurrency(totalDeductions)
+    }
+    if (refundDisplay) {
+      refundDisplay.textContent = formatCurrency(depositRefund)
+    }
+
+    // 更新隱藏的總扣款輸入
+    const totalDeductionsInput = document.getElementById('checkOutTotalDeductions') as HTMLInputElement
+    if (totalDeductionsInput) {
+      totalDeductionsInput.value = totalDeductions.toString()
+    }
+  }
+
   // 初始化模態框輸入字段
   useEffect(() => {
     if (!type || !data) return
@@ -626,6 +706,200 @@ export default function Modal() {
               </button>
               <button onClick={() => saveCheckIn(data)} className="flex-1 btn btn-primary">
                 {t('confirmAndSave', state.lang)}
+              </button>
+            </div>
+          </>
+        )
+
+      case 'checkOut':
+        const checkOutRoom = property?.rooms.find((r: Room) => r.id === data)
+        if (!checkOutRoom || checkOutRoom.s !== 'occupied') return null
+        
+        // 計算初始電錶讀數和當前電錶讀數
+        const initialMeter = checkOutRoom.initialElectricityMeter || checkOutRoom.pm || 0
+        const currentMeter = checkOutRoom.cm || initialMeter
+        
+        return (
+          <>
+            <h2 className="text-2xl font-bold mb-4">🚪 {t('checkOutTitle', state.lang)}</h2>
+            
+            {/* 房間和租客資訊 */}
+            <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+              <div className="text-lg font-bold">{checkOutRoom.n} ({checkOutRoom.f}F)</div>
+              <div className="text-sm text-gray-600">
+                {t('tenantName', state.lang)}: {checkOutRoom.t || '-'} • 
+                {t('contractEnd', state.lang)}: {checkOutRoom.out || '-'}
+              </div>
+              <div className="text-sm text-gray-600 mt-1">
+                {t('monthlyRent', state.lang)}: {formatCurrency(checkOutRoom.r)} • 
+                {t('deposit', state.lang)}: {formatCurrency(checkOutRoom.d || 0)}
+              </div>
+            </div>
+            
+            {/* 步驟1：退房類型 */}
+            <div className="mb-6">
+              <h3 className="text-lg font-bold mb-3">1. {t('checkOutType', state.lang)}</h3>
+              <div className="space-y-2">
+                <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input type="radio" name="checkOutType" value="scheduled" defaultChecked className="mr-3" />
+                  <div>
+                    <div className="font-medium">📅 {t('scheduledCheckOut', state.lang)}</div>
+                    <div className="text-sm text-gray-600">
+                      {t('contractEnd', state.lang)}: {checkOutRoom.out || '-'}
+                    </div>
+                  </div>
+                </label>
+                
+                <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input type="radio" name="checkOutType" value="early" className="mr-3" />
+                  <div>
+                    <div className="font-medium">⚠️ {t('earlyCheckOut', state.lang)}</div>
+                    <div className="text-sm text-gray-600">
+                      {t('penaltyMayApply', state.lang)}
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+            
+            {/* 步驟2：電費結算 */}
+            <div className="mb-6">
+              <h3 className="text-lg font-bold mb-3">2. {t('electricityInfo', state.lang)}</h3>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm mb-1">{t('initialMeter', state.lang)}</label>
+                    <input 
+                      type="number" 
+                      id="checkOutInitialMeter" 
+                      defaultValue={initialMeter}
+                      className="input-field bg-gray-100" 
+                      readOnly
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm mb-1">{t('finalElectricityReading', state.lang)} *</label>
+                    <input 
+                      type="number" 
+                      id="checkOutFinalMeter" 
+                      defaultValue={currentMeter}
+                      className="input-field" 
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm mb-1">{t('electricityRate', state.lang)} (元/度)</label>
+                  <input 
+                    type="number" 
+                    id="checkOutElectricityRate" 
+                    defaultValue="6" 
+                    className="input-field" 
+                    step="0.1"
+                  />
+                </div>
+                
+                <div className="p-3 bg-yellow-50 rounded-lg">
+                  <div className="flex justify-between">
+                    <span>{t('electricityUsage', state.lang)}:</span>
+                    <span id="electricityUsageDisplay" className="font-bold">0 度</span>
+                  </div>
+                  <div className="flex justify-between mt-1">
+                    <span>{t('electricityCost', state.lang)}:</span>
+                    <span id="electricityCostDisplay" className="font-bold">$0</span>
+                  </div>
+                  <button 
+                    type="button" 
+                    onClick={() => calculateElectricityCost()}
+                    className="mt-2 px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
+                  >
+                    {t('calculateElectricity', state.lang)}
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            {/* 步驟3：扣款項目 */}
+            <div className="mb-6">
+              <h3 className="text-lg font-bold mb-3">3. {t('deductions', state.lang)}</h3>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm mb-1">{t('damageDeduction', state.lang)}</label>
+                  <input 
+                    type="number" 
+                    id="checkOutDamageDeduction" 
+                    defaultValue="0" 
+                    className="input-field" 
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm mb-1">{t('cleaningFee', state.lang)}</label>
+                  <input 
+                    type="number" 
+                    id="checkOutCleaningFee" 
+                    defaultValue="0" 
+                    className="input-field" 
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm mb-1">{t('otherDeductions', state.lang)}</label>
+                  <input 
+                    type="number" 
+                    id="checkOutOtherDeductions" 
+                    defaultValue="0" 
+                    className="input-field" 
+                    min="0"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            {/* 步驟4：結算摘要 */}
+            <div className="mb-6 p-4 bg-green-50 rounded-lg">
+              <h3 className="text-lg font-bold mb-3">4. {t('settlementSummary', state.lang)}</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span>{t('deposit', state.lang)}:</span>
+                  <span className="font-bold">{formatCurrency(checkOutRoom.d || 0)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>{t('totalDeductions', state.lang)}:</span>
+                  <span id="totalDeductionsDisplay" className="font-bold text-red-600">$0</span>
+                </div>
+                <div className="flex justify-between text-lg font-bold border-t pt-2">
+                  <span>{t('depositRefund', state.lang)}:</span>
+                  <span id="depositRefundDisplay" className="font-bold">$0</span>
+                </div>
+                <button 
+                  type="button" 
+                  onClick={() => calculateTotalSettlement()}
+                  className="mt-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
+                >
+                  {t('calculateTotal', state.lang)}
+                </button>
+              </div>
+            </div>
+            
+            {/* 步驟5：備註 */}
+            <div className="mb-6">
+              <h3 className="text-lg font-bold mb-3">5. {t('checkOutNotes', state.lang)}</h3>
+              <textarea 
+                id="checkOutNotes" 
+                className="input-field h-20" 
+                placeholder={t('enterNotesHere', state.lang)}
+              ></textarea>
+            </div>
+            
+            {/* 操作按鈕 */}
+            <div className="flex gap-2">
+              <button onClick={closeModal} className="flex-1 btn bg-gray-200">
+                {t('cancel', state.lang)}
+              </button>
+              <button onClick={() => saveCheckOut(data)} className="flex-1 btn btn-primary">
+                {t('confirmCheckOut', state.lang)}
               </button>
             </div>
           </>
@@ -3204,6 +3478,131 @@ export default function Modal() {
     closeModal()
   }
 
+  // 儲存退房結算
+  const saveCheckOut = (roomId: number) => {
+    const property = getCurrentProperty()
+    if (!property) return
+
+    // 獲取退房類型
+    const checkOutTypeInput = document.querySelector('input[name="checkOutType"]:checked') as HTMLInputElement
+    if (!checkOutTypeInput) {
+      alert('請選擇退房類型')
+      return
+    }
+
+    // 獲取電費資訊
+    const finalMeterInput = document.getElementById('checkOutFinalMeter') as HTMLInputElement
+    const electricityCostInput = document.getElementById('checkOutElectricityCost') as HTMLInputElement
+    const totalDeductionsInput = document.getElementById('checkOutTotalDeductions') as HTMLInputElement
+    
+    // 獲取扣款項目
+    const damageInput = document.getElementById('checkOutDamageDeduction') as HTMLInputElement
+    const cleaningInput = document.getElementById('checkOutCleaningFee') as HTMLInputElement
+    const otherInput = document.getElementById('checkOutOtherDeductions') as HTMLInputElement
+    const notesInput = document.getElementById('checkOutNotes') as HTMLTextAreaElement
+
+    // 驗證必填字段
+    if (!finalMeterInput?.value) {
+      alert('請填寫最後電錶讀數')
+      return
+    }
+
+    const finalMeter = parseInt(finalMeterInput.value) || 0
+    const electricityCost = parseFloat(electricityCostInput?.value || '0') || 0
+    const totalDeductions = parseFloat(totalDeductionsInput?.value || '0') || 0
+    const damage = parseFloat(damageInput?.value || '0') || 0
+    const cleaning = parseFloat(cleaningInput?.value || '0') || 0
+    const other = parseFloat(otherInput?.value || '0') || 0
+    const notes = notesInput?.value || ''
+
+    // 找到房間
+    const room = property.rooms.find((r: Room) => r.id === roomId)
+    if (!room) return
+
+    const deposit = room.d || 0
+    const depositRefund = Math.max(0, deposit - totalDeductions)
+
+    // 更新房間狀態
+    const updatedProperties = state.data.properties.map(p => 
+      p.id === property.id
+        ? {
+            ...p,
+            rooms: p.rooms.map(r => 
+              r.id === roomId
+                ? {
+                    ...r,
+                    s: 'available' as const, // 恢復為可出租狀態
+                    t: '', // 清空租客姓名
+                    p: '', // 清空租客電話
+                    in: '', // 清空入住日期
+                    out: '', // 清空退房日期
+                    cm: finalMeter, // 更新最後電錶讀數
+                    finalMeter, // 儲存最後電錶讀數
+                    finalElectricityFee: electricityCost, // 儲存最後電費
+                    checkOutType: checkOutTypeInput.value as 'scheduled' | 'early',
+                    checkOutDate: new Date().toISOString().split('T')[0],
+                    checkOutDeductions: {
+                      damage,
+                      cleaning,
+                      other,
+                      electricity: electricityCost,
+                      total: totalDeductions
+                    },
+                    depositRefund,
+                    checkOutNotes: notes
+                  }
+                : r
+            ),
+            // 添加退房記錄到歷史
+            history: [
+              ...(p.history || []),
+              {
+                id: Math.max(...(p.history || []).map((h: any) => h.id), 0) + 1,
+                rid: roomId,
+                n: room.n,
+                t: room.t || '',
+                m: new Date().toISOString().split('T')[0].substring(0, 7).replace('-', '/'),
+                r: 0, // 租金為0（退房）
+                u: finalMeter - (room.initialElectricityMeter || room.pm || 0), // 用電度數
+                e: electricityCost, // 電費
+                total: -totalDeductions, // 負數表示扣款
+                due: new Date().toISOString().split('T')[0],
+                paid: new Date().toISOString().split('T')[0],
+                s: 'paid' as const,
+                notes: `退房結算 - ${checkOutTypeInput.value === 'scheduled' ? '到期退房' : '臨時退房'}${notes ? ` (${notes})` : ''}`,
+                isCheckOut: true,
+                deductions: {
+                  damage,
+                  cleaning,
+                  other,
+                  electricity: electricityCost
+                },
+                depositRefund
+              }
+            ]
+          }
+        : p
+    )
+
+    updateData({ properties: updatedProperties })
+    
+    // 顯示成功訊息
+    let successMessage = `✅ 退房結算完成！\n\n`
+    successMessage += `房間: ${room.n} (${room.f}F)\n`
+    successMessage += `租客: ${room.t || '-'}\n`
+    successMessage += `退房類型: ${checkOutTypeInput.value === 'scheduled' ? '到期退房' : '臨時退房'}\n`
+    successMessage += `押金: ${formatCurrency(deposit)}\n`
+    successMessage += `總扣款: ${formatCurrency(totalDeductions)}\n`
+    successMessage += `應退押金: ${formatCurrency(depositRefund)}\n`
+    
+    if (notes) {
+      successMessage += `\n備註: ${notes}`
+    }
+    
+    alert(successMessage)
+    closeModal()
+  }
+
   // 儲存出租房間
   const saveRentOut = (roomId: number) => {
     const property = getCurrentProperty()
@@ -3845,6 +4244,81 @@ export default function Modal() {
         
         if (rateInput) {
           rateInput.removeEventListener('input', updateCalculations)
+        }
+      }
+    }
+
+    // 退房結算計算函數
+    if (type === 'checkOut') {
+
+      // 添加隱藏的輸入字段
+      const addHiddenInputs = () => {
+        const formContainer = document.querySelector('.modal-box')
+        if (!formContainer) return
+
+        // 檢查是否已存在
+        if (!document.getElementById('checkOutElectricityCost')) {
+          const electricityCostInput = document.createElement('input')
+          electricityCostInput.type = 'hidden'
+          electricityCostInput.id = 'checkOutElectricityCost'
+          electricityCostInput.value = '0'
+          formContainer.appendChild(electricityCostInput)
+        }
+
+        if (!document.getElementById('checkOutTotalDeductions')) {
+          const totalDeductionsInput = document.createElement('input')
+          totalDeductionsInput.type = 'hidden'
+          totalDeductionsInput.id = 'checkOutTotalDeductions'
+          totalDeductionsInput.value = '0'
+          formContainer.appendChild(totalDeductionsInput)
+        }
+      }
+
+      // 綁定事件
+      const finalMeterInput = document.getElementById('checkOutFinalMeter')
+      const rateInput = document.getElementById('checkOutElectricityRate')
+      const damageInput = document.getElementById('checkOutDamageDeduction')
+      const cleaningInput = document.getElementById('checkOutCleaningFee')
+      const otherInput = document.getElementById('checkOutOtherDeductions')
+
+      const bindEvents = () => {
+        if (finalMeterInput) {
+          finalMeterInput.addEventListener('input', calculateElectricityCost)
+        }
+        if (rateInput) {
+          rateInput.addEventListener('input', calculateElectricityCost)
+        }
+        if (damageInput) {
+          damageInput.addEventListener('input', calculateTotalSettlement)
+        }
+        if (cleaningInput) {
+          cleaningInput.addEventListener('input', calculateTotalSettlement)
+        }
+        if (otherInput) {
+          otherInput.addEventListener('input', calculateTotalSettlement)
+        }
+      }
+
+      // 初始化
+      addHiddenInputs()
+      bindEvents()
+
+      return () => {
+        // 清理事件監聽器
+        if (finalMeterInput) {
+          finalMeterInput.removeEventListener('input', calculateElectricityCost)
+        }
+        if (rateInput) {
+          rateInput.removeEventListener('input', calculateElectricityCost)
+        }
+        if (damageInput) {
+          damageInput.removeEventListener('input', calculateTotalSettlement)
+        }
+        if (cleaningInput) {
+          cleaningInput.removeEventListener('input', calculateTotalSettlement)
+        }
+        if (otherInput) {
+          otherInput.removeEventListener('input', calculateTotalSettlement)
         }
       }
     }
