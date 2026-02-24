@@ -35,8 +35,8 @@ export function initData(): AppData {
           { id: 8, f: 4, n: '401', r: 9000, d: 18000, s: 'available', t: '舊租客F', p: '0912-345-006', in: '2025-08-01', out: '2026-01-31', moveOutDate: '2026-01-31', finalMeter: 1200, finalElectricityFee: 1200 },
           { id: 9, f: 4, n: '402', r: 9000, d: 18000, s: 'available', t: '舊租客G', p: '0912-345-007', in: '2025-07-01', out: '2025-12-31', moveOutDate: '2025-12-31', finalMeter: 1100, finalElectricityFee: 900 },
           
-          // 5樓 - 裝修中
-          { id: 10, f: 5, n: '501', r: 9500, d: 19000, s: 'renovation' },
+          // 5樓 - 維修中
+          { id: 10, f: 5, n: '501', r: 9500, d: 19000, s: 'maintenance' },
         ],
         payments: [],
         history: [
