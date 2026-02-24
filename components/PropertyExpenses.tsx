@@ -151,13 +151,13 @@ export default function PropertyExpenses({ property }: PropertyExpensesProps) {
     const expense = {
       id: newId,
       date: newExpense.date,
-      type: newExpense.type,
+      type: newExpense.type as any, // 使用類型斷言
       amount: parseFloat(newExpense.amount),
       description: newExpense.description.trim(),
       room: newExpense.room,
       vendor: newExpense.vendor.trim(),
-      paymentMethod: newExpense.paymentMethod,
-      status: newExpense.status,
+      paymentMethod: newExpense.paymentMethod as any, // 使用類型斷言
+      status: newExpense.status as any, // 使用類型斷言
       invoiceNumber: newExpense.invoiceNumber.trim(),
       propertyId: property.id
     }
