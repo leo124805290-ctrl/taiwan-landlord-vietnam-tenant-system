@@ -2172,56 +2172,96 @@ export default function Modal() {
     closeModal()
   }
 
-  // 儲存新增裝修
+  // 儲存新增裝修 - 修復版
   const saveAddRenovation = () => {
-    const property = getCurrentProperty()
-    if (!property) return
+    try {
+      console.log('開始儲存新增裝修...')
+      
+      const property = getCurrentProperty()
+      if (!property) {
+        alert('錯誤：找不到當前物業')
+        return
+      }
 
-    const nameInput = document.getElementById('addRenovationName') as HTMLInputElement
-    const descInput = document.getElementById('addRenovationDesc') as HTMLTextAreaElement
-    const typeInput = document.getElementById('addRenovationType') as HTMLSelectElement
-    const budgetInput = document.getElementById('addRenovationBudget') as HTMLInputElement
-    const startInput = document.getElementById('addRenovationStart') as HTMLInputElement
-    const endInput = document.getElementById('addRenovationEnd') as HTMLInputElement
-    const contractorInput = document.getElementById('addRenovationContractor') as HTMLInputElement
-    const statusInput = document.getElementById('addRenovationStatus') as HTMLSelectElement
+      // 獲取輸入元素
+      const nameInput = document.getElementById('addRenovationName') as HTMLInputElement
+      const descInput = document.getElementById('addRenovationDesc') as HTMLTextAreaElement
+      const typeInput = document.getElementById('addRenovationType') as HTMLSelectElement
+      const budgetInput = document.getElementById('addRenovationBudget') as HTMLInputElement
+      const startInput = document.getElementById('addRenovationStart') as HTMLInputElement
+      const endInput = document.getElementById('addRenovationEnd') as HTMLInputElement
+      const contractorInput = document.getElementById('addRenovationContractor') as HTMLInputElement
+      const statusInput = document.getElementById('addRenovationStatus') as HTMLSelectElement
 
-    if (!nameInput?.value.trim()) {
-      alert(t('pleaseEnterProjectName', state.lang))
-      return
-    }
+      // 驗證輸入
+      if (!nameInput?.value.trim()) {
+        alert('請輸入裝修項目名稱')
+        return
+      }
 
-    const newId = Math.max(...(property.maintenance || []).map((m: any) => m.id), 0) + 1
-    const newRenovation = {
-      id: newId,
-      rid: 0, // 默認房間ID
-      n: '', // 默認房號
-      t: '', // 默認租客姓名
-      title: nameInput.value.trim(),
-      desc: descInput.value.trim(),
-      urg: 'normal' as const, // 裝修默認緊急程度為普通
-      type: 'renovation' as const,
-      renovationType: typeInput.value,
-      date: new Date().toISOString().split('T')[0], // 創建日期
-      budget: budgetInput.value ? parseInt(budgetInput.value) : undefined,
-      startDate: startInput.value || undefined,
-      estimatedEndDate: endInput.value || undefined,
-      contractor: contractorInput.value.trim() || undefined,
-      s: statusInput.value as any
-    }
+      // 獲取當前物業的維護記錄
+      const currentMaintenance = property.maintenance || []
+      console.log('當前維護記錄數量:', currentMaintenance.length)
+      
+      // 生成新 ID
+      const maxId = currentMaintenance.length > 0 
+        ? Math.max(...currentMaintenance.map((m: any) => m.id || 0))
+        : 0
+      const newId = maxId + 1
+      console.log('新裝修記錄 ID:', newId)
 
-    const updatedProperties = state.data.properties.map(p => 
-      p.id === property.id
-        ? {
+      // 創建新的裝修記錄
+      const newRenovation = {
+        id: newId,
+        title: nameInput.value.trim(),
+        desc: descInput.value.trim() || '',
+        category: 'renovation' as const,
+        renovationType: typeInput.value,
+        s: statusInput.value || 'planned',
+        date: new Date().toISOString().split('T')[0], // 創建日期
+        estimatedCost: budgetInput.value ? parseInt(budgetInput.value) : 0,
+        startDate: startInput.value || new Date().toISOString().split('T')[0],
+        estimatedCompletion: endInput.value || '',
+        contractor: contractorInput.value.trim() || '',
+        // 確保所有必要欄位都有值
+        n: '公共區域', // 默認房間
+        t: '', // 租客姓名
+        urg: 'normal' as const
+      }
+
+      console.log('新裝修記錄:', newRenovation)
+
+      // 更新物業資料
+      const updatedProperties = state.data.properties.map(p => {
+        if (p.id === property.id) {
+          const updatedProperty = {
             ...p,
             maintenance: [...(p.maintenance || []), newRenovation]
           }
-        : p
-    )
+          console.log('更新後的物業維護記錄數量:', updatedProperty.maintenance.length)
+          return updatedProperty
+        }
+        return p
+      })
 
-    updateData({ properties: updatedProperties })
-    alert(t('renovationAdded', state.lang))
-    closeModal()
+      // 更新資料
+      updateData({ properties: updatedProperties })
+      
+      // 顯示成功訊息
+      alert(`✅ 裝修項目已成功新增！\n項目名稱：${nameInput.value.trim()}\n記錄ID：${newId}`)
+      
+      // 關閉模態框
+      closeModal()
+      
+      // 強制重新渲染（可選）
+      setTimeout(() => {
+        updateState({ tab: state.tab }) // 觸發重新渲染
+      }, 100)
+      
+    } catch (error) {
+      console.error('儲存裝修時發生錯誤:', error)
+      alert(`❌ 儲存失敗：${error instanceof Error ? error.message : '未知錯誤'}`)
+    }
   }
 
   // 儲存新增水電支出
