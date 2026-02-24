@@ -1,7 +1,13 @@
 // 多物業管理系統 - 類型定義
 
 // 房間狀態
-export type RoomStatus = 'available' | 'occupied' | 'renovation';
+export type RoomStatus = 'available' | 'reserved' | 'pending_payment' | 'occupied' | 'maintenance';
+
+// 入住付款類型
+export type CheckInPaymentType = 'full' | 'deposit_only' | 'reservation_only';
+
+// 退房類型
+export type CheckOutType = 'scheduled' | 'early';
 
 // 付款狀態
 export type PaymentStatus = 'pending' | 'paid';
@@ -49,6 +55,37 @@ export interface Room {
   lastMeterMonth?: string; // 上期抄表月份
   lastMeterUsage?: number; // 上期用電度數
   deposit?: number; // 押金（兼容舊代碼，建議使用 d）
+  
+  // 新增：進階房間管理功能
+  checkInPaymentType?: CheckInPaymentType; // 入住付款類型
+  contractMonths?: number; // 合約月數
+  initialElectricityMeter?: number; // 入住初始電錶
+  rentHistory?: RentRecord[]; // 租金歷史記錄
+  checkOutType?: CheckOutType; // 退房類型
+  earlyCheckOutPenalty?: number; // 提前退房違約金
+  otherDeductions?: Deduction[]; // 其他扣款項目
+  depositReturned?: boolean; // 押金是否已退還
+  notes?: string; // 備註
+}
+
+// 租金記錄
+export interface RentRecord {
+  id: number;
+  date: string; // 收款日期
+  amount: number; // 金額
+  type: 'rent' | 'deposit' | 'electricity' | 'other'; // 類型
+  month?: string; // 所屬月份
+  paymentMethod?: 'cash' | 'transfer' | 'other'; // 付款方式
+  notes?: string; // 備註
+}
+
+// 扣款項目
+export interface Deduction {
+  id: number;
+  reason: string; // 扣款原因
+  amount: number; // 金額
+  date: string; // 扣款日期
+  notes?: string; // 備註
 }
 
 // 付款記錄

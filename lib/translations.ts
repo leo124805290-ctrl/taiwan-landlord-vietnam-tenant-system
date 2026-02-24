@@ -472,6 +472,23 @@ export const translations: Translation = {
     notAvailable: '暫不可用',
     quickActionsTip: '點擊圖標快速完成日常操作',
     record: '記錄',
+    // 房間狀態翻譯（補充）
+    reserved: '已預訂',
+    pending_payment: '待補繳',
+    // 操作按鈕
+    checkIn: '入住',
+    checkOut: '退房',
+    completePayment: '補繳',
+    cancelReservation: '取消預訂',
+    // 表格視圖
+    tableView: '表格',
+    searchRooms: '搜尋房間...',
+    noRoomsFound: '找不到房間',
+    noRoomsFoundDescription: '沒有符合條件的房間，或尚未建立房間',
+    addFirstRoom: '新增第一個房間',
+    tenantInfo: '租客資訊',
+    confirmCancelReservation: '確定要取消預訂嗎？',
+    monthly: '每月',
   },
   'vi-VN': {
     system: 'Hệ thống Quản lý Đa BĐS',
@@ -948,6 +965,23 @@ export const translations: Translation = {
     electricityNotCalculated: 'Tiền điện chưa được tính',
     currentMeterReading: 'Số điện kỳ này',
     calculation: 'Kết quả tính toán',
+    // 房間狀態翻譯（越南文補充）
+    reserved: 'Đã đặt trước',
+    pending_payment: 'Chờ thanh toán',
+    // 操作按鈕（越南文）
+    checkIn: 'Cho thuê',
+    checkOut: 'Trả phòng',
+    completePayment: 'Hoàn tất thanh toán',
+    cancelReservation: 'Hủy đặt trước',
+    // 表格視圖（越南文）
+    tableView: 'Bảng',
+    searchRooms: 'Tìm kiếm phòng...',
+    noRoomsFound: 'Không tìm thấy phòng',
+    noRoomsFoundDescription: 'Không có phòng phù hợp, hoặc chưa tạo phòng',
+    addFirstRoom: 'Thêm phòng đầu tiên',
+    tenantInfo: 'Thông tin người thuê',
+    confirmCancelReservation: 'Bạn có chắc chắn muốn hủy đặt trước không?',
+    monthly: 'Hàng tháng',
   }
 };
 
