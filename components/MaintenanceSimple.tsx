@@ -39,8 +39,10 @@ export default function MaintenanceSimple({ property }: MaintenanceSimpleProps) 
   // 獲取所有房間
   const allRooms = useMemo(() => {
     const rooms = allMaintenance.map((m: any) => m.n || '公共區域')
-    const uniqueRooms = Array.from(new Set(rooms)).filter(room => room && room.trim() !== '')
-    return uniqueRooms
+    const uniqueRooms = Array.from(new Set(rooms)).filter((room: any) => 
+      room && typeof room === 'string' && room.trim() !== ''
+    )
+    return uniqueRooms as string[]
   }, [allMaintenance])
   
   // 篩選記錄
