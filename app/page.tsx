@@ -23,7 +23,7 @@ export default function HomePage() {
       return (
         <div className="card text-center py-12">
           <div className="text-6xl mb-4">🏢</div>
-          <h2 className="text-2xl font-bold mb-4">尚未建立物業</h2>
+          <h2 className="text-2xl font-bold mb-4">【測試】尚未建立物業</h2>
           <button 
             onClick={() => openModal('addProperty')}
             className="btn btn-primary"
