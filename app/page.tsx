@@ -5,6 +5,7 @@ import Dashboard from '@/components/Dashboard'
 import Rooms from '@/components/Rooms'
 import Payments from '@/components/Payments'
 import MaintenanceSimple from '@/components/MaintenanceSimple'
+import PropertyExpenses from '@/components/PropertyExpenses'
 import Utilities from '@/components/Utilities'
 import Reports from '@/components/Reports'
 import Settings from '@/components/Settings'
@@ -45,6 +46,8 @@ export default function HomePage() {
         return <PaymentHistory property={property} />
       case 'maintenance':
         return <MaintenanceSimple property={property} />
+      case 'expenses':
+        return <PropertyExpenses property={property} />
       case 'utilities':
         return <Utilities />
       case 'reports':
