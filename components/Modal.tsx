@@ -2210,23 +2210,25 @@ export default function Modal() {
       const newId = maxId + 1
       console.log('新裝修記錄 ID:', newId)
 
-      // 創建新的裝修記錄
+      // 創建新的裝修記錄 - 符合 Maintenance 介面
       const newRenovation = {
         id: newId,
+        rid: 0, // 房間ID，裝修通常是公共區域所以設為0
+        n: '公共區域', // 房號
+        t: '', // 租客姓名
         title: nameInput.value.trim(),
         desc: descInput.value.trim() || '',
-        category: 'renovation' as const,
-        renovationType: typeInput.value,
-        s: statusInput.value || 'planned',
+        urg: 'normal' as const, // 緊急程度
+        s: (statusInput.value || 'planned') as any, // 狀態
         date: new Date().toISOString().split('T')[0], // 創建日期
+        // 裝修相關欄位
         estimatedCost: budgetInput.value ? parseInt(budgetInput.value) : 0,
-        startDate: startInput.value || new Date().toISOString().split('T')[0],
         estimatedCompletion: endInput.value || '',
-        contractor: contractorInput.value.trim() || '',
-        // 確保所有必要欄位都有值
-        n: '公共區域', // 默認房間
-        t: '', // 租客姓名
-        urg: 'normal' as const
+        category: 'renovation' as const,
+        // 可選欄位
+        startDate: startInput.value || undefined,
+        contractor: contractorInput.value.trim() || undefined,
+        renovationType: typeInput.value || undefined
       }
 
       console.log('新裝修記錄:', newRenovation)
