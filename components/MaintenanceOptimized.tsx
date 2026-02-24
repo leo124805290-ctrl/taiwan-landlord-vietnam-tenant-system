@@ -30,16 +30,14 @@ interface MaintenanceProps {
 export default function MaintenanceOptimized({ property }: MaintenanceProps) {
   const { state, updateState, updateData, openModal } = useApp()
   
-  // 判斷記錄類型（報修或裝修）
+  // 判斷記錄類型（報修或裝修）- 簡化版
   const getMaintenanceType = (maint: any): string => {
+    // 優先使用 category 欄位
     if (maint.category) {
-      return maint.category === 'renovation' ? 'renovation' : 'maintenance';
+      return maint.category;
     }
-    if (maint.estimatedCost !== undefined || 
-        (maint.title && (maint.title.includes('裝修') || maint.title.includes('cải tạo') || maint.title.includes('renovation')))) {
-      return 'renovation';
-    }
-    return 'maintenance';
+    // 預設為報修
+    return 'repair';
   };
 
   // 計算維修成本統計
@@ -67,15 +65,17 @@ export default function MaintenanceOptimized({ property }: MaintenanceProps) {
       byRoom[m.n].cost += (m.actualCost || m.cost || 0);
     });
     
-    // 按類別統計
+    // 按類別統計 - 簡化版
     const byCategory = {
       repair: allMaintenance.filter((m: any) => 
-        m.category === 'repair' || (!m.category && getMaintenanceType(m) === 'maintenance')
+        m.category === 'repair' || m.category === '報修' || (!m.category && getMaintenanceType(m) === 'repair')
       ).length,
       renovation: allMaintenance.filter((m: any) => 
-        m.category === 'renovation' || (!m.category && getMaintenanceType(m) === 'renovation')
+        m.category === 'renovation' || m.category === '裝修' || (!m.category && getMaintenanceType(m) === 'renovation')
       ).length,
-      other: allMaintenance.filter((m: any) => m.category === 'other').length
+      other: allMaintenance.filter((m: any) => 
+        m.category === 'other' || m.category === '其它'
+      ).length
     };
     
     // 按狀態統計

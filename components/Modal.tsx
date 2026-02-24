@@ -2183,19 +2183,18 @@ export default function Modal() {
         return
       }
 
-      // 獲取輸入元素
-      const nameInput = document.getElementById('addRenovationName') as HTMLInputElement
-      const descInput = document.getElementById('addRenovationDesc') as HTMLTextAreaElement
-      const typeInput = document.getElementById('addRenovationType') as HTMLSelectElement
-      const budgetInput = document.getElementById('addRenovationBudget') as HTMLInputElement
-      const startInput = document.getElementById('addRenovationStart') as HTMLInputElement
-      const endInput = document.getElementById('addRenovationEnd') as HTMLInputElement
-      const contractorInput = document.getElementById('addRenovationContractor') as HTMLInputElement
+      // 獲取輸入元素 - 簡化版
+      const titleInput = document.getElementById('addRenovationTitle') as HTMLInputElement
+      const mainCategoryInput = document.getElementById('addRenovationMainCategory') as HTMLSelectElement
+      const subCategoryInput = document.getElementById('addRenovationSubCategory') as HTMLSelectElement
       const statusInput = document.getElementById('addRenovationStatus') as HTMLSelectElement
+      const dateInput = document.getElementById('addRenovationDate') as HTMLInputElement
+      const amountInput = document.getElementById('addRenovationAmount') as HTMLInputElement
+      const notesInput = document.getElementById('addRenovationNotes') as HTMLTextAreaElement
 
       // 驗證輸入
-      if (!nameInput?.value.trim()) {
-        alert('請輸入裝修項目名稱')
+      if (!titleInput?.value.trim()) {
+        alert('請輸入標題')
         return
       }
 
@@ -2210,25 +2209,24 @@ export default function Modal() {
       const newId = maxId + 1
       console.log('新裝修記錄 ID:', newId)
 
-      // 創建新的裝修記錄 - 符合 Maintenance 介面
+      // 創建新的裝修記錄 - 簡化版
       const newRenovation = {
         id: newId,
-        rid: 0, // 房間ID，裝修通常是公共區域所以設為0
+        rid: 0, // 房間ID
         n: '公共區域', // 房號
         t: '', // 租客姓名
-        title: nameInput.value.trim(),
-        desc: descInput.value.trim() || '',
+        title: titleInput.value.trim(),
+        desc: notesInput?.value.trim() || '', // 備註作為描述
         urg: 'normal' as const, // 緊急程度
-        s: (statusInput.value || 'planned') as any, // 狀態
-        date: new Date().toISOString().split('T')[0], // 創建日期
-        // 裝修相關欄位
-        estimatedCost: budgetInput.value ? parseInt(budgetInput.value) : 0,
-        estimatedCompletion: endInput.value || '',
-        category: 'renovation' as const,
-        // 可選欄位
-        startDate: startInput.value || undefined,
-        contractor: contractorInput.value.trim() || undefined,
-        renovationType: typeInput.value || undefined
+        s: (statusInput.value || 'pending') as any, // 狀態
+        date: dateInput.value || new Date().toISOString().split('T')[0], // 日期
+        // 金額
+        cost: amountInput.value ? parseInt(amountInput.value) : 0,
+        // 分類
+        category: mainCategoryInput.value as any, // 大類：裝修或報修
+        // 子分類存到 notes 或新增欄位
+        subCategory: subCategoryInput.value || '',
+        // 簡化：移除不必要的欄位
       }
 
       console.log('新裝修記錄:', newRenovation)
@@ -2250,7 +2248,7 @@ export default function Modal() {
       updateData({ properties: updatedProperties })
       
       // 顯示成功訊息
-      alert(`✅ 裝修項目已成功新增！\n項目名稱：${nameInput.value.trim()}\n記錄ID：${newId}`)
+      alert(`✅ 記錄已成功新增！\n標題：${titleInput.value.trim()}\n分類：${mainCategoryInput.value} - ${subCategoryInput.value}\n狀態：${statusInput.value}`)
       
       // 關閉模態框
       closeModal()
