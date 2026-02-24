@@ -106,10 +106,10 @@ export default function MaintenanceOptimized({ property }: MaintenanceProps) {
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   
   // 獲取所有房間號碼
-  const allRooms: string[] = useMemo(() => {
+  const allRooms = useMemo(() => {
     const rooms = (property.maintenance || []).map((m: any) => m.n?.toString() || '');
     const uniqueRooms = Array.from(new Set(rooms)).filter(room => room && room.trim() !== '');
-    return uniqueRooms;
+    return uniqueRooms as string[];
   }, [property.maintenance]);
 
   // 篩選報修/裝修記錄
