@@ -105,6 +105,7 @@ export interface Property {
   payments: Payment[];
   history: Payment[];
   maintenance: Maintenance[];
+  expenses?: Expense[]; // 物業修繕/支出記錄
   meterHistory?: MeterReadingRecord[]; // 抄錶歷史記錄
   utilityExpenses?: UtilityExpense[]; // 水電支出記錄
   additionalIncomes?: AdditionalIncome[]; // 補充收入記錄
@@ -154,6 +155,21 @@ export interface AdditionalIncome {
   receivedDate: string; // 收款日期 (YYYY-MM-DD)
   propertyId: number; // 所屬物業ID
   notes?: string; // 備註（添加notes字段）
+}
+
+// 物業修繕/支出記錄
+export interface Expense {
+  id: number;
+  date: string; // 支出日期
+  type: 'repair' | 'renovation' | 'utility' | 'tax' | 'management' | 'other'; // 支出類型
+  amount: number; // 金額
+  description: string; // 說明
+  room: string; // 房間/區域
+  vendor?: string; // 供應商/收款人
+  paymentMethod?: 'cash' | 'transfer' | 'credit' | 'check'; // 付款方式
+  status: 'pending' | 'paid' | 'cancelled'; // 付款狀態
+  invoiceNumber?: string; // 發票號碼
+  propertyId: number; // 所屬物業ID
 }
 
 // 應用資料
