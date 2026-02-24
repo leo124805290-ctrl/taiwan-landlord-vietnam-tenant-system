@@ -459,6 +459,178 @@ export default function Modal() {
           </>
         )
 
+      case 'checkIn':
+        const checkInRoom = property?.rooms.find((r: Room) => r.id === data)
+        if (!checkInRoom) return null
+        
+        return (
+          <>
+            <h2 className="text-2xl font-bold mb-4">🏠 {t('checkInTitle', state.lang)}</h2>
+            
+            {/* 房間資訊 */}
+            <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+              <div className="text-lg font-bold">{checkInRoom.n} ({checkInRoom.f}F)</div>
+              <div className="text-sm text-gray-600">
+                {t('monthlyRent', state.lang)}: {formatCurrency(checkInRoom.r)} • 
+                {t('deposit', state.lang)}: {formatCurrency(checkInRoom.d || 0)}
+              </div>
+            </div>
+            
+            {/* 步驟1：選擇付款方式 */}
+            <div className="mb-6">
+              <h3 className="text-lg font-bold mb-3">1. {t('selectPaymentOption', state.lang)}</h3>
+              <div className="space-y-2">
+                <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input type="radio" name="paymentOption" value="full" defaultChecked className="mr-3" />
+                  <div>
+                    <div className="font-medium">✅ {t('paymentOptionFull', state.lang)}</div>
+                    <div className="text-sm text-gray-600">
+                      {formatCurrency(checkInRoom.r + (checkInRoom.d || 0))}
+                    </div>
+                  </div>
+                </label>
+                
+                <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input type="radio" name="paymentOption" value="deposit_only" className="mr-3" />
+                  <div>
+                    <div className="font-medium">💰 {t('paymentOptionDeposit', state.lang)}</div>
+                    <div className="text-sm text-gray-600">
+                      {t('deposit', state.lang)}: {formatCurrency(checkInRoom.d || 0)}
+                    </div>
+                  </div>
+                </label>
+                
+                <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input type="radio" name="paymentOption" value="reservation_only" className="mr-3" />
+                  <div>
+                    <div className="font-medium">📅 {t('paymentOptionReserve', state.lang)}</div>
+                    <div className="text-sm text-gray-600">
+                      {t('noPaymentRequired', state.lang)}
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+            
+            {/* 步驟2：租客資訊 */}
+            <div className="mb-6">
+              <h3 className="text-lg font-bold mb-3">2. {t('tenantInformation', state.lang)}</h3>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm mb-1">{t('tenantName', state.lang)} *</label>
+                  <input type="text" id="checkInTenantName" className="input-field" required />
+                </div>
+                <div>
+                  <label className="block text-sm mb-1">{t('tenantPhone', state.lang)} *</label>
+                  <input type="tel" id="checkInTenantPhone" className="input-field" required />
+                </div>
+              </div>
+            </div>
+            
+            {/* 步驟3：合約詳情 */}
+            <div className="mb-6">
+              <h3 className="text-lg font-bold mb-3">3. {t('contractDetails', state.lang)}</h3>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm mb-1">{t('contractStart', state.lang)} *</label>
+                  <input 
+                    type="date" 
+                    id="checkInContractStart" 
+                    defaultValue={new Date().toISOString().split('T')[0]} 
+                    className="input-field" 
+                    required 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm mb-1">{t('contractMonths', state.lang)} *</label>
+                  <div className="flex gap-2">
+                    {[1, 3, 6, 12].map(months => (
+                      <button
+                        key={months}
+                        type="button"
+                        onClick={() => {
+                          const startInput = document.getElementById('checkInContractStart') as HTMLInputElement
+                          const endInput = document.getElementById('checkInContractEnd') as HTMLInputElement
+                          
+                          if (startInput && startInput.value) {
+                            const startDate = new Date(startInput.value)
+                            startDate.setMonth(startDate.getMonth() + months)
+                            const endDate = startDate.toISOString().split('T')[0]
+                            
+                            if (endInput) {
+                              endInput.value = endDate
+                            }
+                          }
+                        }}
+                        className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 text-sm"
+                      >
+                        {months} {t('months', state.lang)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm mb-1">{t('contractEnd', state.lang)} *</label>
+                  <input type="date" id="checkInContractEnd" className="input-field" required />
+                </div>
+              </div>
+            </div>
+            
+            {/* 步驟4：電費資訊 */}
+            <div className="mb-6">
+              <h3 className="text-lg font-bold mb-3">4. {t('electricityInfo', state.lang)}</h3>
+              <div>
+                <label className="block text-sm mb-1">{t('electricityMeter', state.lang)}</label>
+                <input 
+                  type="number" 
+                  id="checkInElectricityMeter" 
+                  className="input-field" 
+                  placeholder={t('enterInitialMeter', state.lang)}
+                />
+              </div>
+            </div>
+            
+            {/* 步驟5：付款摘要 */}
+            <div className="mb-6 p-4 bg-green-50 rounded-lg">
+              <h3 className="text-lg font-bold mb-3">5. {t('paymentSummary', state.lang)}</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span>{t('monthlyRent', state.lang)}:</span>
+                  <span className="font-bold">{formatCurrency(checkInRoom.r)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>{t('deposit', state.lang)}:</span>
+                  <span className="font-bold">{formatCurrency(checkInRoom.d || 0)}</span>
+                </div>
+                <div className="flex justify-between text-lg font-bold border-t pt-2">
+                  <span>{t('totalAmount', state.lang)}:</span>
+                  <span>{formatCurrency(checkInRoom.r + (checkInRoom.d || 0))}</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* 步驟6：備註 */}
+            <div className="mb-6">
+              <h3 className="text-lg font-bold mb-3">6. {t('paymentNotes', state.lang)} ({t('optional', state.lang)})</h3>
+              <textarea 
+                id="checkInNotes" 
+                className="input-field h-20" 
+                placeholder={t('enterNotesHere', state.lang)}
+              ></textarea>
+            </div>
+            
+            {/* 操作按鈕 */}
+            <div className="flex gap-2">
+              <button onClick={closeModal} className="flex-1 btn bg-gray-200">
+                {t('cancel', state.lang)}
+              </button>
+              <button onClick={() => saveCheckIn(data)} className="flex-1 btn btn-primary">
+                {t('confirmAndSave', state.lang)}
+              </button>
+            </div>
+          </>
+        )
+
       case 'editRoom':
         const editRoom = property?.rooms.find((r: Room) => r.id === data)
         if (!editRoom) return null
@@ -2909,6 +3081,126 @@ export default function Modal() {
     
     // 顯示成功訊息
     alert(`✅ ${t('collected', state.lang)}\n${payment.n} - ${payment.t}\n${formatCurrency(payment.total)}`)
+    closeModal()
+  }
+
+  // 儲存入住房間（三種付款方式）
+  const saveCheckIn = (roomId: number) => {
+    const property = getCurrentProperty()
+    if (!property) return
+
+    // 獲取付款方式
+    const paymentOption = document.querySelector('input[name="paymentOption"]:checked') as HTMLInputElement
+    if (!paymentOption) {
+      alert('請選擇付款方式')
+      return
+    }
+
+    // 獲取租客資訊
+    const nameInput = document.getElementById('checkInTenantName') as HTMLInputElement
+    const phoneInput = document.getElementById('checkInTenantPhone') as HTMLInputElement
+    const startInput = document.getElementById('checkInContractStart') as HTMLInputElement
+    const endInput = document.getElementById('checkInContractEnd') as HTMLInputElement
+    const meterInput = document.getElementById('checkInElectricityMeter') as HTMLInputElement
+    const notesInput = document.getElementById('checkInNotes') as HTMLTextAreaElement
+
+    // 驗證必填字段
+    if (!nameInput?.value.trim()) {
+      alert(t('pleaseEnterTenantName', state.lang))
+      return
+    }
+
+    if (!phoneInput?.value.trim()) {
+      alert('請輸入租客電話')
+      return
+    }
+
+    if (!startInput?.value || !endInput?.value) {
+      alert('請填寫合約起訖日期')
+      return
+    }
+
+    const startDate = new Date(startInput.value)
+    const endDate = new Date(endInput.value)
+
+    if (endDate <= startDate) {
+      alert('合約結束日期必須晚於開始日期')
+      return
+    }
+
+    // 根據付款方式設定房間狀態
+    let roomStatus: 'occupied' | 'reserved' | 'pending_payment'
+    let checkInPaymentType: 'full' | 'deposit_only' | 'reservation_only'
+
+    switch (paymentOption.value) {
+      case 'full':
+        roomStatus = 'occupied'
+        checkInPaymentType = 'full'
+        break
+      case 'deposit_only':
+        roomStatus = 'pending_payment'
+        checkInPaymentType = 'deposit_only'
+        break
+      case 'reservation_only':
+        roomStatus = 'reserved'
+        checkInPaymentType = 'reservation_only'
+        break
+      default:
+        roomStatus = 'occupied'
+        checkInPaymentType = 'full'
+    }
+
+    // 計算合約月數
+    const monthsDiff = (endDate.getFullYear() - startDate.getFullYear()) * 12 + 
+                      (endDate.getMonth() - startDate.getMonth())
+
+    // 更新房間資料
+    const updatedProperties = state.data.properties.map(p => 
+      p.id === property.id
+        ? {
+            ...p,
+            rooms: p.rooms.map(r => 
+              r.id === roomId
+                ? {
+                    ...r,
+                    s: roomStatus,
+                    t: nameInput.value.trim(),
+                    p: phoneInput.value.trim(),
+                    in: startInput.value,
+                    out: endInput.value,
+                    pm: meterInput?.value ? parseInt(meterInput.value) : 0,
+                    checkInPaymentType,
+                    contractMonths: monthsDiff,
+                    initialElectricityMeter: meterInput?.value ? parseInt(meterInput.value) : 0,
+                    notes: notesInput?.value || '',
+                    // 如果是全額付款，設定電錶讀數
+                    ...(paymentOption.value === 'full' && meterInput?.value 
+                      ? { cm: parseInt(meterInput.value) } 
+                      : {})
+                  }
+                : r
+            )
+          }
+        : p
+    )
+
+    updateData({ properties: updatedProperties })
+    
+    // 顯示成功訊息
+    let successMessage = ''
+    switch (paymentOption.value) {
+      case 'full':
+        successMessage = '✅ 入住成功！已收取全額租金和押金。'
+        break
+      case 'deposit_only':
+        successMessage = '💰 入住成功！已收取押金，請提醒租客補繳租金。'
+        break
+      case 'reservation_only':
+        successMessage = '📅 預訂成功！房間已保留，等待後續處理。'
+        break
+    }
+    
+    alert(successMessage)
     closeModal()
   }
 
