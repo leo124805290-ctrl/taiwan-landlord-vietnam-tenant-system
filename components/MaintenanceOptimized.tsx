@@ -108,8 +108,10 @@ export default function MaintenanceOptimized({ property }: MaintenanceProps) {
   // 獲取所有房間號碼
   const allRooms = useMemo(() => {
     const rooms = (property.maintenance || []).map((m: any) => m.n?.toString() || '');
-    const uniqueRooms = Array.from(new Set(rooms)).filter((room: string) => room && room.trim() !== '');
-    return uniqueRooms as string[];
+    const uniqueRooms = Array.from(new Set(rooms)).filter((room): room is string => 
+      typeof room === 'string' && room.trim() !== ''
+    );
+    return uniqueRooms;
   }, [property.maintenance]);
 
   // 篩選報修/裝修記錄
