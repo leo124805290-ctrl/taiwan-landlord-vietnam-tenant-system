@@ -108,7 +108,7 @@ export default function MaintenanceOptimized({ property }: MaintenanceProps) {
   // 獲取所有房間號碼
   const allRooms = useMemo(() => {
     const rooms = (property.maintenance || []).map((m: any) => m.n?.toString() || '');
-    const uniqueRooms = Array.from(new Set(rooms)).filter(room => room && room.trim() !== '');
+    const uniqueRooms = Array.from(new Set(rooms)).filter((room: string) => room && room.trim() !== '');
     return uniqueRooms as string[];
   }, [property.maintenance]);
 
