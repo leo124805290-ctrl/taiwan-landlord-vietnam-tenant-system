@@ -69,7 +69,36 @@ export default function Rooms({ property }: RoomsProps) {
     }
   }, [property.id, property.rooms, state.data.properties, updateData])
 
-  // 計算統計資料
+  // 計算統計資料（支持單一物業，為多物業擴展做準備）
+  // 未來擴展：當選擇「全部物業」時，計算所有物業的合併統計
+  /*
+  const calculateAllPropertiesStats = (properties: any[]) => {
+    return properties.reduce((acc, property) => {
+      const rooms = property.rooms || []
+      return {
+        total: acc.total + rooms.length,
+        available: acc.available + rooms.filter(r => r.s === 'available').length,
+        pending_checkin_paid: acc.pending_checkin_paid + rooms.filter(r => 
+          r.s === 'pending_checkin_paid' || r.s === 'fully_paid'
+        ).length,
+        pending_checkin_unpaid: acc.pending_checkin_unpaid + rooms.filter(r => 
+          r.s === 'pending_checkin_unpaid' || 
+          r.s === 'deposit_paid' || 
+          r.s === 'reserved' || 
+          r.s === 'pending_payment'
+        ).length,
+        occupied: acc.occupied + rooms.filter(r => r.s === 'occupied').length,
+        maintenance: acc.maintenance + rooms.filter(r => r.s === 'maintenance').length,
+        totalRent: acc.totalRent + rooms.reduce((sum, r) => sum + (r.r || 0), 0),
+        totalDeposit: acc.totalDeposit + rooms.reduce((sum, r) => sum + (r.d || 0), 0),
+      }
+    }, {
+      total: 0, available: 0, pending_checkin_paid: 0, pending_checkin_unpaid: 0,
+      occupied: 0, maintenance: 0, totalRent: 0, totalDeposit: 0
+    })
+  }
+  */
+  
   const stats = useMemo(() => {
     const rooms = property.rooms || []
     
@@ -94,8 +123,11 @@ export default function Rooms({ property }: RoomsProps) {
       maintenance: rooms.filter((r: Room) => r.s === 'maintenance').length,
       totalRent: rooms.reduce((sum: number, r: Room) => sum + (r.r || 0), 0),
       totalDeposit: rooms.reduce((sum: number, r: Room) => sum + (r.d || 0), 0),
+      // 為多物業擴展準備的字段
+      propertyName: property.name || '未命名物業',
+      propertyCount: 1, // 當前只有一個物業
     }
-  }, [property.rooms])
+  }, [property.rooms, property.name])
 
   // 過濾房間
   const filteredRooms = useMemo(() => {
@@ -283,6 +315,9 @@ export default function Rooms({ property }: RoomsProps) {
           <h2 className="text-lg font-bold flex items-center gap-2">
             <span>🏢</span>
             房間狀態統計
+            <span className="text-sm font-normal text-gray-600 ml-2">
+              ({property.name || '未命名物業'})
+            </span>
           </h2>
           <div className="text-sm text-gray-500">
             總房間數：{stats.total} 間 | 出租率：{stats.total > 0 ? Math.round((stats.occupied / stats.total) * 100) : 0}%
@@ -437,25 +472,6 @@ export default function Rooms({ property }: RoomsProps) {
             </button>
           </div>
 
-          {/* 狀態過濾 */}
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setFilterStatus('all')}
-              className={`px-3 py-1 rounded ${filterStatus === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-            >
-              {t('all', state.lang)}
-            </button>
-            {(['available', 'pending_checkin_unpaid', 'pending_checkin_paid', 'occupied', 'maintenance'] as RoomStatus[]).map(status => (
-              <button
-                key={status}
-                onClick={() => setFilterStatus(status)}
-                className={`px-3 py-1 rounded ${filterStatus === status ? getStatusColor(status) : 'bg-gray-200'}`}
-              >
-                {getStatusIcon(status)} {t(status, state.lang)}
-              </button>
-            ))}
-          </div>
-
           {/* 搜尋框 */}
           <div className="flex-1">
             <input
@@ -509,7 +525,9 @@ export default function Rooms({ property }: RoomsProps) {
                     <tr key={room.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3">
                         <div className="font-bold">{room.n}</div>
-                        <div className="text-xs text-gray-500">{room.f}F</div>
+                        <div className="text-xs text-gray-500">
+                          {property.name || '未命名物業'} • {room.f}F
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(room.s)}`}>
@@ -848,7 +866,7 @@ export default function Rooms({ property }: RoomsProps) {
                       {room.n} ({room.f}F) - {formatCurrency(room.r)}
                     </div>
                     <div className="text-sm text-gray-600">
-                      {room.t || t('forRent', state.lang)} • {t(room.s, state.lang)}
+                      {property.name || '未命名物業'} • {room.t || t('forRent', state.lang)} • {t(room.s, state.lang)}
                     </div>
                   </div>
                 </div>
