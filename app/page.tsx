@@ -4,6 +4,7 @@ import Header from '@/components/Header'
 import Dashboard from '@/components/Dashboard'
 import Rooms from '@/components/Rooms'
 import AllPropertiesRooms from '@/components/AllPropertiesRooms'
+import AllPropertiesPayments from '@/components/AllPropertiesPayments'
 import FinancialOverview from '@/components/FinancialOverview'
 import Payments from '@/components/Payments'
 import PropertyExpenses from '@/components/PropertyExpenses'
@@ -86,11 +87,15 @@ export default function HomePage() {
       case 'dashboard':
         return <Dashboard property={property} />
       case 'rooms':
-        return <Rooms property={property} />
+        return state.currentProperty === 'all' 
+          ? <AllPropertiesRooms properties={state.data.properties} />
+          : <Rooms property={property} />
       case 'financial':
-        return <FinancialOverview properties={[property]} />
+        return <FinancialOverview properties={state.currentProperty === 'all' ? state.data.properties : [property]} />
       case 'payments':
-        return <Payments property={property} />
+        return state.currentProperty === 'all'
+          ? <AllPropertiesPayments />
+          : <Payments property={property} />
       case 'paymentHistory':
         return <PaymentHistory property={property} />
       case 'expenses':

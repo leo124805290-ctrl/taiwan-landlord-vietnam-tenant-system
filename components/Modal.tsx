@@ -2855,7 +2855,7 @@ export default function Modal() {
               </div>
             </div>
             
-            {/* 電錶讀數輸入 */}
+            {/* 電錶讀數輸入和計算 */}
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1">
@@ -2870,17 +2870,29 @@ export default function Modal() {
                     placeholder="輸入本期電錶讀數"
                     min="0"
                     step="1"
+                    onChange={(e) => calculateElectricityFee(e.target.value)}
                   />
                   <span className="text-gray-500">{t('degree', state.lang)}</span>
                 </div>
                 <div className="text-xs text-gray-500 mt-1">
                   {t('lastMeter', state.lang)}: {data?.lastMeterReading || 0} {t('degree', state.lang)}
                 </div>
+                
+                {/* 確認計算按鈕 */}
+                <button
+                  onClick={() => {
+                    const meterInput = document.getElementById('collectMeterReading') as HTMLInputElement
+                    calculateElectricityFee(meterInput?.value || '0')
+                  }}
+                  className="mt-2 px-4 py-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 text-sm w-full"
+                >
+                  🔄 確認計算電費
+                </button>
               </div>
               
               {/* 自動計算顯示 */}
               <div className="bg-gray-50 rounded-lg p-4">
-                <div className="text-sm font-medium mb-2">📊 {t('calculation', state.lang)}</div>
+                <div className="text-sm font-medium mb-2">📊 預計收款金額</div>
                 
                 <div className="space-y-2">
                   {/* 用電度數計算 */}
@@ -2908,7 +2920,7 @@ export default function Modal() {
                   
                   {/* 總金額 */}
                   <div className="flex justify-between text-lg font-bold">
-                    <span>💰 {t('total', state.lang)}:</span>
+                    <span>💰 總收款金額:</span>
                     <span className="text-green-600" id="totalAmountDisplay">
                       {formatCurrency((data?.rentAmount || 0) + (data?.currentElectricityFee || 0))}
                     </span>
@@ -5014,6 +5026,44 @@ export default function Modal() {
       case 'tenant_request': return '租客要求修改'
       case 'other': return '其他原因'
       default: return '未知原因'
+    }
+  }
+
+  // 計算電費函數（用於收款模態框）
+  const calculateElectricityFee = (currentReading: string) => {
+    const reading = parseFloat(currentReading || '0')
+    const lastReading = data?.lastMeterReading || 0
+    const electricityRate = state.data.electricityRate || 6
+    
+    // 計算用電度數
+    const electricityUsage = Math.max(0, reading - lastReading)
+    
+    // 計算電費
+    const electricityFee = electricityUsage * electricityRate
+    
+    // 更新顯示
+    const usageDisplay = document.getElementById('electricityUsageDisplay')
+    const feeDisplay = document.getElementById('electricityFeeDisplay')
+    const totalDisplay = document.getElementById('totalAmountDisplay')
+    
+    if (usageDisplay) {
+      usageDisplay.textContent = `${electricityUsage} ${t('degree', state.lang)}`
+    }
+    
+    if (feeDisplay) {
+      feeDisplay.textContent = formatCurrency(electricityFee)
+    }
+    
+    if (totalDisplay) {
+      const rentAmount = data?.rentAmount || 0
+      totalDisplay.textContent = formatCurrency(rentAmount + electricityFee)
+    }
+    
+    // 返回計算結果
+    return {
+      electricityUsage,
+      electricityFee,
+      totalAmount: (data?.rentAmount || 0) + electricityFee
     }
   }
 

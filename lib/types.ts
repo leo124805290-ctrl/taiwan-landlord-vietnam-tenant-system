@@ -158,6 +158,7 @@ export interface Property {
   name: string;
   address: string;
   floors: number;
+  color?: string; // 物業顏色標識
   rooms: Room[];
   payments: Payment[];
   history: Payment[];
