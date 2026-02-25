@@ -506,6 +506,25 @@ export function formatDate(dateString: string): string {
   return date.toLocaleDateString('zh-TW');
 }
 
+// 計算月底日期
+export function getMonthEndDate(startDate: string, monthsToAdd: number = 1): string {
+  const date = new Date(startDate);
+  date.setMonth(date.getMonth() + monthsToAdd);
+  
+  // 設置為該月的最後一天
+  date.setDate(0); // 設置為上個月的最後一天
+  date.setMonth(date.getMonth() + 1); // 回到目標月份
+  date.setDate(0); // 設置為目標月份的最後一天
+  
+  return date.toISOString().split('T')[0];
+}
+
+// 計算下個月底日期（從今天開始）
+export function getNextMonthEndDate(months: number = 1): string {
+  const today = new Date();
+  return getMonthEndDate(today.toISOString().split('T')[0], months);
+}
+
 // 檢查合約是否即將到期
 export function isContractExpiring(endDate: string, daysThreshold: number = 90): boolean {
   const end = new Date(endDate);

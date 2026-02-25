@@ -2,7 +2,7 @@
 
 import { Room } from '@/lib/types'
 import { t } from '@/lib/translations'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, getMonthEndDate, getNextMonthEndDate } from '@/lib/utils'
 import { useApp } from '@/contexts/AppContext'
 import { useEffect, useRef } from 'react'
 
@@ -624,7 +624,7 @@ export default function Modal() {
                 <div>
                   <label className="block text-sm mb-1">{t('contractMonths', state.lang)} *</label>
                   <div className="flex gap-2">
-                    {[1, 3, 6, 12].map(months => (
+                    {[1, 2, 3, 6, 12].map(months => (
                       <button
                         key={months}
                         type="button"
@@ -633,9 +633,8 @@ export default function Modal() {
                           const endInput = document.getElementById('checkInContractEnd') as HTMLInputElement
                           
                           if (startInput && startInput.value) {
-                            const startDate = new Date(startInput.value)
-                            startDate.setMonth(startDate.getMonth() + months)
-                            const endDate = startDate.toISOString().split('T')[0]
+                            // 計算月底日期
+                            const endDate = getMonthEndDate(startInput.value, months)
                             
                             if (endInput) {
                               endInput.value = endDate
@@ -644,14 +643,23 @@ export default function Modal() {
                         }}
                         className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 text-sm"
                       >
-                        {months} {t('months', state.lang)}
+                        {months} {t('months', state.lang)}（月底）
                       </button>
                     ))}
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm mb-1">{t('contractEnd', state.lang)} *</label>
-                  <input type="date" id="checkInContractEnd" className="input-field" required />
+                  <input 
+                    type="date" 
+                    id="checkInContractEnd" 
+                    defaultValue={getNextMonthEndDate(1)} 
+                    className="input-field" 
+                    required 
+                  />
+                  <div className="text-xs text-gray-500 mt-1">
+                    默認設置為下個月底，點擊上方按鈕可快速設置
+                  </div>
                 </div>
               </div>
             </div>

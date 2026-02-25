@@ -112,6 +112,60 @@ export default function Rooms({ property }: RoomsProps) {
     updateData({ properties: updatedProperties })
   }
 
+  // 處理房間狀態變更
+  const handleChangeRoomStatus = (roomId: number, newStatus: RoomStatus) => {
+    const room = property.rooms.find((r: Room) => r.id === roomId)
+    if (!room) return
+    
+    let confirmMessage = ''
+    switch (newStatus) {
+      case 'maintenance':
+        confirmMessage = `確定要將房間 ${room.n} 設為「維修中/無法出租」狀態嗎？`
+        break
+      case 'available':
+        if (room.s === 'maintenance') {
+          confirmMessage = `確定要將房間 ${room.n} 恢復為「可出租」狀態嗎？`
+        }
+        break
+      default:
+        confirmMessage = `確定要將房間 ${room.n} 的狀態變更為「${t(newStatus, state.lang)}」嗎？`
+    }
+    
+    if (confirmMessage && !confirm(confirmMessage)) return
+    
+    const updatedProperties = state.data.properties.map(p => 
+      p.id === property.id
+        ? {
+            ...p,
+            rooms: p.rooms.map(r => 
+              r.id === roomId
+                ? { 
+                    ...r, 
+                    s: newStatus,
+                    // 如果設為維修中，清除租客資訊
+                    ...(newStatus === 'maintenance' ? { 
+                      t: undefined, 
+                      p: undefined, 
+                      in: undefined, 
+                      out: undefined 
+                    } : {}),
+                    // 如果從維修中恢復為可出租，保留基本資訊
+                    ...(room.s === 'maintenance' && newStatus === 'available' ? {
+                      t: undefined,
+                      p: undefined,
+                      in: undefined,
+                      out: undefined
+                    } : {})
+                  }
+                : r
+            )
+          }
+        : p
+    )
+    
+    updateData({ properties: updatedProperties })
+  }
+
   // 計算電費
   const calculateElectricityFee = (room: Room) => {
     if (room.s !== 'occupied') return 0
@@ -342,10 +396,32 @@ export default function Rooms({ property }: RoomsProps) {
                           
                           <button
                             onClick={() => openModal('editRoom', room.id)}
-                            className="px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700"
+                            className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                            title="編輯房間詳情"
                           >
-                            {t('edit', state.lang)}
+                            ✏️ {t('edit', state.lang)}
                           </button>
+                          
+                          {/* 狀態管理按鈕 */}
+                          {room.s !== 'maintenance' && room.s !== 'occupied' && (
+                            <button
+                              onClick={() => handleChangeRoomStatus(room.id, 'maintenance')}
+                              className="px-3 py-1 bg-orange-600 text-white rounded text-sm hover:bg-orange-700"
+                              title="設為維修中/無法出租"
+                            >
+                              🔧 維修中
+                            </button>
+                          )}
+                          
+                          {room.s === 'maintenance' && (
+                            <button
+                              onClick={() => handleChangeRoomStatus(room.id, 'available')}
+                              className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                              title="恢復為可出租"
+                            >
+                              ✅ 恢復出租
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -482,10 +558,32 @@ export default function Rooms({ property }: RoomsProps) {
                   
                   <button
                     onClick={() => openModal('editRoom', room.id)}
-                    className="flex-1 btn bg-gray-600 text-white text-sm"
+                    className="flex-1 btn bg-blue-600 text-white text-sm"
+                    title="編輯房間詳情"
                   >
-                    {t('edit', state.lang)}
+                    ✏️ {t('edit', state.lang)}
                   </button>
+                  
+                  {/* 狀態管理按鈕 */}
+                  {room.s !== 'maintenance' && room.s !== 'occupied' && (
+                    <button
+                      onClick={() => handleChangeRoomStatus(room.id, 'maintenance')}
+                      className="flex-1 btn bg-orange-600 text-white text-sm"
+                      title="設為維修中/無法出租"
+                    >
+                      🔧 維修中
+                    </button>
+                  )}
+                  
+                  {room.s === 'maintenance' && (
+                    <button
+                      onClick={() => handleChangeRoomStatus(room.id, 'available')}
+                      className="flex-1 btn bg-green-600 text-white text-sm"
+                      title="恢復為可出租"
+                    >
+                      ✅ 恢復出租
+                    </button>
+                  )}
                 </div>
               </div>
             )
