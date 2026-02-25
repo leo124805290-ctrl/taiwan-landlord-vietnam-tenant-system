@@ -324,7 +324,20 @@ export default function Rooms({ property }: RoomsProps) {
           </div>
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+          {/* 總房間數 - 可點擊篩選（顯示全部） */}
+          <button
+            onClick={() => setFilterStatus('all')}
+            className={`bg-indigo-50 p-3 rounded-lg border ${filterStatus === 'all' ? 'border-indigo-400 ring-2 ring-indigo-200' : 'border-indigo-200'} hover:bg-indigo-100 transition-colors`}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-indigo-600">🏢</span>
+              <div className="text-sm font-medium">總房間數</div>
+            </div>
+            <div className="text-2xl font-bold text-indigo-700">{stats.total}</div>
+            <div className="text-xs text-gray-500">間</div>
+          </button>
+          
           {/* 已出租入住中 - 可點擊篩選 */}
           <button
             onClick={() => setFilterStatus('occupied')}
@@ -399,11 +412,12 @@ export default function Rooms({ property }: RoomsProps) {
                 <span className="text-blue-600">🔍</span>
                 <span>正在篩選：</span>
                 <span className="font-bold">
-                  {filterStatus === 'occupied' ? '已出租入住中' :
+                  {(filterStatus as string) === 'all' ? '全部房間' :
+                   filterStatus === 'occupied' ? '已出租入住中' :
                    filterStatus === 'pending_checkin_paid' ? '待入住（已結清）' :
                    filterStatus === 'pending_checkin_unpaid' ? '待入住（尚未結清）' :
                    filterStatus === 'available' ? '空屋可出租' :
-                   filterStatus === 'maintenance' ? '維修中' : '全部'}
+                   filterStatus === 'maintenance' ? '維修中' : filterStatus as string}
                 </span>
                 <span className="text-gray-500">
                   ({filteredRooms.length} 間房間)
@@ -418,33 +432,6 @@ export default function Rooms({ property }: RoomsProps) {
             </div>
           </div>
         )}
-      </div>
-
-      {/* 原有統計卡片（保留兼容） */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="card">
-          <div className="text-sm text-gray-600 mb-1">{t('total', state.lang)}</div>
-          <div className="text-2xl font-bold">{stats.total}</div>
-          <div className="text-xs text-gray-500 mt-1">{t('rooms', state.lang)}</div>
-        </div>
-        
-        <div className="card">
-          <div className="text-sm text-gray-600 mb-1">{t('occupied', state.lang)}</div>
-          <div className="text-2xl font-bold text-purple-600">{stats.occupied}</div>
-          <div className="text-xs text-gray-500 mt-1">{t('rentedRooms', state.lang)}</div>
-        </div>
-        
-        <div className="card">
-          <div className="text-sm text-gray-600 mb-1">{t('available', state.lang)}</div>
-          <div className="text-2xl font-bold text-green-600">{stats.available}</div>
-          <div className="text-xs text-gray-500 mt-1">{t('vacantRooms', state.lang)}</div>
-        </div>
-        
-        <div className="card">
-          <div className="text-sm text-gray-600 mb-1">{t('totalRent', state.lang)}</div>
-          <div className="text-2xl font-bold text-blue-600">{formatCurrency(stats.totalRent)}</div>
-          <div className="text-xs text-gray-500 mt-1">{t('monthly', state.lang)}</div>
-        </div>
       </div>
 
       {/* 控制面板 */}
