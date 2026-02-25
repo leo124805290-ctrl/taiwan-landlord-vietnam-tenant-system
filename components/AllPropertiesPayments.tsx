@@ -20,6 +20,11 @@ export default function AllPropertiesPayments() {
   // 獲取所有物業
   const allProperties = state.data?.properties || []
   
+  // 調試：檢查物業數據
+  console.log('=== AllPropertiesPayments 調試 ===')
+  console.log('物業數量:', allProperties.length)
+  console.log('物業列表:', allProperties.map(p => ({ id: p.id, name: p.name, payments: p.payments?.length || 0, history: p.history?.length || 0 })))
+  
   // 獲取所有物業的所有付款記錄
   const getAllPayments = () => {
     const allPayments: any[] = []
@@ -30,13 +35,15 @@ export default function AllPropertiesPayments() {
           ...payment,
           propertyId: property.id,
           propertyName: property.name,
-          propertyColor: property.color
+          propertyColor: property.color || '#3b82f6' // 默認藍色
         }))
       
       allPayments.push(...propertyPayments)
     })
     
-    return allPayments.sort((a, b) => (b.paid || b.due).localeCompare(a.paid || a.due))
+    console.log('總付款記錄數量:', allPayments.length)
+    
+    return allPayments.sort((a, b) => (b.paid || b.due || '').localeCompare(a.paid || a.due || ''))
   }
   
   const allPayments = getAllPayments()

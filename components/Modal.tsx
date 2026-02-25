@@ -4963,8 +4963,12 @@ export default function Modal() {
       return
     }
 
-    if (paymentToRestore.s !== 'paid' || !paymentToRestore.archived) {
-      alert('此款項無法恢復，可能尚未歸檔')
+    // 檢查是否可恢復：已付款且（已歸檔或在歷史記錄中）
+    const isInHistory = property.history?.some((p: any) => p.id === paymentId) || false
+    const isArchived = paymentToRestore.archived === true || isInHistory
+    
+    if (paymentToRestore.s !== 'paid' || !isArchived) {
+      alert(`此款項無法恢復\n狀態: ${paymentToRestore.s}\n歸檔: ${paymentToRestore.archived}\n在歷史記錄中: ${isInHistory}`)
       return
     }
 

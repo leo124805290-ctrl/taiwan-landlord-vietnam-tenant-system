@@ -170,6 +170,41 @@ export default function Payments({ property }: PaymentsProps) {
     })
   }
 
+  // 調試函數：檢查付款記錄
+  const debugPayments = () => {
+    console.log('=== 付款記錄調試信息 ===')
+    console.log('當前物業:', property.name)
+    console.log('待付款記錄數量:', property.payments?.length || 0)
+    console.log('歷史記錄數量:', property.history?.length || 0)
+    
+    // 檢查所有付款記錄
+    const allPaymentsDebug = [...property.payments, ...(property.history || [])]
+    console.log('總付款記錄數量:', allPaymentsDebug.length)
+    
+    // 檢查逾期記錄
+    const today = new Date()
+    const overduePayments = allPaymentsDebug.filter(p => {
+      if (p.s !== 'pending' || p.archived) return false
+      if (!p.due) return false
+      
+      const dueDate = new Date(p.due)
+      return dueDate < today
+    })
+    
+    console.log('逾期付款記錄數量:', overduePayments.length)
+    console.log('逾期記錄詳情:', overduePayments.map(p => ({
+      房間: p.n,
+      租客: p.t,
+      月份: p.m,
+      到期日: p.due,
+      狀態: p.s,
+      歸檔: p.archived,
+      金額: p.total
+    })))
+    
+    alert(`調試信息已輸出到控制台\n逾期記錄: ${overduePayments.length}筆`)
+  }
+
   // 獲取房間的上期電錶讀數
   const getLastMeterReading = (roomId: number) => {
     const room = property.rooms.find((r: any) => r.id === roomId)
@@ -290,7 +325,7 @@ export default function Payments({ property }: PaymentsProps) {
           </div>
         </div>
         
-        {/* 視圖模式切換 */}
+        {/* 視圖模式切換和調試按鈕 */}
         <div className="flex items-center gap-2">
           <div className="text-sm text-gray-600">視圖模式：</div>
           <div className="flex bg-gray-100 rounded-lg p-1">
@@ -316,6 +351,15 @@ export default function Payments({ property }: PaymentsProps) {
               📋
             </button>
           </div>
+          
+          {/* 調試按鈕 */}
+          <button
+            onClick={debugPayments}
+            className="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm"
+            title="檢查付款記錄"
+          >
+            🔍 調試
+          </button>
         </div>
       </div>
 
