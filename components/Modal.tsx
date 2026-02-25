@@ -3516,6 +3516,77 @@ export default function Modal() {
     const monthsDiff = (endDate.getFullYear() - startDate.getFullYear()) * 12 + 
                       (endDate.getMonth() - startDate.getMonth())
 
+    // 獲取房間資訊
+    const room = property.rooms.find((r: any) => r.id === roomId)
+    if (!room) {
+      alert('找不到房間資訊')
+      return
+    }
+
+    // 生成付款記錄（根據付款類型）
+    let newPayments: any[] = []
+    const paymentId = Math.max(...(property.payments || []).map((p: any) => p.id), 0) + 1
+    
+    // 當前月份（用於付款記錄）
+    const currentMonth = new Date().toISOString().slice(0, 7).replace('-', '/')
+    
+    switch (paymentOption.value) {
+      case 'deposit_only':
+        // 僅付訂金：生成租金待收款項
+        newPayments.push({
+          id: paymentId,
+          rid: roomId,
+          n: room.n,
+          t: nameInput.value.trim(),
+          m: currentMonth,
+          r: room.r, // 租金金額
+          u: 0, // 用電度數（稍後更新）
+          e: 0, // 電費（稍後更新）
+          total: room.r, // 總金額（僅租金）
+          due: startInput.value, // 入住日就是租金到期日
+          s: 'pending' as const,
+          notes: '待收租金（已收訂金）',
+          paymentType: 'rent_pending'
+        })
+        break
+        
+      case 'reservation_only':
+        // 僅預訂：生成租金+訂金待收款項
+        newPayments.push({
+          id: paymentId,
+          rid: roomId,
+          n: room.n,
+          t: nameInput.value.trim(),
+          m: currentMonth,
+          r: room.r, // 租金金額
+          u: 0,
+          e: 0,
+          total: room.r, // 租金
+          due: startInput.value,
+          s: 'pending' as const,
+          notes: '待收租金（預訂中）',
+          paymentType: 'rent_pending'
+        })
+        
+        // 訂金待收款項
+        newPayments.push({
+          id: paymentId + 1,
+          rid: roomId,
+          n: room.n,
+          t: nameInput.value.trim(),
+          m: currentMonth,
+          r: 0, // 訂金在租金欄位為0，有專門欄位
+          u: 0,
+          e: 0,
+          total: room.d || 0, // 訂金金額
+          due: startInput.value,
+          s: 'pending' as const,
+          notes: '待收訂金（預訂中）',
+          paymentType: 'deposit_pending'
+        })
+        break
+    }
+
     // 更新房間資料
     const updatedProperties = state.data.properties.map(p => 
       p.id === property.id
@@ -3541,7 +3612,9 @@ export default function Modal() {
                       : {})
                   }
                 : r
-            )
+            ),
+            // 添加新的付款記錄
+            payments: [...(p.payments || []), ...newPayments]
           }
         : p
     )
@@ -3555,10 +3628,14 @@ export default function Modal() {
         successMessage = '✅ 入住成功！已收取全額租金和押金。'
         break
       case 'deposit_only':
-        successMessage = '💰 入住成功！已收取押金，請提醒租客補繳租金。'
+        successMessage = '💰 入住成功！已收取押金。\n' +
+                        '📋 系統已自動生成租金待收款項。\n' +
+                        '📅 入住日到時，房間會自動轉為「已出租」。'
         break
       case 'reservation_only':
-        successMessage = '📅 預訂成功！房間已保留，等待後續處理。'
+        successMessage = '📅 預訂成功！房間已保留。\n' +
+                        '📋 系統已自動生成租金+訂金待收款項。\n' +
+                        '📅 入住日到時，房間會自動轉為「待付款」。'
         break
     }
     

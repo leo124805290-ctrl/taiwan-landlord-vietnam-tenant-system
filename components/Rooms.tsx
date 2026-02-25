@@ -3,7 +3,7 @@
 import { t } from '@/lib/translations'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { useApp } from '@/contexts/AppContext'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Room, RoomStatus, CheckInPaymentType, CheckOutType } from '@/lib/types'
 
 interface RoomsProps {
@@ -15,6 +15,52 @@ export default function Rooms({ property }: RoomsProps) {
   const [viewMode, setViewMode] = useState<'card' | 'list' | 'table'>('table')
   const [filterStatus, setFilterStatus] = useState<RoomStatus | 'all'>('all')
   const [searchQuery, setSearchQuery] = useState('')
+
+  // 檢查房間狀態（入住日自動轉換）
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD格式
+    
+    let hasChanges = false
+    const updatedRooms = property.rooms.map((room: Room) => {
+      // 檢查預訂中的房間
+      if (room.s === 'reserved' && room.in) {
+        const checkInDate = room.in
+        
+        // 如果入住日期已到或已過
+        if (checkInDate <= today) {
+          hasChanges = true
+          
+          // 根據付款類型決定新狀態
+          let newStatus: RoomStatus = 'occupied'
+          if (room.checkInPaymentType === 'reservation_only') {
+            // 僅預訂：轉為待付款
+            newStatus = 'pending_payment'
+          } else if (room.checkInPaymentType === 'deposit_only') {
+            // 僅付訂金：轉為待付款（租金待收）
+            newStatus = 'pending_payment'
+          }
+          
+          return {
+            ...room,
+            s: newStatus
+          }
+        }
+      }
+      
+      return room
+    })
+    
+    // 如果有變更，更新資料
+    if (hasChanges) {
+      const updatedProperties = state.data.properties.map(p => 
+        p.id === property.id
+          ? { ...p, rooms: updatedRooms }
+          : p
+      )
+      
+      updateData({ properties: updatedProperties })
+    }
+  }, [property.id, property.rooms, state.data.properties, updateData])
 
   // 計算統計資料
   const stats = useMemo(() => {
