@@ -32,8 +32,9 @@ export default function HomePage() {
           return <AllPropertiesRooms properties={state.data.properties || []} />
         case 'financial':
           return <FinancialOverview properties={state.data.properties || []} />
-        case 'dashboard':
         case 'payments':
+          return <AllPropertiesPayments />
+        case 'dashboard':
         case 'paymentHistory':
         case 'expenses':
         case 'utilities':
@@ -44,7 +45,7 @@ export default function HomePage() {
               <div className="text-6xl mb-4">🏢</div>
               <h2 className="text-2xl font-bold mb-4">全部物業模式</h2>
               <p className="text-gray-600 mb-6">
-                在「全部物業」模式下，目前只支援房間管理和財務總覽功能。
+                在「全部物業」模式下，目前只支援房間管理、財務總覽和繳費功能。
                 <br />
                 請選擇特定物業以使用其他功能。
               </p>
