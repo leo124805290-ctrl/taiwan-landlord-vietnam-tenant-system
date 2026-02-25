@@ -118,6 +118,13 @@ export interface Payment {
   paymentMethod?: string; // 付款方式
   notes?: string; // 備註
   electricityRate?: number; // 當時的電費單價（用於版本控制）
+  archived?: boolean; // 是否已歸檔到歷史
+  collectedBy?: string; // 收款人員
+  collectionDate?: string; // 收款日期
+  paymentType?: 'rent' | 'deposit' | 'electricity' | 'water' | 'internet' | 'other'; // 款項類型
+  period?: string; // 期間（如：2026-02、入住前）
+  tenantType?: 'new' | 'existing'; // 租客類型
+  overdueDays?: number; // 逾期天數
 }
 
 // 維修記錄

@@ -1,9 +1,11 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { t } from '@/lib/translations'
 import { formatCurrency } from '@/lib/utils'
 import { useApp } from '@/contexts/AppContext'
+import PaymentStatsPanel from './PaymentStatsPanel'
+import PaymentViews from './PaymentViews'
 
 interface PaymentsProps {
   property: any
@@ -11,6 +13,12 @@ interface PaymentsProps {
 
 export default function Payments({ property }: PaymentsProps) {
   const { state, updateState, updateData } = useApp()
+  
+  // 視圖模式狀態
+  const [viewMode, setViewMode] = useState<'table' | 'card' | 'list'>('table')
+  
+  // 分類篩選狀態
+  const [categoryFilter, setCategoryFilter] = useState<'all' | 'new_tenant' | 'current_month' | 'overdue' | 'collected'>('all')
   
   // 獲取所有付款記錄（待付款 + 歷史）
   const allPayments = [...property.payments, ...(property.history || [])]
@@ -28,8 +36,47 @@ export default function Payments({ property }: PaymentsProps) {
   const [statusFilter, setStatusFilter] = React.useState<'all' | 'pending' | 'paid'>('all')
   const [searchTerm, setSearchTerm] = React.useState('')
 
+  // 分類篩選邏輯
+  const filterByCategory = (payment: any) => {
+    if (categoryFilter === 'all') return true
+    
+    const today = new Date()
+    const dueDate = payment.due ? new Date(payment.due) : null
+    
+    switch (categoryFilter) {
+      case 'new_tenant':
+        // 新租客款項：押金或首月租金
+        return payment.paymentType === 'deposit' || 
+               (payment.tenantType === 'new' && payment.paymentType === 'rent')
+      
+      case 'current_month':
+        // 舊租客當月款項：本月到期且未逾期
+        const currentMonth = today.toISOString().slice(0, 7).replace('-', '/')
+        return payment.m === currentMonth && 
+               payment.s === 'pending' &&
+               (!dueDate || dueDate >= today) &&
+               payment.tenantType === 'existing'
+      
+      case 'overdue':
+        // 逾期款項：已過期且未付款
+        return payment.s === 'pending' && 
+               dueDate && 
+               dueDate < today
+      
+      case 'collected':
+        // 已收款項
+        return payment.s === 'paid'
+      
+      default:
+        return true
+    }
+  }
+  
   // 篩選付款記錄
   const filteredPayments = allPayments.filter(payment => {
+    // 分類篩選
+    if (!filterByCategory(payment)) return false
+    
     // 月份篩選
     if (monthFilter && monthFilter !== 'all' && payment.m !== monthFilter) return false
     
@@ -202,16 +249,91 @@ export default function Payments({ property }: PaymentsProps) {
   }
 
   return (
-    <div className="space-y-4">
-      {/* 頁面標題 */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <span>💰</span>
-          {t('paymentsTab', state.lang)}
-        </h1>
-        <div className="text-sm text-gray-500">
-          {property.name} - {totalPendingRooms} {t('rooms', state.lang)} {t('pendingPayment', state.lang)}
+    <div className="space-y-6">
+      {/* 頁面標題和視圖控制 */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <span>💰</span>
+            {t('paymentsTab', state.lang)}
+          </h1>
+          <div className="text-sm text-gray-500 mt-1">
+            {property.name} - {totalPendingRooms} {t('rooms', state.lang)} {t('pendingPayment', state.lang)}
+          </div>
         </div>
+        
+        {/* 視圖模式切換 */}
+        <div className="flex items-center gap-2">
+          <div className="text-sm text-gray-600">視圖模式：</div>
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('table')}
+              className={`px-3 py-1 rounded ${viewMode === 'table' ? 'bg-white shadow' : 'hover:bg-gray-200'}`}
+              title="表格視圖"
+            >
+              📊
+            </button>
+            <button
+              onClick={() => setViewMode('card')}
+              className={`px-3 py-1 rounded ${viewMode === 'card' ? 'bg-white shadow' : 'hover:bg-gray-200'}`}
+              title="卡片視圖"
+            >
+              🃏
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`px-3 py-1 rounded ${viewMode === 'list' ? 'bg-white shadow' : 'hover:bg-gray-200'}`}
+              title="列表視圖"
+            >
+              📋
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 統計面板 */}
+      <PaymentStatsPanel 
+        property={property}
+        payments={allPayments}
+        rooms={property.rooms || []}
+      />
+
+      {/* 分類篩選 */}
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={() => setCategoryFilter('all')}
+          className={`px-3 py-2 rounded-lg ${categoryFilter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+        >
+          📋 全部待收 ({allPayments.filter(p => p.s === 'pending' && !p.archived).length})
+        </button>
+        <button
+          onClick={() => setCategoryFilter('new_tenant')}
+          className={`px-3 py-2 rounded-lg ${categoryFilter === 'new_tenant' ? 'bg-purple-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+        >
+          🆕 新租客款項
+        </button>
+        <button
+          onClick={() => setCategoryFilter('current_month')}
+          className={`px-3 py-2 rounded-lg ${categoryFilter === 'current_month' ? 'bg-green-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+        >
+          👥 舊租客當月
+        </button>
+        <button
+          onClick={() => setCategoryFilter('overdue')}
+          className={`px-3 py-2 rounded-lg ${categoryFilter === 'overdue' ? 'bg-red-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+        >
+          ⚠️ 逾期款項 ({allPayments.filter(p => 
+            p.s === 'pending' && 
+            p.due && 
+            new Date(p.due) < new Date()
+          ).length})
+        </button>
+        <button
+          onClick={() => setCategoryFilter('collected')}
+          className={`px-3 py-2 rounded-lg ${categoryFilter === 'collected' ? 'bg-gray-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+        >
+          ✅ 已收款項
+        </button>
       </div>
 
       {/* 篩選面板 */}
@@ -315,112 +437,36 @@ export default function Payments({ property }: PaymentsProps) {
         </div>
       </div>
 
-      {/* 待收款列表 */}
-      <div className="space-y-3">
+      {/* 付款記錄視圖 */}
+      <div className="mt-4">
         {sortedPayments.length === 0 ? (
           <div className="card text-center py-8">
             <div className="text-4xl mb-3">📭</div>
             <div className="text-lg font-bold text-gray-600">
-              {statusFilter === 'pending' 
-                ? t('noPendingPayments', state.lang)
-                : t('noPaymentsFound', state.lang)}
+              {categoryFilter === 'collected' 
+                ? '無已收款項記錄'
+                : categoryFilter === 'overdue'
+                ? '無逾期款項'
+                : categoryFilter === 'new_tenant'
+                ? '無新租客款項'
+                : categoryFilter === 'current_month'
+                ? '無當月待收款項'
+                : '無待收款項'}
             </div>
             <div className="text-sm text-gray-500 mt-1">
-              {statusFilter === 'pending'
-                ? t('noPendingPaymentsDescription', state.lang)
-                : t('noPaymentsFoundDescription', state.lang)}
+              {categoryFilter === 'collected' 
+                ? '所有收款記錄將顯示在此'
+                : '所有待收款項將顯示在此'}
             </div>
           </div>
         ) : (
-          sortedPayments.map(payment => (
-            <div key={payment.id} className="card hover:bg-gray-50">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  {/* 房號和租客姓名 */}
-                  <div className="font-bold text-lg">
-                    {payment.n} - {payment.t}
-                    <span className="ml-3 text-sm font-normal text-gray-600">
-                      {payment.m}
-                    </span>
-                  </div>
-                  
-                  {/* 金額明細 */}
-                  <div className="mt-2">
-                    <div className="text-sm">
-                      <span className="text-gray-700">🏠 {t('rent', state.lang)}: </span>
-                      <span className="font-bold">{formatCurrency(payment.r)}</span>
-                      
-                      <span className="mx-2">+</span>
-                      
-                      <span className="text-gray-700">⚡ {t('electricity', state.lang)}: </span>
-                      <span className="font-bold text-blue-600">{formatCurrency(payment.e || 0)}</span>
-                      
-                      <span className="mx-2">=</span>
-                      
-                      <span className="text-gray-700">💰 {t('total', state.lang)}: </span>
-                      <span className="font-bold text-green-600">{formatCurrency(payment.total)}</span>
-                    </div>
-                    
-                    {/* 電費詳細計算（如果電費為0，顯示提醒） */}
-                    <div className="text-xs text-gray-500 mt-1">
-                      {payment.e === 0 || payment.e === undefined ? (
-                        <span className="text-orange-600">
-                          ⚠️ {t('electricityNotCalculated', state.lang)}
-                        </span>
-                      ) : (
-                        <span>
-                          {t('electricityUsage', state.lang)}: {payment.u || 0}{t('degree', state.lang)} × 
-                          ${payment.electricityRate || state.data?.electricityRate || 6} = {formatCurrency(payment.e)}
-                        </span>
-                      )}
-                    </div>
-                    
-                    {/* 付款狀態和日期 */}
-                    <div className="text-xs mt-2">
-                      {payment.s === 'pending' ? (
-                        <span className="text-red-600">
-                          ⏳ {t('dueDate', state.lang)}: {payment.due}
-                        </span>
-                      ) : (
-                        <span className="text-green-600">
-                          ✓ {t('paidOn', state.lang)}: {payment.paid}
-                          {payment.paymentMethod && ` · ${t('paymentMethod', state.lang)}: ${payment.paymentMethod}`}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                
-                {/* 操作按鈕 */}
-                <div className="flex flex-col gap-2 ml-4">
-                  {payment.s === 'pending' ? (
-                    <>
-                      <button
-                        onClick={() => collectPayment(payment)}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
-                      >
-                        💰 {t('collectPayment', state.lang)}
-                      </button>
-                      
-                      {(payment.e === 0 || payment.e === undefined) && (
-                        <button
-                          onClick={() => updateElectricityFee(payment.id)}
-                          className="px-3 py-1 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 text-sm"
-                          title="從房間最新電錶數據更新電費"
-                        >
-                          ⚡ {t('updateElectricity', state.lang)}
-                        </button>
-                      )}
-                    </>
-                  ) : (
-                    <span className="badge bg-green-100 text-green-700 px-3 py-1">
-                      ✓ {t('paid', state.lang)}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))
+          <PaymentViews
+            payments={sortedPayments}
+            viewMode={viewMode}
+            onCollectPayment={collectPayment}
+            onUpdateElectricity={updateElectricityFee}
+            lang={state.lang}
+          />
         )}
       </div>
     </div>
