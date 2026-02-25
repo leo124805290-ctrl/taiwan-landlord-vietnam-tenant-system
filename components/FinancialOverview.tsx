@@ -16,10 +16,16 @@ export default function FinancialOverview({ properties }: FinancialOverviewProps
   
   // 獲取當前顯示的物業
   const currentProperties = useMemo(() => {
+    console.log('FinancialOverview - 收到的物業數據:', properties)
+    console.log('FinancialOverview - 物業數量:', properties.length)
+    console.log('FinancialOverview - 選擇的物業:', selectedProperty)
+    
     if (selectedProperty === 'all') {
       return properties
     }
-    return properties.filter(p => p.id === selectedProperty)
+    const filtered = properties.filter(p => p.id === selectedProperty)
+    console.log('FinancialOverview - 過濾後物業:', filtered.length)
+    return filtered
   }, [properties, selectedProperty])
   
   // 獲取所有房間

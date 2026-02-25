@@ -100,7 +100,7 @@ export default function Rooms({ property }: RoomsProps) {
   */
   
   const stats = useMemo(() => {
-    const rooms = property.rooms || []
+    const rooms = (property.rooms || []).filter((r: Room) => !r.archived)
     
     // 計算新狀態統計
     const pendingCheckinPaid = rooms.filter((r: Room) => 
@@ -132,6 +132,9 @@ export default function Rooms({ property }: RoomsProps) {
   // 過濾房間
   const filteredRooms = useMemo(() => {
     let rooms = property.rooms || []
+    
+    // 過濾掉已歸檔的房間
+    rooms = rooms.filter((r: Room) => !r.archived)
     
     // 狀態過濾
     if (filterStatus !== 'all') {
@@ -215,6 +218,11 @@ export default function Rooms({ property }: RoomsProps) {
   // 處理續租
   const handleRenewLease = (roomId: number) => {
     openModal('renewLease', roomId)
+  }
+
+  // 處理刪除房間
+  const handleDeleteRoom = (roomId: number) => {
+    openModal('deleteRoom', roomId)
   }
 
   // 處理補繳操作
@@ -555,12 +563,21 @@ export default function Rooms({ property }: RoomsProps) {
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-1">
                           {room.s === 'available' && (
-                            <button
-                              onClick={() => handleCheckIn(room.id)}
-                              className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
-                            >
-                              {t('checkIn', state.lang)}
-                            </button>
+                            <>
+                              <button
+                                onClick={() => handleCheckIn(room.id)}
+                                className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                              >
+                                {t('checkIn', state.lang)}
+                              </button>
+                              <button
+                                onClick={() => handleDeleteRoom(room.id)}
+                                className="px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700"
+                                title="刪除房間（僅限空屋）"
+                              >
+                                🗑️ 刪除
+                              </button>
+                            </>
                           )}
                           
                           {room.s === 'reserved' && (
@@ -746,12 +763,21 @@ export default function Rooms({ property }: RoomsProps) {
                 {/* 操作按鈕 */}
                 <div className="flex flex-wrap gap-2">
                   {room.s === 'available' && (
-                    <button
-                      onClick={() => handleCheckIn(room.id)}
-                      className="flex-1 btn btn-primary text-sm"
-                    >
-                      {t('checkIn', state.lang)}
-                    </button>
+                    <>
+                      <button
+                        onClick={() => handleCheckIn(room.id)}
+                        className="flex-1 btn btn-primary text-sm"
+                      >
+                        {t('checkIn', state.lang)}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteRoom(room.id)}
+                        className="flex-1 btn bg-gray-600 text-white text-sm"
+                        title="刪除房間（僅限空屋）"
+                      >
+                        🗑️ 刪除
+                      </button>
+                    </>
                   )}
                   
                   {room.s === 'reserved' && (
@@ -883,12 +909,21 @@ export default function Rooms({ property }: RoomsProps) {
                 
                 <div className="flex items-center space-x-2">
                   {room.s === 'available' && (
-                    <button
-                      onClick={() => handleCheckIn(room.id)}
-                      className="px-3 py-1 bg-green-600 text-white rounded text-sm"
-                    >
-                      {t('checkIn', state.lang)}
-                    </button>
+                    <>
+                      <button
+                        onClick={() => handleCheckIn(room.id)}
+                        className="px-3 py-1 bg-green-600 text-white rounded text-sm"
+                      >
+                        {t('checkIn', state.lang)}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteRoom(room.id)}
+                        className="px-3 py-1 bg-gray-600 text-white rounded text-sm"
+                        title="刪除房間（僅限空屋）"
+                      >
+                        🗑️ 刪除
+                      </button>
+                    </>
                   )}
                   
                   {room.s === 'occupied' && (

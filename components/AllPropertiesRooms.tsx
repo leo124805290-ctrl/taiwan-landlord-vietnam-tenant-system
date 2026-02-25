@@ -30,7 +30,7 @@ export default function AllPropertiesRooms({ properties }: AllPropertiesRoomsPro
   // 計算所有物業的統計資料
   const stats = useMemo(() => {
     return properties.reduce((acc, property) => {
-      const rooms = property.rooms || []
+      const rooms = (property.rooms || []).filter((r: Room) => !r.archived)
       
       // 計算新狀態統計
       const pendingCheckinPaid = rooms.filter((r: Room) => 
@@ -102,7 +102,7 @@ export default function AllPropertiesRooms({ properties }: AllPropertiesRoomsPro
 
   // 篩選房間
   const filteredRooms = useMemo(() => {
-    let rooms = allRooms
+    let rooms = allRooms.filter((r: any) => !r.archived)
     
     // 狀態篩選
     if (filterStatus !== 'all') {
@@ -170,6 +170,12 @@ export default function AllPropertiesRooms({ properties }: AllPropertiesRoomsPro
   const handleRenewLease = (roomId: string, propertyId: string) => {
     updateState({ currentProperty: parseInt(propertyId) })
     openModal('renewLease', roomId)
+  }
+
+  // 處理刪除房間
+  const handleDeleteRoom = (roomId: string, propertyId: string) => {
+    updateState({ currentProperty: parseInt(propertyId) })
+    openModal('deleteRoom', roomId)
   }
 
   // 處理維修
@@ -421,12 +427,21 @@ export default function AllPropertiesRooms({ properties }: AllPropertiesRoomsPro
                         <td className="px-4 py-3">
                           <div className="flex flex-wrap gap-1">
                             {room.s === 'available' && (
-                              <button
-                                onClick={() => handleCheckIn(room.id, room.propertyId)}
-                                className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
-                              >
-                                {t('checkIn', state.lang)}
-                              </button>
+                              <>
+                                <button
+                                  onClick={() => handleCheckIn(room.id, room.propertyId)}
+                                  className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                                >
+                                  {t('checkIn', state.lang)}
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteRoom(room.id, room.propertyId)}
+                                  className="px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700"
+                                  title="刪除房間（僅限空屋）"
+                                >
+                                  🗑️ 刪除
+                                </button>
+                              </>
                             )}
                             
                             {room.s === 'reserved' && (
@@ -552,12 +567,21 @@ export default function AllPropertiesRooms({ properties }: AllPropertiesRoomsPro
                     
                     <div className="flex items-center space-x-2">
                       {room.s === 'available' && (
-                        <button
-                          onClick={() => handleCheckIn(room.id, room.propertyId)}
-                          className="flex-1 btn btn-primary text-sm"
-                        >
-                          {t('checkIn', state.lang)}
-                        </button>
+                        <>
+                          <button
+                            onClick={() => handleCheckIn(room.id, room.propertyId)}
+                            className="flex-1 btn btn-primary text-sm"
+                          >
+                            {t('checkIn', state.lang)}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteRoom(room.id, room.propertyId)}
+                            className="flex-1 btn bg-gray-600 text-white text-sm"
+                            title="刪除房間（僅限空屋）"
+                          >
+                            🗑️ 刪除
+                          </button>
+                        </>
                       )}
                       
                       {room.s === 'reserved' && (
@@ -709,12 +733,21 @@ export default function AllPropertiesRooms({ properties }: AllPropertiesRoomsPro
                       
                       <div className="flex items-center space-x-2">
                         {room.s === 'available' && (
-                          <button
-                            onClick={() => handleCheckIn(room.id, room.propertyId)}
-                            className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
-                          >
-                            {t('checkIn', state.lang)}
-                          </button>
+                          <>
+                            <button
+                              onClick={() => handleCheckIn(room.id, room.propertyId)}
+                              className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                            >
+                              {t('checkIn', state.lang)}
+                            </button>
+                            <button
+                              onClick={() => handleDeleteRoom(room.id, room.propertyId)}
+                              className="px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700"
+                              title="刪除房間（僅限空屋）"
+                            >
+                              🗑️ 刪除
+                            </button>
+                          </>
                         )}
                         
                         {room.s === 'reserved' && (

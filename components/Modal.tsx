@@ -952,6 +952,312 @@ export default function Modal() {
           </div>
         )
 
+      case 'deleteRoom':
+        const deleteRoom = property?.rooms.find((r: Room) => r.id === data)
+        if (!deleteRoom) return null
+        
+        // 檢查房間狀態 - 只有空房間可以刪除
+        if (deleteRoom.s !== 'available') {
+          return (
+            <div className="modal">
+              <div className="modal-content max-w-md">
+                <div className="modal-header">
+                  <h2 className="text-xl font-bold flex items-center gap-2 text-red-600">
+                    <span>❌</span>
+                    無法刪除房間
+                  </h2>
+                  <button onClick={closeModal} className="modal-close">×</button>
+                </div>
+                
+                <div className="modal-body space-y-4">
+                  <div className="bg-red-50 p-4 rounded border border-red-200">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span>⚠️</span>
+                      <div className="font-bold">房間狀態不符合刪除條件</div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <div>房間號碼：</div>
+                        <div className="font-bold">{deleteRoom.n}</div>
+                      </div>
+                      
+                      <div className="flex justify-between">
+                        <div>當前狀態：</div>
+                        <div className="font-bold">
+                          {deleteRoom.s === 'occupied' ? '已出租入住中' :
+                           deleteRoom.s === 'pending_checkin_paid' ? '待入住（已結清）' :
+                           deleteRoom.s === 'pending_checkin_unpaid' ? '待入住（尚未結清）' :
+                           deleteRoom.s === 'maintenance' ? '維修中' : '未知狀態'}
+                        </div>
+                      </div>
+                      
+                      <div className="mt-3 p-2 bg-yellow-50 rounded text-sm">
+                        <div className="font-medium">刪除條件：</div>
+                        <div>✅ 房間必須為「空屋」狀態</div>
+                        <div>✅ 無待處理款項或押金</div>
+                        <div>✅ 無租客居住</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="font-medium">建議操作：</div>
+                    
+                    {deleteRoom.s === 'occupied' && (
+                      <div className="bg-blue-50 p-3 rounded">
+                        <div className="font-medium mb-1">已入住房間</div>
+                        <div className="text-sm text-gray-600 mb-2">
+                          請先辦理退房流程，處理押金退還和租金結算。
+                        </div>
+                        <button
+                          onClick={() => {
+                            closeModal()
+                            // 這裡需要重新打開 checkOut 模態框
+                            // 由於在 Modal 組件內部，我們需要通過其他方式
+                            // 暫時先關閉，用戶可以手動點擊退房按鈕
+                            alert('請關閉此對話框後，點擊房間的「退房」按鈕')
+                          }}
+                          className="btn bg-blue-600 text-white text-sm"
+                        >
+                          🚪 前往退房
+                        </button>
+                      </div>
+                    )}
+                    
+                    {(deleteRoom.s === 'pending_checkin_paid' || deleteRoom.s === 'pending_checkin_unpaid') && (
+                      <div className="bg-orange-50 p-3 rounded">
+                        <div className="font-medium mb-1">待入住房間</div>
+                        <div className="text-sm text-gray-600 mb-2">
+                          請先取消預訂，處理已收款項退還。
+                        </div>
+                        <button
+                          onClick={() => {
+                            closeModal()
+                            // 這裡可以添加取消預訂的功能
+                            alert('取消預訂功能開發中')
+                          }}
+                          className="btn bg-orange-600 text-white text-sm"
+                        >
+                          📝 取消預訂
+                        </button>
+                      </div>
+                    )}
+                    
+                    {deleteRoom.s === 'maintenance' && (
+                      <div className="bg-purple-50 p-3 rounded">
+                        <div className="font-medium mb-1">維修中房間</div>
+                        <div className="text-sm text-gray-600 mb-2">
+                          請先將房間狀態恢復為「空屋」。
+                        </div>
+                        <button
+                          onClick={() => {
+                            closeModal()
+                            // 這裡需要重新打開 restore 模態框
+                            alert('請關閉此對話框後，點擊房間的「恢復出租」按鈕')
+                          }}
+                          className="btn bg-purple-600 text-white text-sm"
+                        >
+                          🔧 恢復出租
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="modal-footer">
+                  <button
+                    onClick={closeModal}
+                    className="btn bg-gray-600 text-white"
+                  >
+                    關閉
+                  </button>
+                </div>
+              </div>
+            </div>
+          )
+        }
+        
+        // 房間是空屋，顯示刪除確認
+        return (
+          <div className="modal">
+            <div className="modal-content max-w-md">
+              <div className="modal-header">
+                <h2 className="text-xl font-bold flex items-center gap-2">
+                  <span>🗑️</span>
+                  刪除房間 {deleteRoom.n}
+                </h2>
+                <button onClick={closeModal} className="modal-close">×</button>
+              </div>
+              
+              <div className="modal-body space-y-4">
+                <div className="bg-red-50 p-4 rounded border border-red-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span>⚠️</span>
+                    <div className="font-bold text-red-700">警告：此操作無法撤銷！</div>
+                  </div>
+                  <div className="text-sm text-red-600">
+                    刪除後將無法恢復房間數據，請謹慎操作。
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  <div className="bg-gray-50 p-3 rounded">
+                    <div className="text-sm text-gray-600 mb-1">房間資訊</div>
+                    <div className="space-y-1">
+                      <div className="flex justify-between">
+                        <div>房間號碼：</div>
+                        <div className="font-bold">{deleteRoom.n}</div>
+                      </div>
+                      <div className="flex justify-between">
+                        <div>租金設定：</div>
+                        <div className="font-bold">{formatCurrency(deleteRoom.r || 0)}/月</div>
+                      </div>
+                      <div className="flex justify-between">
+                        <div>押金設定：</div>
+                        <div className="font-bold">{formatCurrency(deleteRoom.d || 0)}</div>
+                      </div>
+                      <div className="flex justify-between">
+                        <div>當前狀態：</div>
+                        <div className="font-bold text-green-600">空屋 ✅</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      刪除原因（必填）
+                    </label>
+                    <select
+                      className="w-full px-3 py-2 border rounded"
+                      defaultValue=""
+                      id="deleteReason"
+                    >
+                      <option value="" disabled>請選擇刪除原因</option>
+                      <option value="停止出租">停止出租</option>
+                      <option value="房間改建">房間改建（合併/分割）</option>
+                      <option value="數據錯誤">數據輸入錯誤</option>
+                      <option value="測試數據">測試數據清理</option>
+                      <option value="其他">其他原因</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      備註說明（可選）
+                    </label>
+                    <textarea
+                      className="w-full px-3 py-2 border rounded"
+                      rows={2}
+                      placeholder="例如：改為倉庫使用、建築結構調整等"
+                      id="deleteNotes"
+                    />
+                  </div>
+                  
+                  <div className="bg-yellow-50 p-3 rounded border border-yellow-200">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span>🔒</span>
+                      <div className="font-medium">安全驗證</div>
+                    </div>
+                    <div className="text-sm text-gray-600 mb-2">
+                      請輸入管理密碼確認操作
+                    </div>
+                    <input
+                      type="password"
+                      className="w-full px-3 py-2 border rounded"
+                      placeholder="輸入管理密碼"
+                      id="deletePassword"
+                    />
+                    <div className="text-xs text-gray-500 mt-1">
+                      預設密碼：admin123（正式環境請修改）
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="modal-footer">
+                <button
+                  onClick={closeModal}
+                  className="btn bg-gray-600 text-white"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={() => {
+                    // 獲取輸入值
+                    const reasonSelect = document.getElementById('deleteReason') as HTMLSelectElement
+                    const notesTextarea = document.getElementById('deleteNotes') as HTMLTextAreaElement
+                    const passwordInput = document.getElementById('deletePassword') as HTMLInputElement
+                    
+                    const reason = reasonSelect?.value
+                    const notes = notesTextarea?.value || ''
+                    const password = passwordInput?.value || ''
+                    
+                    // 驗證輸入
+                    if (!reason) {
+                      alert('請選擇刪除原因')
+                      return
+                    }
+                    
+                    if (!password) {
+                      alert('請輸入管理密碼')
+                      return
+                    }
+                    
+                    // 驗證密碼（這裡使用簡單驗證，正式環境應使用更安全的方式）
+                    if (password !== 'admin123') {
+                      alert('密碼錯誤')
+                      return
+                    }
+                    
+                    // 執行軟刪除 - 添加 archived 標記而不是真正刪除
+                    const updatedRooms = property.rooms.map((r: Room) => 
+                      r.id === data ? { 
+                        ...r, 
+                        archived: true,
+                        archiveDate: new Date().toISOString().split('T')[0],
+                        archiveReason: reason,
+                        archiveNotes: notes
+                      } : r
+                    )
+                    
+                    // 更新物業
+                    const updatedProperties = state.data.properties.map(p => 
+                      p.id === property.id ? { ...p, rooms: updatedRooms } : p
+                    )
+                    
+                    // 保存數據
+                    updateData({ properties: updatedProperties })
+                    
+                    // 記錄刪除日誌
+                    const deletionLog = {
+                      roomId: data,
+                      roomNumber: deleteRoom.n,
+                      propertyId: property.id,
+                      propertyName: property.name,
+                      deleteReason: reason,
+                      deleteNotes: notes,
+                      deletedBy: '系統管理員',
+                      deletedAt: new Date().toISOString(),
+                      originalData: deleteRoom // 備份原始數據
+                    }
+                    
+                    console.log('房間刪除記錄:', deletionLog)
+                    
+                    // 顯示成功訊息
+                    alert(`房間 ${deleteRoom.n} 已成功刪除（已歸檔）`)
+                    
+                    closeModal()
+                  }}
+                  className="btn bg-red-600 text-white"
+                >
+                  🗑️ 確認刪除
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+
       case 'checkOut':
         const checkOutRoom = property?.rooms.find((r: Room) => r.id === data)
         if (!checkOutRoom || checkOutRoom.s !== 'occupied') return null

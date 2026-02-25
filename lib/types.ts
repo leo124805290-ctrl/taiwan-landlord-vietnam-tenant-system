@@ -75,6 +75,10 @@ export interface Room {
   otherDeductions?: Deduction[]; // 其他扣款項目
   depositReturned?: boolean; // 押金是否已退還
   notes?: string; // 備註
+  archived?: boolean; // 是否已歸檔（軟刪除）
+  archiveDate?: string; // 歸檔日期
+  archiveReason?: string; // 歸檔原因
+  archiveNotes?: string; // 歸檔備註
 }
 
 // 租金記錄
