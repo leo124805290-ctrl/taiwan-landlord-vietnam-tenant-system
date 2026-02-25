@@ -176,6 +176,49 @@ export default function AllPropertiesPayments() {
       }
     })
   }
+
+  // 調試函數：檢查所有物業的付款記錄
+  const debugAllPropertiesPayments = () => {
+    console.log('=== 全部物業付款記錄調試 ===')
+    console.log('總物業數量:', allProperties.length)
+    
+    // 檢查每個物業的付款記錄
+    allProperties.forEach(property => {
+      console.log(`\n物業: ${property.name} (ID: ${property.id})`)
+      console.log('待付款記錄:', property.payments?.length || 0)
+      console.log('歷史記錄:', property.history?.length || 0)
+      
+      // 檢查逾期記錄
+      const allPropertyPayments = [...(property.payments || []), ...(property.history || [])]
+      const today = new Date()
+      const overduePayments = allPropertyPayments.filter(p => {
+        if (p.s !== 'pending' || p.archived) return false
+        if (!p.due) return false
+        
+        const dueDate = new Date(p.due)
+        return dueDate < today
+      })
+      
+      console.log('逾期記錄:', overduePayments.length)
+      if (overduePayments.length > 0) {
+        console.log('逾期詳情:', overduePayments.map(p => ({
+          房間: p.n,
+          租客: p.t,
+          月份: p.m,
+          到期日: p.due,
+          金額: p.total
+        })))
+      }
+    })
+    
+    // 檢查全部物業的合併數據
+    console.log('\n=== 全部物業合併數據 ===')
+    console.log('總付款記錄:', allPayments.length)
+    console.log('待收款項:', pendingPayments.length)
+    console.log('已收款項:', collectedPayments.length)
+    
+    alert(`全部物業調試信息已輸出到控制台\n總物業: ${allProperties.length}\n總付款記錄: ${allPayments.length}`)
+  }
   
   // 計算所有物業的統計數據
   const calculateAllPropertiesStats = () => {
@@ -286,7 +329,7 @@ export default function AllPropertiesPayments() {
           </div>
         </div>
         
-        {/* 視圖模式切換 */}
+        {/* 視圖模式切換和調試按鈕 */}
         <div className="flex items-center gap-2">
           <div className="text-sm text-gray-600">視圖模式：</div>
           <div className="flex bg-gray-100 rounded-lg p-1">
@@ -312,6 +355,15 @@ export default function AllPropertiesPayments() {
               📋
             </button>
           </div>
+          
+          {/* 調試按鈕 */}
+          <button
+            onClick={debugAllPropertiesPayments}
+            className="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm"
+            title="檢查全部物業付款記錄"
+          >
+            🔍 調試全部
+          </button>
         </div>
       </div>
 
