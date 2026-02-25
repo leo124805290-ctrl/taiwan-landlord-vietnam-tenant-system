@@ -407,16 +407,6 @@ export default function Modal() {
               <button onClick={closeModal} className="flex-1 btn bg-gray-200">
                 {t('close', state.lang)}
               </button>
-              <button 
-                onClick={() => {
-                  closeModal()
-                  // 這裡無法直接調用 openModal，需要其他方式
-                  // 暫時只關閉 modal
-                }}
-                className="flex-1 btn btn-primary"
-              >
-                {room.s === 'occupied' ? t('updateMeter', state.lang) : t('edit', state.lang)}
-              </button>
             </div>
           </>
         )
@@ -714,6 +704,96 @@ export default function Modal() {
               </button>
               <button onClick={() => saveCheckIn(data)} className="flex-1 btn btn-primary">
                 {t('confirmAndSave', state.lang)}
+              </button>
+            </div>
+          </>
+        )
+
+      case 'completePayment':
+        const completePaymentRoom = property?.rooms.find((r: Room) => r.id === data)
+        if (!completePaymentRoom || (completePaymentRoom.s !== 'reserved' && completePaymentRoom.s !== 'pending_payment')) return null
+        
+        return (
+          <>
+            <h2 className="text-2xl font-bold mb-4">💰 {t('completePayment', state.lang)}</h2>
+            
+            {/* 房間資訊 */}
+            <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+              <div className="text-lg font-bold">{completePaymentRoom.n} ({completePaymentRoom.f}F)</div>
+              <div className="text-sm text-gray-600">
+                {t('tenantName', state.lang)}: {completePaymentRoom.t || 'N/A'}<br/>
+                {t('monthlyRent', state.lang)}: {formatCurrency(completePaymentRoom.r)}<br/>
+                {t('deposit', state.lang)}: {formatCurrency(completePaymentRoom.d || 0)}
+              </div>
+            </div>
+            
+            {/* 付款詳情 */}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm mb-1">{t('paymentType', state.lang)}</label>
+                <div className="flex gap-2">
+                  <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                    <input type="radio" name="completePaymentType" value="full" defaultChecked className="mr-3" />
+                    <div>
+                      <div className="font-medium">✅ {t('paymentFull', state.lang)}</div>
+                      <div className="text-sm text-gray-600">
+                        {formatCurrency(completePaymentRoom.r + (completePaymentRoom.d || 0))}
+                      </div>
+                    </div>
+                  </label>
+                  
+                  <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                    <input type="radio" name="completePaymentType" value="rent_only" className="mr-3" />
+                    <div>
+                      <div className="font-medium">🏠 {t('paymentRentOnly', state.lang)}</div>
+                      <div className="text-sm text-gray-600">
+                        {formatCurrency(completePaymentRoom.r)}
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm mb-1">{t('paymentMethod', state.lang)}</label>
+                <select id="completePaymentMethod" className="input-field">
+                  <option value="cash">💵 {t('cash', state.lang)}</option>
+                  <option value="transfer">🏦 {t('transfer', state.lang)}</option>
+                  <option value="other">📝 {t('other', state.lang)}</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm mb-1">{t('paymentDate', state.lang)}</label>
+                <input 
+                  type="date" 
+                  id="completePaymentDate" 
+                  defaultValue={new Date().toISOString().split('T')[0]} 
+                  className="input-field" 
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm mb-1">{t('notes', state.lang)}</label>
+                <textarea 
+                  id="completePaymentNotes" 
+                  className="input-field" 
+                  rows={3}
+                  placeholder="可選：記錄付款相關備註"
+                />
+              </div>
+            </div>
+            
+            {/* 操作按鈕 */}
+            <div className="flex gap-2 mt-6">
+              <button onClick={closeModal} className="flex-1 btn bg-gray-200">
+                {t('cancel', state.lang)}
+              </button>
+              <button 
+                onClick={() => processCompletePayment(completePaymentRoom.id)}
+                className="flex-1 btn bg-green-600 text-white hover:bg-green-700"
+              >
+                💰 {t('confirmPayment', state.lang)}
               </button>
             </div>
           </>
@@ -3965,6 +4045,146 @@ export default function Modal() {
   }
 
   // 處理單筆收款
+  // 處理補繳操作
+  const processCompletePayment = (roomId: number) => {
+    const property = getCurrentProperty()
+    if (!property) {
+      alert('無法處理補繳：找不到當前物業')
+      return
+    }
+
+    // 獲取付款類型
+    const paymentTypeInput = document.querySelector('input[name="completePaymentType"]:checked') as HTMLInputElement
+    const paymentMethodSelect = document.getElementById('completePaymentMethod') as HTMLSelectElement
+    const paymentDateInput = document.getElementById('completePaymentDate') as HTMLInputElement
+    const notesInput = document.getElementById('completePaymentNotes') as HTMLTextAreaElement
+    
+    if (!paymentTypeInput || !paymentMethodSelect || !paymentDateInput) {
+      alert('請填寫所有必填欄位')
+      return
+    }
+
+    const paymentType = paymentTypeInput.value
+    const paymentMethod = paymentMethodSelect.value
+    const paymentDate = paymentDateInput.value
+    const notes = notesInput?.value || ''
+
+    // 找到房間
+    const room = property.rooms.find((r: any) => r.id === roomId)
+    if (!room) {
+      alert('找不到房間')
+      return
+    }
+
+    // 計算應收款項
+    let amount = 0
+    let description = ''
+    
+    if (paymentType === 'full') {
+      amount = room.r + (room.d || 0)
+      description = '全額租金+押金'
+    } else if (paymentType === 'rent_only') {
+      amount = room.r
+      description = '租金'
+    }
+
+    // 確定房間的新狀態
+    let newRoomStatus: any = 'occupied'
+    if (paymentType === 'full') {
+      newRoomStatus = 'occupied'
+    } else if (paymentType === 'rent_only' && room.s === 'reserved') {
+      newRoomStatus = 'pending_payment' // 只付租金，押金待付
+    }
+
+    // 更新房間狀態
+    const updatedRooms = property.rooms.map((r: any) => 
+      r.id === roomId
+        ? {
+            ...r,
+            s: newRoomStatus,
+            // 如果是全額付款，設置入住日期
+            ...(paymentType === 'full' && !r.in ? { 
+              in: new Date().toISOString().split('T')[0] 
+            } : {})
+          }
+        : r
+    )
+
+    // 創建付款記錄
+    const paymentId = Math.max(...(property.payments || []).map((p: any) => p.id), 0) + 1
+    const historyId = Math.max(...(property.history || []).map((h: any) => h.id), 0) + 1
+    
+    const currentMonth = new Date().toISOString().slice(0, 7).replace('-', '/')
+    
+    // 付款記錄（用於待收款）
+    const newPayment: any = {
+      id: paymentId,
+      rid: roomId,
+      n: room.n,
+      t: room.t || '未命名租客',
+      m: currentMonth,
+      r: room.r,
+      u: 0, // 用電度數（稍後更新）
+      e: 0, // 電費（稍後更新）
+      total: amount,
+      due: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30天後到期
+      s: 'paid' as const, // 直接標記為已付款
+      paid: paymentDate,
+      paymentMethod: paymentMethod,
+      notes: `補繳：${description}${notes ? ` - ${notes}` : ''}`
+    }
+
+    // 歷史記錄
+    const newHistory: any = {
+      id: historyId,
+      rid: roomId,
+      n: room.n,
+      t: room.t || '未命名租客',
+      m: currentMonth,
+      r: room.r,
+      u: 0,
+      e: 0,
+      total: amount,
+      due: new Date().toISOString().split('T')[0],
+      s: 'paid' as const,
+      paid: paymentDate,
+      paymentMethod: paymentMethod,
+      notes: `補繳完成：${description}${notes ? ` - ${notes}` : ''}`
+    }
+
+    // 更新數據
+    const updatedProperties = state.data.properties.map(p => 
+      p.id === property.id
+        ? {
+            ...p,
+            rooms: updatedRooms,
+            payments: [...(p.payments || []), newPayment],
+            history: [...(p.history || []), newHistory]
+          }
+        : p
+    )
+
+    updateData({ properties: updatedProperties })
+    
+    // 顯示成功訊息
+    let successMessage = ''
+    if (paymentType === 'full') {
+      successMessage = `✅ 補繳成功！房間 ${room.n} 已設為「已出租」狀態。\n` +
+                      `💰 收款金額：${formatCurrency(amount)}\n` +
+                      `📅 付款日期：${paymentDate}\n` +
+                      `💳 付款方式：${paymentMethod}`
+    } else if (paymentType === 'rent_only') {
+      successMessage = `✅ 租金補繳成功！\n` +
+                      `💰 收款金額：${formatCurrency(amount)}\n` +
+                      `📅 付款日期：${paymentDate}\n` +
+                      `💳 付款方式：${paymentMethod}\n` +
+                      `⚠️ 注意：押金尚未收取，房間狀態為「待付款」`
+    }
+    
+    alert(successMessage)
+    closeModal()
+  }
+
   const processCollectPayment = (paymentId: number) => {
     const property = getCurrentProperty()
     if (!property || !paymentId) {

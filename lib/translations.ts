@@ -479,6 +479,9 @@ export const translations: Translation = {
     checkIn: '入住',
     checkOut: '退房',
     completePayment: '補繳',
+    paymentType: '付款類型',
+    paymentFull: '全額付款（租金+押金）',
+    paymentRentOnly: '僅付租金',
     cancelReservation: '取消預訂',
     // 表格視圖
     tableView: '表格',
@@ -1009,6 +1012,9 @@ export const translations: Translation = {
     checkIn: 'Cho thuê',
     checkOut: 'Trả phòng',
     completePayment: 'Hoàn tất thanh toán',
+    paymentType: 'Loại thanh toán',
+    paymentFull: 'Thanh toán toàn bộ (tiền thuê + tiền đặt cọc)',
+    paymentRentOnly: 'Chỉ thanh toán tiền thuê',
     cancelReservation: 'Hủy đặt trước',
     // 表格視圖（越南文）
     tableView: 'Bảng',
