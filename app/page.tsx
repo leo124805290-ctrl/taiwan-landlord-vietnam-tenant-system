@@ -11,7 +11,6 @@ import PropertyExpenses from '@/components/PropertyExpenses'
 import Utilities from '@/components/Utilities'
 import Reports from '@/components/Reports'
 import Settings from '@/components/Settings'
-import PaymentHistory from '@/components/PaymentHistory'
 import Modal from '@/components/Modal'
 import { useApp } from '@/contexts/AppContext'
 
@@ -35,7 +34,6 @@ export default function HomePage() {
         case 'payments':
           return <AllPropertiesPayments />
         case 'dashboard':
-        case 'paymentHistory':
         case 'expenses':
         case 'utilities':
         case 'reports':
@@ -97,8 +95,6 @@ export default function HomePage() {
         return state.currentProperty === 'all'
           ? <AllPropertiesPayments />
           : <Payments property={property} />
-      case 'paymentHistory':
-        return <PaymentHistory property={property} />
       case 'expenses':
         return <PropertyExpenses property={property} />
       case 'utilities':

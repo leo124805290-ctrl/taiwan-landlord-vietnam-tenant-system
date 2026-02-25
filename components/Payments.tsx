@@ -413,7 +413,7 @@ export default function Payments({ property }: PaymentsProps) {
           onClick={() => setCategoryFilter('collected')}
           className={`px-3 py-2 rounded-lg ${categoryFilter === 'collected' ? 'bg-gray-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
         >
-          ✅ 已收款項 ({collectedPayments.length})
+          📜 繳費歷史 ({collectedPayments.length})
         </button>
       </div>
 
@@ -525,7 +525,7 @@ export default function Payments({ property }: PaymentsProps) {
             <div className="text-4xl mb-3">📭</div>
             <div className="text-lg font-bold text-gray-600">
               {categoryFilter === 'collected' 
-                ? '無已收款項記錄'
+                ? '無繳費歷史記錄'
                 : categoryFilter === 'overdue'
                 ? '無逾期款項'
                 : categoryFilter === 'new_tenant'
@@ -536,7 +536,7 @@ export default function Payments({ property }: PaymentsProps) {
             </div>
             <div className="text-sm text-gray-500 mt-1">
               {categoryFilter === 'collected' 
-                ? '所有收款記錄將顯示在此'
+                ? '所有已收款的歷史記錄將顯示在此'
                 : '所有待收款項將顯示在此'}
             </div>
           </div>

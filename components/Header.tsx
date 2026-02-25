@@ -11,7 +11,6 @@ export default function Header() {
     { key: 'rooms', icon: '🏠', label: 'roomsTab' },
     { key: 'financial', icon: '💰', label: 'financialTab' },
     { key: 'payments', icon: '💵', label: 'paymentsTab' },
-    { key: 'paymentHistory', icon: '📜', label: 'paymentHistoryTab' },
     { key: 'expenses', icon: '💸', label: 'expensesTab' },
     { key: 'utilities', icon: '💧', label: 'utilitiesTab' },
     { key: 'reports', icon: '📈', label: 'reportsTab' },
