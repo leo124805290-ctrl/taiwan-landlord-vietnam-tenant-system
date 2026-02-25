@@ -2,6 +2,7 @@
 
 import Header from '@/components/Header'
 import Dashboard from '@/components/Dashboard'
+import PropertyDashboard from '@/components/PropertyDashboard'
 import Rooms from '@/components/Rooms'
 import AllPropertiesRooms from '@/components/AllPropertiesRooms'
 import AllPropertiesPayments from '@/components/AllPropertiesPayments'
@@ -85,6 +86,8 @@ export default function HomePage() {
     switch (state.tab) {
       case 'dashboard':
         return <Dashboard property={property} />
+      case 'propertyDashboard':
+        return <PropertyDashboard />
       case 'rooms':
         return state.currentProperty === 'all' 
           ? <AllPropertiesRooms properties={state.data.properties} />
