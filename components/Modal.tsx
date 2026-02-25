@@ -4110,15 +4110,14 @@ export default function Modal() {
         : r
     )
 
-    // 創建付款記錄
-    const paymentId = Math.max(...(property.payments || []).map((p: any) => p.id), 0) + 1
+    // 創建歷史記錄（補繳的記錄應該直接進入歷史，而不是待付款）
     const historyId = Math.max(...(property.history || []).map((h: any) => h.id), 0) + 1
     
     const currentMonth = new Date().toISOString().slice(0, 7).replace('-', '/')
     
-    // 付款記錄（用於待收款）
-    const newPayment: any = {
-      id: paymentId,
+    // 歷史記錄（補繳完成）
+    const newHistory: any = {
+      id: historyId,
       rid: roomId,
       n: room.n,
       t: room.t || '未命名租客',
@@ -4127,29 +4126,11 @@ export default function Modal() {
       u: 0, // 用電度數（稍後更新）
       e: 0, // 電費（稍後更新）
       total: amount,
-      due: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30天後到期
-      s: 'paid' as const, // 直接標記為已付款
-      paid: paymentDate,
-      paymentMethod: paymentMethod,
-      notes: `補繳：${description}${notes ? ` - ${notes}` : ''}`
-    }
-
-    // 歷史記錄
-    const newHistory: any = {
-      id: historyId,
-      rid: roomId,
-      n: room.n,
-      t: room.t || '未命名租客',
-      m: currentMonth,
-      r: room.r,
-      u: 0,
-      e: 0,
-      total: amount,
       due: new Date().toISOString().split('T')[0],
       s: 'paid' as const,
       paid: paymentDate,
       paymentMethod: paymentMethod,
-      notes: `補繳完成：${description}${notes ? ` - ${notes}` : ''}`
+      notes: `補繳：${description}${notes ? ` - ${notes}` : ''}`
     }
 
     // 更新數據
@@ -4158,7 +4139,8 @@ export default function Modal() {
         ? {
             ...p,
             rooms: updatedRooms,
-            payments: [...(p.payments || []), newPayment],
+            // 不添加到 payments 陣列，因為這是已付款的記錄
+            // 只添加到 history 陣列
             history: [...(p.history || []), newHistory]
           }
         : p

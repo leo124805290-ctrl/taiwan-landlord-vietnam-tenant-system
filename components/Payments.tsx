@@ -25,7 +25,7 @@ export default function Payments({ property }: PaymentsProps) {
   const [monthFilter, setMonthFilter] = React.useState('all')
   const [roomFilter, setRoomFilter] = React.useState('all')
   const [tenantFilter, setTenantFilter] = React.useState('all')
-  const [statusFilter, setStatusFilter] = React.useState<'all' | 'pending' | 'paid'>('pending')
+  const [statusFilter, setStatusFilter] = React.useState<'all' | 'pending' | 'paid'>('all')
   const [searchTerm, setSearchTerm] = React.useState('')
 
   // 篩選付款記錄
