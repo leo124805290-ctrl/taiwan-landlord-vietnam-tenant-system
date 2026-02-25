@@ -38,7 +38,7 @@ export default function Header() {
                   onChange={(e) => {
                     const value = e.target.value
                     if (value === 'all') {
-                      updateState({ currentProperty: null })
+                      updateState({ currentProperty: 'all' })
                     } else {
                       updateState({ currentProperty: parseInt(value) })
                     }

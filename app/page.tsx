@@ -3,6 +3,7 @@
 import Header from '@/components/Header'
 import Dashboard from '@/components/Dashboard'
 import Rooms from '@/components/Rooms'
+import AllPropertiesRooms from '@/components/AllPropertiesRooms'
 import Payments from '@/components/Payments'
 import PropertyExpenses from '@/components/PropertyExpenses'
 import Utilities from '@/components/Utilities'
@@ -13,12 +14,55 @@ import Modal from '@/components/Modal'
 import { useApp } from '@/contexts/AppContext'
 
 export default function HomePage() {
-  const { state, openModal, getCurrentProperty } = useApp()
+  const { state, updateState, openModal, getCurrentProperty } = useApp()
 
   // 渲染內容
   const renderContent = () => {
     const property = getCurrentProperty()
     
+    // 檢查是否選擇了「全部物業」
+    const isAllProperties = state.currentProperty === 'all' || state.currentProperty === null
+    
+    if (isAllProperties) {
+      // 顯示所有物業的房間
+      switch (state.tab) {
+        case 'rooms':
+          return <AllPropertiesRooms properties={state.data.properties || []} />
+        case 'dashboard':
+        case 'payments':
+        case 'paymentHistory':
+        case 'expenses':
+        case 'utilities':
+        case 'reports':
+        case 'settings':
+          return (
+            <div className="card text-center py-12">
+              <div className="text-6xl mb-4">🏢</div>
+              <h2 className="text-2xl font-bold mb-4">全部物業模式</h2>
+              <p className="text-gray-600 mb-6">
+                在「全部物業」模式下，目前只支援房間管理功能。
+                <br />
+                請選擇特定物業以使用其他功能。
+              </p>
+              <div className="flex flex-wrap gap-4 justify-center">
+                {state.data.properties.map((p: any) => (
+                  <button
+                    key={p.id}
+                    onClick={() => updateState({ currentProperty: p.id })}
+                    className="btn bg-blue-600 text-white"
+                  >
+                    🏠 切換到 {p.name || '未命名物業'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )
+        default:
+          return <AllPropertiesRooms properties={state.data.properties || []} />
+      }
+    }
+    
+    // 如果沒有選擇任何物業（包括全部物業）
     if (!property) {
       return (
         <div className="card text-center py-12">
@@ -34,6 +78,7 @@ export default function HomePage() {
       )
     }
 
+    // 單一物業模式
     switch (state.tab) {
       case 'dashboard':
         return <Dashboard property={property} />

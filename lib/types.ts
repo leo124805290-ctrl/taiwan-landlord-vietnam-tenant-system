@@ -236,7 +236,7 @@ export interface AppState {
     data?: any;
   } | null;
   filter: 'all' | 'unpaid' | 'paid';
-  currentProperty: number | null;
+  currentProperty: number | 'all' | null;
   revenueTimeScope: TimeScope;
   revenueYear: number;
   revenueMonth: string;
