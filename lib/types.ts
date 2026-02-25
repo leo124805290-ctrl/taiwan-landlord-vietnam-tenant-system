@@ -1,7 +1,14 @@
 // 多物業管理系統 - 類型定義
 
 // 房間狀態
-export type RoomStatus = 'available' | 'reserved' | 'pending_payment' | 'occupied' | 'maintenance';
+export type RoomStatus = 
+  | 'available'          // 空屋（可立即出租）
+  | 'reserved'           // 已預訂（未付款）
+  | 'deposit_paid'       // 已付訂金，待入住
+  | 'fully_paid'         // 已付（租金+訂金），待入住
+  | 'occupied'           // 已出租入住中
+  | 'maintenance'        // 維修中
+  | 'pending_payment';   // 待付款（兼容舊資料）
 
 // 入住付款類型
 export type CheckInPaymentType = 'full' | 'deposit_only' | 'reservation_only';

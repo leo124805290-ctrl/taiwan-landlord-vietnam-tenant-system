@@ -1,6 +1,6 @@
 'use client'
 
-import { Room } from '@/lib/types'
+import { Room, RoomStatus } from '@/lib/types'
 import { t } from '@/lib/translations'
 import { formatCurrency, getMonthEndDate, getNextMonthEndDate } from '@/lib/utils'
 import { useApp } from '@/contexts/AppContext'
@@ -3490,17 +3490,33 @@ export default function Modal() {
       return
     }
 
+    // 今天日期（用於判斷入住狀態）
+    const today = new Date().toISOString().split('T')[0]
+
     // 根據付款方式設定房間狀態
-    let roomStatus: 'occupied' | 'reserved' | 'pending_payment'
+    let roomStatus: RoomStatus
     let checkInPaymentType: 'full' | 'deposit_only' | 'reservation_only'
 
     switch (paymentOption.value) {
       case 'full':
-        roomStatus = 'occupied'
+        // 全額付款：檢查入住日期
+        const today = new Date().toISOString().split('T')[0]
+        if (startInput.value <= today) {
+          // 入住日期已到或已過：直接設為已出租
+          roomStatus = 'occupied'
+        } else {
+          // 入住日期未到：設為已付，待入住
+          roomStatus = 'fully_paid'
+        }
         checkInPaymentType = 'full'
         break
       case 'deposit_only':
-        roomStatus = 'pending_payment'
+        // 僅付訂金：檢查入住日期
+        if (startInput.value <= today) {
+          roomStatus = 'pending_payment'
+        } else {
+          roomStatus = 'deposit_paid'
+        }
         checkInPaymentType = 'deposit_only'
         break
       case 'reservation_only':
