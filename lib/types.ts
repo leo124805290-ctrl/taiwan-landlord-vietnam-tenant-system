@@ -229,7 +229,7 @@ export interface AppData {
 
 // 應用狀態
 export interface AppState {
-  tab: 'dashboard' | 'rooms' | 'payments' | 'paymentHistory' | 'maintenance' | 'expenses' | 'utilities' | 'reports' | 'settings';
+  tab: 'dashboard' | 'rooms' | 'financial' | 'payments' | 'paymentHistory' | 'maintenance' | 'expenses' | 'utilities' | 'reports' | 'settings';
   lang: 'zh-TW' | 'vi-VN';
   modal: {
     type: string;

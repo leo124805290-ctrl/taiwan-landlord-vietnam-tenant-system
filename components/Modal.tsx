@@ -2,7 +2,7 @@
 
 import { Room, RoomStatus } from '@/lib/types'
 import { t } from '@/lib/translations'
-import { formatCurrency, getMonthEndDate, getNextMonthEndDate } from '@/lib/utils'
+import { formatCurrency, formatDate, getMonthEndDate, getNextMonthEndDate } from '@/lib/utils'
 import { useApp } from '@/contexts/AppContext'
 import { useEffect, useRef } from 'react'
 
@@ -797,6 +797,159 @@ export default function Modal() {
               </button>
             </div>
           </>
+        )
+
+      case 'renewLease':
+        const renewRoom = property?.rooms.find((r: Room) => r.id === data)
+        if (!renewRoom || renewRoom.s !== 'occupied') return null
+        
+        // 計算新合約結束日期（預設延長一年）
+        const currentEndDate = renewRoom.out ? new Date(renewRoom.out) : new Date()
+        const newEndDate = new Date(currentEndDate)
+        newEndDate.setFullYear(newEndDate.getFullYear() + 1)
+        
+        const formattedCurrentEndDate = currentEndDate.toISOString().split('T')[0]
+        const formattedNewEndDate = newEndDate.toISOString().split('T')[0]
+        
+        return (
+          <div className="modal">
+            <div className="modal-content max-w-md">
+              <div className="modal-header">
+                <h2 className="text-xl font-bold flex items-center gap-2">
+                  <span>🔄</span>
+                  續租房間 {renewRoom.n}
+                </h2>
+                <button onClick={closeModal} className="modal-close">×</button>
+              </div>
+              
+              <div className="modal-body space-y-4">
+                <div className="bg-blue-50 p-3 rounded">
+                  <div className="text-sm text-gray-600">租客資訊</div>
+                  <div className="font-bold">{renewRoom.t || '未填寫'}</div>
+                  <div className="text-sm text-gray-600">{renewRoom.p || ''}</div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-50 p-3 rounded">
+                    <div className="text-sm text-gray-600">原合約期間</div>
+                    <div className="font-bold">
+                      {renewRoom.in ? formatDate(renewRoom.in) : '未設定'} - {formattedCurrentEndDate}
+                    </div>
+                  </div>
+                  
+                  <div className="bg-green-50 p-3 rounded">
+                    <div className="text-sm text-gray-600">新合約期間</div>
+                    <div className="font-bold">
+                      {renewRoom.in ? formatDate(renewRoom.in) : '未設定'} - {formattedNewEndDate}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      租金調整（可選）
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 bg-gray-50 p-3 rounded">
+                        <div className="text-sm text-gray-600">原租金</div>
+                        <div className="font-bold">{formatCurrency(renewRoom.r || 0)}/月</div>
+                      </div>
+                      <div className="text-gray-400">→</div>
+                      <div className="flex-1">
+                        <input
+                          type="number"
+                          defaultValue={renewRoom.r || 0}
+                          className="w-full px-3 py-2 border rounded"
+                          placeholder="新租金"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-yellow-50 p-3 rounded border border-yellow-200">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span>🏦</span>
+                      <div className="font-medium">押金處理</div>
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      ✅ 原押金 {formatCurrency(renewRoom.d || 0)} 將繼續保管
+                      <br />
+                      （無需退還再收取，減少資金流動）
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      備註（可選）
+                    </label>
+                    <textarea
+                      className="w-full px-3 py-2 border rounded"
+                      rows={2}
+                      placeholder="例如：租金調整原因、特殊條款等"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="modal-footer">
+                <button
+                  onClick={closeModal}
+                  className="btn bg-gray-600 text-white"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={() => {
+                    // 這裡實現續租邏輯
+                    const newRentInput = document.querySelector('input[type="number"]') as HTMLInputElement
+                    const notesInput = document.querySelector('textarea') as HTMLTextAreaElement
+                    
+                    const newRent = newRentInput ? parseInt(newRentInput.value) : renewRoom.r
+                    const notes = notesInput ? notesInput.value : ''
+                    
+                    // 更新房間合約結束日期
+                    const updatedRooms = property.rooms.map((r: Room) => 
+                      r.id === data ? { ...r, out: formattedNewEndDate, r: newRent } : r
+                    )
+                    
+                    // 更新物業
+                    const updatedProperties = state.data.properties.map(p => 
+                      p.id === property.id ? { ...p, rooms: updatedRooms } : p
+                    )
+                    
+                    // 保存數據
+                    updateData({ properties: updatedProperties })
+                    
+                    // 記錄續租歷史
+                    const renewalRecord = {
+                      roomId: data,
+                      roomNumber: renewRoom.n,
+                      tenantName: renewRoom.t,
+                      oldEndDate: formattedCurrentEndDate,
+                      newEndDate: formattedNewEndDate,
+                      oldRent: renewRoom.r,
+                      newRent: newRent,
+                      depositRemained: renewRoom.d || 0,
+                      date: new Date().toISOString().split('T')[0],
+                      notes: notes
+                    }
+                    
+                    // 這裡可以將 renewalRecord 保存到歷史記錄中
+                    console.log('續租記錄:', renewalRecord)
+                    
+                    // 顯示成功訊息
+                    alert(`房間 ${renewRoom.n} 已成功續租至 ${formattedNewEndDate}`)
+                    
+                    closeModal()
+                  }}
+                  className="btn bg-green-600 text-white"
+                >
+                  ✅ 確認續租
+                </button>
+              </div>
+            </div>
+          </div>
         )
 
       case 'checkOut':

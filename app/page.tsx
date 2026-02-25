@@ -4,6 +4,7 @@ import Header from '@/components/Header'
 import Dashboard from '@/components/Dashboard'
 import Rooms from '@/components/Rooms'
 import AllPropertiesRooms from '@/components/AllPropertiesRooms'
+import FinancialOverview from '@/components/FinancialOverview'
 import Payments from '@/components/Payments'
 import PropertyExpenses from '@/components/PropertyExpenses'
 import Utilities from '@/components/Utilities'
@@ -24,10 +25,12 @@ export default function HomePage() {
     const isAllProperties = state.currentProperty === 'all' || state.currentProperty === null
     
     if (isAllProperties) {
-      // 顯示所有物業的房間
+      // 顯示所有物業的內容
       switch (state.tab) {
         case 'rooms':
           return <AllPropertiesRooms properties={state.data.properties || []} />
+        case 'financial':
+          return <FinancialOverview properties={state.data.properties || []} />
         case 'dashboard':
         case 'payments':
         case 'paymentHistory':
@@ -40,7 +43,7 @@ export default function HomePage() {
               <div className="text-6xl mb-4">🏢</div>
               <h2 className="text-2xl font-bold mb-4">全部物業模式</h2>
               <p className="text-gray-600 mb-6">
-                在「全部物業」模式下，目前只支援房間管理功能。
+                在「全部物業」模式下，目前只支援房間管理和財務總覽功能。
                 <br />
                 請選擇特定物業以使用其他功能。
               </p>
@@ -84,6 +87,8 @@ export default function HomePage() {
         return <Dashboard property={property} />
       case 'rooms':
         return <Rooms property={property} />
+      case 'financial':
+        return <FinancialOverview properties={[property]} />
       case 'payments':
         return <Payments property={property} />
       case 'paymentHistory':

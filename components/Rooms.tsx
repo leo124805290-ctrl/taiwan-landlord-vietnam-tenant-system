@@ -212,6 +212,11 @@ export default function Rooms({ property }: RoomsProps) {
     openModal('checkOut', roomId)
   }
 
+  // 處理續租
+  const handleRenewLease = (roomId: number) => {
+    openModal('renewLease', roomId)
+  }
+
   // 處理補繳操作
   const handleCompletePayment = (roomId: number) => {
     openModal('completePayment', roomId)
@@ -605,12 +610,21 @@ export default function Rooms({ property }: RoomsProps) {
                           )}
                           
                           {room.s === 'occupied' && (
-                            <button
-                              onClick={() => handleCheckOut(room.id)}
-                              className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
-                            >
-                              {t('checkOut', state.lang)}
-                            </button>
+                            <>
+                              <button
+                                onClick={() => handleRenewLease(room.id)}
+                                className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                                title="續租（押金不動）"
+                              >
+                                🔄 續租
+                              </button>
+                              <button
+                                onClick={() => handleCheckOut(room.id)}
+                                className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                              >
+                                {t('checkOut', state.lang)}
+                              </button>
+                            </>
                           )}
                           
                           <button
@@ -787,12 +801,21 @@ export default function Rooms({ property }: RoomsProps) {
                   )}
                   
                   {room.s === 'occupied' && (
-                    <button
-                      onClick={() => handleCheckOut(room.id)}
-                      className="flex-1 btn bg-red-600 text-white text-sm"
-                    >
-                      {t('checkOut', state.lang)}
-                    </button>
+                    <>
+                      <button
+                        onClick={() => handleRenewLease(room.id)}
+                        className="flex-1 btn bg-green-600 text-white text-sm"
+                        title="續租（押金不動）"
+                      >
+                        🔄 續租
+                      </button>
+                      <button
+                        onClick={() => handleCheckOut(room.id)}
+                        className="flex-1 btn bg-red-600 text-white text-sm"
+                      >
+                        {t('checkOut', state.lang)}
+                      </button>
+                    </>
                   )}
                   
                   <button
