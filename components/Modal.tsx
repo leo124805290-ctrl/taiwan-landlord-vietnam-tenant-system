@@ -1,6 +1,6 @@
 'use client'
 
-import { Room, RoomStatus } from '@/lib/types'
+import { Room, RoomStatus, Payment } from '@/lib/types'
 import { t } from '@/lib/translations'
 import { formatCurrency, formatDate, getMonthEndDate, getNextMonthEndDate } from '@/lib/utils'
 import { useApp } from '@/contexts/AppContext'
@@ -950,6 +950,101 @@ export default function Modal() {
               </div>
             </div>
           </div>
+        )
+
+      case 'restorePayment':
+        const paymentToRestore = property?.history?.find((p: Payment) => p.id === data)
+        if (!paymentToRestore) return null
+        
+        return (
+          <>
+            <h2 className="text-2xl font-bold mb-4">🔄 恢復款項為待收</h2>
+            
+            {/* 警告訊息 */}
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+              <div className="flex items-start gap-3">
+                <div className="text-yellow-600 text-xl">⚠️</div>
+                <div>
+                  <div className="font-bold text-yellow-800">確認要恢復此款項嗎？</div>
+                  <div className="text-sm text-yellow-700 mt-1">
+                    恢復後，此款項將重新出現在待收列表中，需要重新收款。
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* 款項資訊 */}
+            <div className="bg-gray-50 rounded-lg p-4 mb-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <div className="text-sm text-gray-600">房間</div>
+                  <div className="font-bold">{paymentToRestore.n}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-600">租客</div>
+                  <div className="font-bold">{paymentToRestore.t}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-600">月份</div>
+                  <div className="font-bold">{paymentToRestore.m}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-600">總金額</div>
+                  <div className="font-bold text-green-600">{formatCurrency(paymentToRestore.total)}</div>
+                </div>
+                <div className="col-span-2">
+                  <div className="text-sm text-gray-600">收款日期</div>
+                  <div className="font-bold">{paymentToRestore.paid}</div>
+                </div>
+              </div>
+            </div>
+            
+            {/* 恢復原因 */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">
+                📝 恢復原因
+              </label>
+              <select
+                id="restoreReason"
+                className="w-full input-field"
+                defaultValue="mistake"
+              >
+                <option value="mistake">誤操作標記</option>
+                <option value="wrong_amount">金額有誤</option>
+                <option value="tenant_request">租客要求修改</option>
+                <option value="other">其他原因</option>
+              </select>
+            </div>
+            
+            {/* 備註 */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-1">
+                📝 備註（選填）
+              </label>
+              <textarea
+                id="restoreNotes"
+                className="w-full input-field"
+                rows={3}
+                placeholder="請說明恢復的詳細原因..."
+              ></textarea>
+            </div>
+            
+            {/* 操作按鈕 */}
+            <div className="flex gap-3">
+              <button
+                onClick={closeModal}
+                className="flex-1 btn bg-gray-200 text-gray-800 hover:bg-gray-300"
+              >
+                ❌ 取消
+              </button>
+              <button
+                onClick={() => processRestorePayment(data)}
+                className="flex-1 btn bg-blue-600 text-white hover:bg-blue-700"
+              >
+                🔄 確認恢復
+              </button>
+            </div>
+          </>
         )
 
       case 'deleteRoom':
@@ -4783,7 +4878,7 @@ export default function Modal() {
         : r
     )
 
-    // 更新付款記錄（標記為已付款）
+    // 更新付款記錄（標記為已付款並歸檔）
     const updatedPayments = property.payments.map((p: any) => 
       p.id === paymentId
         ? {
@@ -4795,12 +4890,18 @@ export default function Modal() {
             paid: new Date().toISOString().split('T')[0],
             s: 'paid',
             paymentMethod: 'cash', // 預設為現金，可以擴展選擇
-            notes: `電錶讀數: ${lastMeterReading} → ${currentMeterReading} (${electricityUsage}度)`
+            notes: `電錶讀數: ${lastMeterReading} → ${currentMeterReading} (${electricityUsage}度)`,
+            archived: true, // 標記為已歸檔
+            collectedBy: '管理員', // 收款人員（可以擴展為當前用戶）
+            collectionDate: new Date().toISOString().split('T')[0], // 收款日期
+            // 根據付款類型設置 tenantType 和 paymentType
+            tenantType: p.tenantType || (p.paymentType === 'deposit' ? 'new' : 'existing'),
+            paymentType: p.paymentType || 'rent'
           }
         : p
     )
 
-    // 移動到歷史記錄
+    // 移動到歷史記錄（自動歸檔）
     const paidPayment = updatedPayments.find((p: any) => p.id === paymentId && p.s === 'paid')
     const remainingPayments = updatedPayments.filter((p: any) => p.id !== paymentId)
     const updatedHistory = [...(property.history || []), paidPayment].filter(Boolean)
@@ -4826,6 +4927,94 @@ export default function Modal() {
           `⚡ 電費: ${formatCurrency(electricityFee)} (${electricityUsage}度 × ${electricityRate}元)`)
     
     closeModal()
+  }
+
+  // 處理恢復付款
+  const processRestorePayment = (paymentId: number) => {
+    const property = getCurrentProperty()
+    if (!property || !paymentId) {
+      alert('無法處理恢復：缺少必要數據')
+      return
+    }
+
+    // 獲取恢復原因和備註
+    const reasonSelect = document.getElementById('restoreReason') as HTMLSelectElement
+    const notesTextarea = document.getElementById('restoreNotes') as HTMLTextAreaElement
+    
+    const restoreReason = reasonSelect?.value || 'mistake'
+    const restoreNotes = notesTextarea?.value || ''
+
+    // 找到要恢復的付款記錄（在歷史記錄中）
+    const paymentToRestore = property.history?.find((p: any) => p.id === paymentId)
+    if (!paymentToRestore) {
+      alert('找不到要恢復的付款記錄')
+      return
+    }
+
+    if (paymentToRestore.s !== 'paid' || !paymentToRestore.archived) {
+      alert('此款項無法恢復，可能尚未歸檔')
+      return
+    }
+
+    // 檢查是否可恢復（例如：收款後7天內）
+    const collectedDate = paymentToRestore.paid ? new Date(paymentToRestore.paid) : null
+    const today = new Date()
+    const daysSinceCollection = collectedDate ? 
+      Math.floor((today.getTime() - collectedDate.getTime()) / (1000 * 60 * 60 * 24)) : 999
+    
+    if (daysSinceCollection > 7) {
+      if (!confirm(`此款項已收款超過7天（${daysSinceCollection}天），確定要恢復嗎？`)) {
+        return
+      }
+    }
+
+    // 恢復為待收狀態
+    const restoredPayment = {
+      ...paymentToRestore,
+      s: 'pending',
+      archived: false,
+      paid: undefined,
+      paymentMethod: undefined,
+      collectedBy: undefined,
+      collectionDate: undefined,
+      notes: `🔄 恢復原因：${getRestoreReasonText(restoreReason)}${restoreNotes ? `\n備註：${restoreNotes}` : ''}\n原收款日期：${paymentToRestore.paid}`
+    }
+
+    // 從歷史記錄移除，加回待付款列表
+    const updatedHistory = property.history?.filter((p: any) => p.id !== paymentId) || []
+    const updatedPayments = [...property.payments, restoredPayment]
+    
+    // 更新數據
+    const updatedProperties = state.data.properties.map(p => 
+      p.id === property.id
+        ? {
+            ...p,
+            payments: updatedPayments,
+            history: updatedHistory
+          }
+        : p
+    )
+
+    updateData({ properties: updatedProperties })
+    
+    // 顯示成功訊息
+    alert(`✅ 成功恢復款項 ${paymentToRestore.n} - ${paymentToRestore.t}\n` +
+          `💰 金額: ${formatCurrency(paymentToRestore.total)}\n` +
+          `📅 月份: ${paymentToRestore.m}\n` +
+          `🔄 恢復原因: ${getRestoreReasonText(restoreReason)}`)
+    
+    closeModal()
+  }
+
+  // 獲取恢復原因的文字描述
+  const getRestoreReasonText = (reason: string) => {
+    switch (reason) {
+      case 'mistake': return '誤操作標記'
+      case 'wrong_amount': return '金額有誤'
+      case 'tenant_request': return '租客要求修改'
+      case 'other': return '其他原因'
+      default: return '未知原因'
+    }
   }
 
   // 處理批量抄表

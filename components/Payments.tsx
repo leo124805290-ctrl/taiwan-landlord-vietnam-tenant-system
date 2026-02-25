@@ -21,8 +21,19 @@ export default function Payments({ property }: PaymentsProps) {
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'new_tenant' | 'current_month' | 'overdue' | 'collected'>('all')
   
   // 獲取所有付款記錄（待付款 + 歷史）
+  // 注意：已歸檔的付款記錄不會在待收列表中顯示
   const allPayments = [...property.payments, ...(property.history || [])]
     .sort((a, b) => (b.paid || b.due).localeCompare(a.paid || a.due))
+  
+  // 獲取待收款項（未歸檔的 pending 狀態）
+  const pendingPayments = allPayments.filter(p => 
+    p.s === 'pending' && !p.archived
+  )
+  
+  // 獲取已收款項（已歸檔的 paid 狀態）
+  const collectedPayments = allPayments.filter(p => 
+    p.s === 'paid' && p.archived
+  )
 
   // 獲取所有唯一的月份、房間和租客（用於篩選）
   const allMonths = Array.from(new Set(allPayments.map((p: any) => p.m))).sort().reverse()
@@ -38,37 +49,44 @@ export default function Payments({ property }: PaymentsProps) {
 
   // 分類篩選邏輯
   const filterByCategory = (payment: any) => {
-    if (categoryFilter === 'all') return true
+    if (categoryFilter === 'all') {
+      // 全部待收：只顯示未歸檔的待收款項
+      return payment.s === 'pending' && !payment.archived
+    }
     
     const today = new Date()
     const dueDate = payment.due ? new Date(payment.due) : null
     
     switch (categoryFilter) {
       case 'new_tenant':
-        // 新租客款項：押金或首月租金
-        return payment.paymentType === 'deposit' || 
-               (payment.tenantType === 'new' && payment.paymentType === 'rent')
+        // 新租客款項：押金或首月租金（未歸檔）
+        return payment.s === 'pending' && 
+               !payment.archived && 
+               (payment.paymentType === 'deposit' || 
+                (payment.tenantType === 'new' && payment.paymentType === 'rent'))
       
       case 'current_month':
-        // 舊租客當月款項：本月到期且未逾期
+        // 舊租客當月款項：本月到期且未逾期（未歸檔）
         const currentMonth = today.toISOString().slice(0, 7).replace('-', '/')
-        return payment.m === currentMonth && 
-               payment.s === 'pending' &&
+        return payment.s === 'pending' && 
+               !payment.archived &&
+               payment.m === currentMonth && 
                (!dueDate || dueDate >= today) &&
                payment.tenantType === 'existing'
       
       case 'overdue':
-        // 逾期款項：已過期且未付款
+        // 逾期款項：已過期且未付款（未歸檔）
         return payment.s === 'pending' && 
+               !payment.archived &&
                dueDate && 
                dueDate < today
       
       case 'collected':
-        // 已收款項
-        return payment.s === 'paid'
+        // 已收款項：已歸檔的付款記錄
+        return payment.s === 'paid' && payment.archived
       
       default:
-        return true
+        return payment.s === 'pending' && !payment.archived
     }
   }
   
@@ -117,8 +135,7 @@ export default function Payments({ property }: PaymentsProps) {
     return (b.m || '').localeCompare(a.m || '')
   })
 
-  // 計算統計
-  const pendingPayments = sortedPayments.filter(p => p.s === 'pending')
+  // 計算統計（使用前面定義的 pendingPayments）
   const totalPendingAmount = pendingPayments.reduce((sum: number, p: any) => sum + p.total, 0)
   const totalPendingRooms = new Set(pendingPayments.map(p => p.n)).size
 
@@ -138,6 +155,17 @@ export default function Payments({ property }: PaymentsProps) {
           currentElectricityUsage: payment.u || 0,
           lastMeterReading: getLastMeterReading(payment.rid)
         }
+      }
+    })
+  }
+
+  // 恢復付款函數
+  const restorePayment = (paymentId: number) => {
+    // 設置當前要恢復的付款記錄
+    updateState({ 
+      modal: {
+        type: 'restorePayment',
+        data: paymentId
       }
     })
   }
@@ -304,26 +332,35 @@ export default function Payments({ property }: PaymentsProps) {
           onClick={() => setCategoryFilter('all')}
           className={`px-3 py-2 rounded-lg ${categoryFilter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
         >
-          📋 全部待收 ({allPayments.filter(p => p.s === 'pending' && !p.archived).length})
+          📋 全部待收 ({pendingPayments.length})
         </button>
         <button
           onClick={() => setCategoryFilter('new_tenant')}
           className={`px-3 py-2 rounded-lg ${categoryFilter === 'new_tenant' ? 'bg-purple-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
         >
-          🆕 新租客款項
+          🆕 新租客款項 ({pendingPayments.filter(p => 
+            p.paymentType === 'deposit' || 
+            (p.tenantType === 'new' && p.paymentType === 'rent')
+          ).length})
         </button>
         <button
           onClick={() => setCategoryFilter('current_month')}
           className={`px-3 py-2 rounded-lg ${categoryFilter === 'current_month' ? 'bg-green-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
         >
-          👥 舊租客當月
+          👥 舊租客當月 ({pendingPayments.filter(p => {
+            const today = new Date()
+            const currentMonth = today.toISOString().slice(0, 7).replace('-', '/')
+            const dueDate = p.due ? new Date(p.due) : null
+            return p.m === currentMonth && 
+                   (!dueDate || dueDate >= today) &&
+                   p.tenantType === 'existing'
+          }).length})
         </button>
         <button
           onClick={() => setCategoryFilter('overdue')}
           className={`px-3 py-2 rounded-lg ${categoryFilter === 'overdue' ? 'bg-red-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
         >
-          ⚠️ 逾期款項 ({allPayments.filter(p => 
-            p.s === 'pending' && 
+          ⚠️ 逾期款項 ({pendingPayments.filter(p => 
             p.due && 
             new Date(p.due) < new Date()
           ).length})
@@ -332,7 +369,7 @@ export default function Payments({ property }: PaymentsProps) {
           onClick={() => setCategoryFilter('collected')}
           className={`px-3 py-2 rounded-lg ${categoryFilter === 'collected' ? 'bg-gray-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
         >
-          ✅ 已收款項
+          ✅ 已收款項 ({collectedPayments.length})
         </button>
       </div>
 
@@ -465,6 +502,7 @@ export default function Payments({ property }: PaymentsProps) {
             viewMode={viewMode}
             onCollectPayment={collectPayment}
             onUpdateElectricity={updateElectricityFee}
+            onRestorePayment={restorePayment}
             lang={state.lang}
           />
         )}

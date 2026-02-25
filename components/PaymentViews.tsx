@@ -9,6 +9,7 @@ interface PaymentViewsProps {
   viewMode: 'table' | 'card' | 'list'
   onCollectPayment: (payment: Payment) => void
   onUpdateElectricity: (paymentId: number) => void
+  onRestorePayment: (paymentId: number) => void
   lang: string
 }
 
@@ -17,6 +18,7 @@ export default function PaymentViews({
   viewMode, 
   onCollectPayment, 
   onUpdateElectricity,
+  onRestorePayment,
   lang 
 }: PaymentViewsProps) {
   
@@ -116,8 +118,19 @@ export default function PaymentViews({
                         )}
                       </div>
                     ) : (
-                      <div className="text-xs text-gray-500">
-                        {payment.paid && `已收於 ${payment.paid}`}
+                      <div className="flex flex-col gap-2">
+                        <div className="text-xs text-gray-500">
+                          {payment.paid && `已收於 ${payment.paid}`}
+                        </div>
+                        {payment.archived && (
+                          <button
+                            onClick={() => onRestorePayment(payment.id)}
+                            className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs hover:bg-yellow-200"
+                            title="恢復為待收狀態"
+                          >
+                            🔄 恢復
+                          </button>
+                        )}
                       </div>
                     )}
                   </td>
@@ -212,7 +225,7 @@ export default function PaymentViews({
               </div>
               
               {/* 操作按鈕 */}
-              {payment.s === 'pending' && (
+              {payment.s === 'pending' ? (
                 <div className="flex gap-2">
                   <button
                     onClick={() => onCollectPayment(payment)}
@@ -230,6 +243,13 @@ export default function PaymentViews({
                     </button>
                   )}
                 </div>
+              ) : payment.archived && (
+                <button
+                  onClick={() => onRestorePayment(payment.id)}
+                  className="w-full btn bg-yellow-100 text-yellow-700 hover:bg-yellow-200 text-sm"
+                >
+                  🔄 恢復為待收
+                </button>
               )}
             </div>
           )
@@ -326,8 +346,18 @@ export default function PaymentViews({
                       )}
                     </div>
                   ) : (
-                    <div className="text-xs text-gray-500 text-right">
-                      已收
+                    <div className="flex flex-col gap-2">
+                      <div className="text-xs text-gray-500 text-right">
+                        已收
+                      </div>
+                      {payment.archived && (
+                        <button
+                          onClick={() => onRestorePayment(payment.id)}
+                          className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs hover:bg-yellow-200"
+                        >
+                          恢復
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
