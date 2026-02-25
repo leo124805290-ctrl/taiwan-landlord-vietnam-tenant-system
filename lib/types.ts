@@ -2,13 +2,15 @@
 
 // 房間狀態
 export type RoomStatus = 
-  | 'available'          // 空屋（可立即出租）
-  | 'reserved'           // 已預訂（未付款）
-  | 'deposit_paid'       // 已付訂金，待入住
-  | 'fully_paid'         // 已付（租金+訂金），待入住
-  | 'occupied'           // 已出租入住中
-  | 'maintenance'        // 維修中
-  | 'pending_payment';   // 待付款（兼容舊資料）
+  | 'available'                 // 空屋（可立即出租）
+  | 'pending_checkin_unpaid'    // 待入住（尚未結清）
+  | 'pending_checkin_paid'      // 待入住（已結清）
+  | 'occupied'                  // 已出租入住中
+  | 'maintenance'               // 維修中
+  | 'reserved'                  // 已預訂（兼容舊資料）
+  | 'deposit_paid'              // 已付訂金（兼容舊資料）
+  | 'fully_paid'                // 已付全額（兼容舊資料）
+  | 'pending_payment';          // 待付款（兼容舊資料）
 
 // 入住付款類型
 export type CheckInPaymentType = 'full' | 'deposit_only' | 'reservation_only';

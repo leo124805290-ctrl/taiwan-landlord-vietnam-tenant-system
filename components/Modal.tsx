@@ -3500,27 +3500,29 @@ export default function Modal() {
     switch (paymentOption.value) {
       case 'full':
         // 全額付款：檢查入住日期
-        const today = new Date().toISOString().split('T')[0]
         if (startInput.value <= today) {
           // 入住日期已到或已過：直接設為已出租
           roomStatus = 'occupied'
         } else {
-          // 入住日期未到：設為已付，待入住
-          roomStatus = 'fully_paid'
+          // 入住日期未到：設為待入住（已結清）
+          roomStatus = 'pending_checkin_paid'
         }
         checkInPaymentType = 'full'
         break
       case 'deposit_only':
         // 僅付訂金：檢查入住日期
         if (startInput.value <= today) {
-          roomStatus = 'pending_payment'
+          // 入住日期已到：設為待入住（尚未結清）
+          roomStatus = 'pending_checkin_unpaid'
         } else {
-          roomStatus = 'deposit_paid'
+          // 入住日期未到：設為待入住（尚未結清）
+          roomStatus = 'pending_checkin_unpaid'
         }
         checkInPaymentType = 'deposit_only'
         break
       case 'reservation_only':
-        roomStatus = 'reserved'
+        // 僅預訂：設為待入住（尚未結清）
+        roomStatus = 'pending_checkin_unpaid'
         checkInPaymentType = 'reservation_only'
         break
       default:

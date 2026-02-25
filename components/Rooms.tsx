@@ -23,7 +23,7 @@ export default function Rooms({ property }: RoomsProps) {
     let hasChanges = false
     const updatedRooms = property.rooms.map((room: Room) => {
       // 檢查待入住的房間
-      if ((room.s === 'fully_paid' || room.s === 'deposit_paid' || room.s === 'reserved') && room.in) {
+      if ((room.s === 'pending_checkin_paid' || room.s === 'pending_checkin_unpaid') && room.in) {
         const checkInDate = room.in
         
         // 如果入住日期已到或已過
@@ -33,17 +33,13 @@ export default function Rooms({ property }: RoomsProps) {
           // 根據當前狀態決定新狀態
           let newStatus: RoomStatus
           switch (room.s) {
-            case 'fully_paid':
-              // 已付全額：轉為已出租
+            case 'pending_checkin_paid':
+              // 已結清：轉為已出租
               newStatus = 'occupied'
               break
-            case 'deposit_paid':
-              // 已付訂金：轉為待付款
-              newStatus = 'pending_payment'
-              break
-            case 'reserved':
-              // 僅預訂：轉為待付款
-              newStatus = 'pending_payment'
+            case 'pending_checkin_unpaid':
+              // 尚未結清：轉為待入住（尚未結清）- 保持不變，但標記為已到期
+              newStatus = 'pending_checkin_unpaid'
               break
             default:
               newStatus = room.s
@@ -51,7 +47,9 @@ export default function Rooms({ property }: RoomsProps) {
           
           return {
             ...room,
-            s: newStatus
+            s: newStatus,
+            // 標記入住日期已到
+            checkInDatePassed: checkInDate <= today
           }
         }
       }
@@ -74,13 +72,24 @@ export default function Rooms({ property }: RoomsProps) {
   // 計算統計資料
   const stats = useMemo(() => {
     const rooms = property.rooms || []
+    
+    // 計算新狀態統計
+    const pendingCheckinPaid = rooms.filter((r: Room) => 
+      r.s === 'pending_checkin_paid' || r.s === 'fully_paid'
+    ).length
+    
+    const pendingCheckinUnpaid = rooms.filter((r: Room) => 
+      r.s === 'pending_checkin_unpaid' || 
+      r.s === 'deposit_paid' || 
+      r.s === 'reserved' || 
+      r.s === 'pending_payment'
+    ).length
+    
     return {
       total: rooms.length,
       available: rooms.filter((r: Room) => r.s === 'available').length,
-      reserved: rooms.filter((r: Room) => r.s === 'reserved').length,
-      deposit_paid: rooms.filter((r: Room) => r.s === 'deposit_paid').length,
-      fully_paid: rooms.filter((r: Room) => r.s === 'fully_paid').length,
-      pending_payment: rooms.filter((r: Room) => r.s === 'pending_payment').length,
+      pending_checkin_paid: pendingCheckinPaid,
+      pending_checkin_unpaid: pendingCheckinUnpaid,
       occupied: rooms.filter((r: Room) => r.s === 'occupied').length,
       maintenance: rooms.filter((r: Room) => r.s === 'maintenance').length,
       totalRent: rooms.reduce((sum: number, r: Room) => sum + (r.r || 0), 0),
@@ -94,7 +103,24 @@ export default function Rooms({ property }: RoomsProps) {
     
     // 狀態過濾
     if (filterStatus !== 'all') {
-      rooms = rooms.filter((r: Room) => r.s === filterStatus)
+      if (filterStatus === 'pending_checkin_unpaid') {
+        // 待入住（尚未結清）：包含多種舊狀態
+        rooms = rooms.filter((r: Room) => 
+          r.s === 'pending_checkin_unpaid' ||
+          r.s === 'deposit_paid' ||
+          r.s === 'reserved' ||
+          r.s === 'pending_payment'
+        )
+      } else if (filterStatus === 'pending_checkin_paid') {
+        // 待入住（已結清）：包含舊狀態
+        rooms = rooms.filter((r: Room) => 
+          r.s === 'pending_checkin_paid' ||
+          r.s === 'fully_paid'
+        )
+      } else {
+        // 其他狀態：直接匹配
+        rooms = rooms.filter((r: Room) => r.s === filterStatus)
+      }
     }
     
     // 搜尋過濾
@@ -114,12 +140,15 @@ export default function Rooms({ property }: RoomsProps) {
   const getStatusColor = (status: RoomStatus) => {
     switch (status) {
       case 'available': return 'bg-emerald-100 text-emerald-700'
+      case 'pending_checkin_unpaid': return 'bg-blue-100 text-blue-700'
+      case 'pending_checkin_paid': return 'bg-yellow-100 text-yellow-700'
+      case 'occupied': return 'bg-green-100 text-green-700'
+      case 'maintenance': return 'bg-gray-100 text-gray-700'
+      // 兼容舊狀態
       case 'reserved': return 'bg-orange-100 text-orange-700'
       case 'deposit_paid': return 'bg-blue-100 text-blue-700'
       case 'fully_paid': return 'bg-yellow-100 text-yellow-700'
       case 'pending_payment': return 'bg-red-100 text-red-700'
-      case 'occupied': return 'bg-green-100 text-green-700'
-      case 'maintenance': return 'bg-gray-100 text-gray-700'
       default: return 'bg-gray-100 text-gray-700'
     }
   }
@@ -128,12 +157,15 @@ export default function Rooms({ property }: RoomsProps) {
   const getStatusIcon = (status: RoomStatus) => {
     switch (status) {
       case 'available': return '🟢'
+      case 'pending_checkin_unpaid': return '💵'
+      case 'pending_checkin_paid': return '💰'
+      case 'occupied': return '✅'
+      case 'maintenance': return '🔧'
+      // 兼容舊狀態
       case 'reserved': return '📅'
       case 'deposit_paid': return '💵'
       case 'fully_paid': return '💰'
       case 'pending_payment': return '⏳'
-      case 'occupied': return '✅'
-      case 'maintenance': return '🔧'
       default: return '⚪'
     }
   }
@@ -257,76 +289,97 @@ export default function Rooms({ property }: RoomsProps) {
           </div>
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-          {/* 已出租入住中 */}
-          <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          {/* 已出租入住中 - 可點擊篩選 */}
+          <button
+            onClick={() => setFilterStatus('occupied')}
+            className={`bg-green-50 p-3 rounded-lg border ${filterStatus === 'occupied' ? 'border-green-400 ring-2 ring-green-200' : 'border-green-200'} hover:bg-green-100 transition-colors`}
+          >
             <div className="flex items-center gap-2 mb-1">
               <span className="text-green-600">✅</span>
               <div className="text-sm font-medium">已出租入住中</div>
             </div>
             <div className="text-2xl font-bold text-green-700">{stats.occupied}</div>
             <div className="text-xs text-gray-500">間</div>
-          </div>
+          </button>
           
-          {/* 已付，待入住 */}
-          <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+          {/* 待入住（已結清） - 可點擊篩選 */}
+          <button
+            onClick={() => setFilterStatus('pending_checkin_paid')}
+            className={`bg-yellow-50 p-3 rounded-lg border ${filterStatus === 'pending_checkin_paid' ? 'border-yellow-400 ring-2 ring-yellow-200' : 'border-yellow-200'} hover:bg-yellow-100 transition-colors`}
+          >
             <div className="flex items-center gap-2 mb-1">
               <span className="text-yellow-600">💰</span>
-              <div className="text-sm font-medium">已付，待入住</div>
+              <div className="text-sm font-medium">待入住（已結清）</div>
             </div>
-            <div className="text-2xl font-bold text-yellow-700">{stats.fully_paid || 0}</div>
+            <div className="text-2xl font-bold text-yellow-700">{stats.pending_checkin_paid}</div>
             <div className="text-xs text-gray-500">間</div>
-          </div>
+          </button>
           
-          {/* 已付訂金，待入住 */}
-          <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+          {/* 待入住（尚未結清） - 可點擊篩選 */}
+          <button
+            onClick={() => setFilterStatus('pending_checkin_unpaid')}
+            className={`bg-blue-50 p-3 rounded-lg border ${filterStatus === 'pending_checkin_unpaid' ? 'border-blue-400 ring-2 ring-blue-200' : 'border-blue-200'} hover:bg-blue-100 transition-colors`}
+          >
             <div className="flex items-center gap-2 mb-1">
               <span className="text-blue-600">💵</span>
-              <div className="text-sm font-medium">已付訂金，待入住</div>
+              <div className="text-sm font-medium">待入住（尚未結清）</div>
             </div>
-            <div className="text-2xl font-bold text-blue-700">{stats.deposit_paid || 0}</div>
+            <div className="text-2xl font-bold text-blue-700">{stats.pending_checkin_unpaid}</div>
             <div className="text-xs text-gray-500">間</div>
-          </div>
+          </button>
           
-          {/* 已預訂未付款 */}
-          <div className="bg-orange-50 p-3 rounded-lg border border-orange-200">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-orange-600">📅</span>
-              <div className="text-sm font-medium">已預訂未付款</div>
-            </div>
-            <div className="text-2xl font-bold text-orange-700">{stats.reserved}</div>
-            <div className="text-xs text-gray-500">間</div>
-          </div>
-          
-          {/* 空屋可出租 */}
-          <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-200">
+          {/* 空屋可出租 - 可點擊篩選 */}
+          <button
+            onClick={() => setFilterStatus('available')}
+            className={`bg-emerald-50 p-3 rounded-lg border ${filterStatus === 'available' ? 'border-emerald-400 ring-2 ring-emerald-200' : 'border-emerald-200'} hover:bg-emerald-100 transition-colors`}
+          >
             <div className="flex items-center gap-2 mb-1">
               <span className="text-emerald-600">🟢</span>
               <div className="text-sm font-medium">空屋可出租</div>
             </div>
             <div className="text-2xl font-bold text-emerald-700">{stats.available}</div>
             <div className="text-xs text-gray-500">間</div>
-          </div>
+          </button>
           
-          {/* 維修中 */}
-          <div className="bg-gray-100 p-3 rounded-lg border border-gray-300">
+          {/* 維修中 - 可點擊篩選 */}
+          <button
+            onClick={() => setFilterStatus('maintenance')}
+            className={`bg-gray-100 p-3 rounded-lg border ${filterStatus === 'maintenance' ? 'border-gray-400 ring-2 ring-gray-200' : 'border-gray-300'} hover:bg-gray-200 transition-colors`}
+          >
             <div className="flex items-center gap-2 mb-1">
               <span className="text-gray-600">🔧</span>
               <div className="text-sm font-medium">維修中</div>
             </div>
             <div className="text-2xl font-bold text-gray-700">{stats.maintenance}</div>
             <div className="text-xs text-gray-500">間</div>
-          </div>
+          </button>
         </div>
         
-        {/* 待付款統計（如果有） */}
-        {(stats.pending_payment || 0) > 0 && (
-          <div className="mt-3 pt-3 border-t border-gray-200">
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-red-600">⏳</span>
-              <span className="font-medium">待付款房間：</span>
-              <span className="text-red-600 font-bold">{stats.pending_payment} 間</span>
-              <span className="text-gray-500">（需補繳租金）</span>
+        {/* 篩選狀態提示 */}
+        {filterStatus !== 'all' && (
+          <div className="mt-3 p-2 bg-blue-50 rounded border border-blue-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-blue-600">🔍</span>
+                <span>正在篩選：</span>
+                <span className="font-bold">
+                  {filterStatus === 'occupied' ? '已出租入住中' :
+                   filterStatus === 'pending_checkin_paid' ? '待入住（已結清）' :
+                   filterStatus === 'pending_checkin_unpaid' ? '待入住（尚未結清）' :
+                   filterStatus === 'available' ? '空屋可出租' :
+                   filterStatus === 'maintenance' ? '維修中' : '全部'}
+                </span>
+                <span className="text-gray-500">
+                  ({filteredRooms.length} 間房間)
+                </span>
+              </div>
+              <button
+                onClick={() => setFilterStatus('all')}
+                className="text-sm text-blue-600 hover:text-blue-800"
+              >
+                清除篩選
+              </button>
             </div>
           </div>
         )}
@@ -392,7 +445,7 @@ export default function Rooms({ property }: RoomsProps) {
             >
               {t('all', state.lang)}
             </button>
-            {(['available', 'reserved', 'deposit_paid', 'fully_paid', 'pending_payment', 'occupied', 'maintenance'] as RoomStatus[]).map(status => (
+            {(['available', 'pending_checkin_unpaid', 'pending_checkin_paid', 'occupied', 'maintenance'] as RoomStatus[]).map(status => (
               <button
                 key={status}
                 onClick={() => setFilterStatus(status)}
@@ -517,14 +570,15 @@ export default function Rooms({ property }: RoomsProps) {
                             </>
                           )}
                           
-                          {(room.s === 'deposit_paid' || room.s === 'fully_paid') && (
+                          {(room.s === 'pending_checkin_unpaid' || room.s === 'pending_checkin_paid' || 
+                            room.s === 'deposit_paid' || room.s === 'fully_paid') && (
                             <>
                               <button
                                 onClick={() => handleCompletePayment(room.id)}
                                 className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
-                                title={room.s === 'fully_paid' ? '查看付款記錄' : '補繳租金'}
+                                title={room.s === 'pending_checkin_paid' || room.s === 'fully_paid' ? '查看付款記錄' : '補繳租金'}
                               >
-                                {room.s === 'fully_paid' ? '📋 查看' : '💰 補繳'}
+                                {room.s === 'pending_checkin_paid' || room.s === 'fully_paid' ? '📋 查看' : '💰 補繳'}
                               </button>
                               <button
                                 onClick={() => openModal('roomDetail', room.id)}
@@ -698,14 +752,15 @@ export default function Rooms({ property }: RoomsProps) {
                     </>
                   )}
                   
-                  {(room.s === 'deposit_paid' || room.s === 'fully_paid') && (
+                  {(room.s === 'pending_checkin_unpaid' || room.s === 'pending_checkin_paid' || 
+                    room.s === 'deposit_paid' || room.s === 'fully_paid') && (
                     <>
                       <button
                         onClick={() => handleCompletePayment(room.id)}
                         className="flex-1 btn bg-blue-600 text-white text-sm"
-                        title={room.s === 'fully_paid' ? '查看付款記錄' : '補繳租金'}
+                        title={room.s === 'pending_checkin_paid' || room.s === 'fully_paid' ? '查看付款記錄' : '補繳租金'}
                       >
-                        {room.s === 'fully_paid' ? '📋 查看' : '💰 補繳'}
+                        {room.s === 'pending_checkin_paid' || room.s === 'fully_paid' ? '📋 查看' : '💰 補繳'}
                       </button>
                       <button
                         onClick={() => openModal('roomDetail', room.id)}
