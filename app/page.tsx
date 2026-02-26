@@ -8,7 +8,6 @@ import FinancialOverview from '@/components/FinancialOverview'
 import Payments from '@/components/Payments'
 import PropertyExpenses from '@/components/PropertyExpenses'
 import Utilities from '@/components/Utilities'
-import Reports from '@/components/Reports'
 import Settings from '@/components/Settings'
 import Modal from '@/components/Modal'
 import { useApp } from '@/contexts/AppContext'
@@ -34,7 +33,6 @@ export default function HomePage() {
           return <AllPropertiesPayments />
         case 'expenses':
         case 'utilities':
-        case 'reports':
         case 'settings':
           return (
             <div className="card text-center py-12">
@@ -95,8 +93,6 @@ export default function HomePage() {
         return <PropertyExpenses property={property} />
       case 'utilities':
         return <Utilities />
-      case 'reports':
-        return <Reports />
       case 'settings':
         return <Settings />
       default:
