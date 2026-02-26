@@ -31,11 +31,11 @@ import {
   ChevronUp
 } from 'lucide-react'
 
-interface CostManagementProps {
+interface FinancialOverviewProps {
   property: any
 }
 
-export default function CostManagement({ property }: CostManagementProps) {
+export default function FinancialOverview({ property }: FinancialOverviewProps) {
   const { state, updateState, updateData, openModal } = useApp()
   
   // 財務記錄狀態
