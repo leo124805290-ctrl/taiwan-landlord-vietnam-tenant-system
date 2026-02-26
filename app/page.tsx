@@ -4,9 +4,8 @@ import Header from '@/components/Header'
 import Rooms from '@/components/Rooms'
 import AllPropertiesRooms from '@/components/AllPropertiesRooms'
 import AllPropertiesPayments from '@/components/AllPropertiesPayments'
-import FinancialOverview from '@/components/FinancialOverview'
 import Payments from '@/components/Payments'
-import PropertyExpenses from '@/components/PropertyExpenses'
+import FinancialManagement from '@/components/FinancialManagement'
 import Utilities from '@/components/Utilities'
 import Settings from '@/components/Settings'
 import Modal from '@/components/Modal'
@@ -27,11 +26,32 @@ export default function HomePage() {
       switch (state.tab) {
         case 'rooms':
           return <AllPropertiesRooms properties={state.data.properties || []} />
-        case 'financial':
-          return <FinancialOverview properties={state.data.properties || []} />
+        case 'financial-management':
+          return (
+            <div className="card text-center py-12">
+              <div className="text-6xl mb-4">🏢</div>
+              <h2 className="text-2xl font-bold mb-4">全部物業模式</h2>
+              <p className="text-gray-600 mb-6">
+                在「全部物業」模式下，財務管理功能需要選擇特定物業。
+                <br />
+                請選擇特定物業以使用財務管理功能。
+              </p>
+              <div className="flex flex-wrap gap-4 justify-center">
+                {state.data.properties.map((p: any) => (
+                  <button
+                    key={p.id}
+                    onClick={() => updateState({ currentProperty: p.id })}
+                    className="btn bg-blue-600 text-white"
+                  >
+                    🏠 切換到 {p.name || '未命名物業'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )
         case 'payments':
           return <AllPropertiesPayments />
-        case 'expenses':
+        case 'financial-management':
         case 'utilities':
         case 'settings':
           return (
@@ -83,14 +103,14 @@ export default function HomePage() {
         return state.currentProperty === 'all' 
           ? <AllPropertiesRooms properties={state.data.properties} />
           : <Rooms property={property} />
-      case 'financial':
-        return <FinancialOverview properties={state.currentProperty === 'all' ? state.data.properties : [property]} />
+      case 'financial-management':
+        return <FinancialManagement property={property} />
       case 'payments':
         return state.currentProperty === 'all'
           ? <AllPropertiesPayments />
           : <Payments property={property} />
-      case 'expenses':
-        return <PropertyExpenses property={property} />
+      case 'financial-management':
+        return <FinancialManagement property={property} />
       case 'utilities':
         return <Utilities />
       case 'settings':

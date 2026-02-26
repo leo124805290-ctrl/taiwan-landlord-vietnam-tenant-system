@@ -219,15 +219,29 @@ export interface AdditionalIncome {
 export interface Expense {
   id: number;
   date: string; // 支出日期
-  type: 'repair' | 'renovation' | 'utility' | 'tax' | 'management' | 'other'; // 支出類型
+  
+  // 分層分類系統
+  mainCategory: 'renovation' | 'repair' | 'management' | 'tax' | 'other'; // 大項分類
+  subCategory: string; // 中項分類（根據 mainCategory 動態變化）
+  detailCategory?: string; // 小項分類（可選）
+  
+  // 保持向後兼容的 type 字段
+  type: 'repair' | 'renovation' | 'utility' | 'tax' | 'management' | 'other'; // 舊的支出類型（兼容用）
+  
   amount: number; // 金額
-  description: string; // 說明
+  description: string; // 詳細說明/備註
   room: string; // 房間/區域
   vendor?: string; // 供應商/收款人
   paymentMethod?: 'cash' | 'transfer' | 'credit' | 'check'; // 付款方式
   status: 'pending' | 'paid' | 'cancelled'; // 付款狀態
   invoiceNumber?: string; // 發票號碼
   propertyId: number; // 所屬物業ID
+  
+  // 新增字段（可選）
+  projectName?: string; // 專案名稱
+  contractor?: string; // 承包商
+  expectedCompletion?: string; // 預計完成日期
+  actualCompletion?: string; // 實際完成日期
 }
 
 // 應用資料
@@ -241,7 +255,7 @@ export interface AppData {
 
 // 應用狀態
 export interface AppState {
-  tab: 'rooms' | 'financial' | 'payments' | 'paymentHistory' | 'maintenance' | 'expenses' | 'utilities' | 'settings';
+  tab: 'rooms' | 'financial-management' | 'payments' | 'paymentHistory' | 'maintenance' | 'utilities' | 'settings';
   lang: 'zh-TW' | 'vi-VN';
   modal: {
     type: string;
@@ -321,3 +335,136 @@ export interface ElectricityAnalysis {
     suggestedRate?: number;
   };
 }
+
+// ==================== 財務管理模組 - 新規格 ====================
+
+// 大項分類列舉
+export enum MajorCategory {
+  PRE_INVESTMENT = '前期支出',
+  DEPOSIT_EXPENSE = '押金支出',
+  MAINTENANCE_EXPENSE = '維修支出',
+  DAILY_EXPENSE = '日常支出',
+  OPERATIONAL_INCOME = '經營收入'
+}
+
+// 中項分類列舉
+export enum MinorCategory {
+  // 前期支出
+  DECORATION = '裝潢隔間',
+  FURNITURE = '家具購置',
+  AIR_CONDITIONER = '冷氣購置',
+  PLUMBING_ELEC = '水電裝修',
+  APPLIANCES = '電器購置',
+  OTHER_PRE_INV = '其他前期支出',
+  
+  // 押金支出
+  DEPOSIT = '押金',
+  
+  // 維修支出
+  AC_MAINTENANCE = '冷氣保養',
+  PIPE_REPAIR = '水管維修',
+  APPLIANCE_REPAIR = '電器維修',
+  ELEVATOR_REPAIR = '電梯維修',
+  FURNITURE_MAINT = '家具維護',
+  OTHER_MAINT = '其他維護',
+  
+  // 日常支出
+  WATER_BILL = '水費',
+  ELECTRIC_BILL = '電費',
+  RENT_EXPENSE = '房屋租金（支出）',
+  OTHER_DAILY = '其他日常支出',
+  
+  // 經營收入
+  LAUNDRY_INCOME = '自助洗衣機收入',
+  EV_CHARGING_INCOME = '電動車充電收入',
+  RENTAL_INCOME = '房租收入（收入）'
+}
+
+// 財務記錄（支出/收入）
+export interface FinancialRecord {
+  id: string; // UUID 格式
+  major_category: MajorCategory;
+  minor_category: MinorCategory;
+  amount: number; // 金額（支援小數點）
+  currency: string; // 貨幣單位，預設 'NTD'
+  transaction_date: string; // 交易日期，格式 'YYYY-MM-DD'
+  remarks: string; // 使用者輸入備註
+  remarks_hint: string; // 備註提示清單（根據 minor_category 自動帶入）
+  created_at: string; // 建立時間，格式 'YYYY-MM-DD HH:mm:ss'
+  updated_at: string; // 更新時間，格式 'YYYY-MM-DD HH:mm:ss'
+  
+  // 可選關聯字段
+  property_id?: number; // 所屬物業ID
+  room_number?: string; // 房間號碼（如果適用）
+  tenant_id?: number; // 租客ID（如果適用）
+  invoice_number?: string; // 發票號碼
+  payment_method?: 'cash' | 'transfer' | 'credit' | 'check' | 'other'; // 付款方式
+  status?: 'pending' | 'completed' | 'cancelled'; // 狀態
+}
+
+// 中項分類對應的備註提示
+export const MinorCategoryHints: Record<MinorCategory, string> = {
+  // 前期支出
+  [MinorCategory.DECORATION]: '設計費、材料費（木材、油漆、地板）、施工人工費',
+  [MinorCategory.FURNITURE]: '床（床架、床墊）、桌椅（餐桌、書桌、椅子）、沙發、收納櫃（衣櫃、鞋櫃、書櫃）、窗簾、燈具、裝飾品',
+  [MinorCategory.AIR_CONDITIONER]: '機型/品牌、安裝費用、保固/延長保固',
+  [MinorCategory.PLUMBING_ELEC]: '管線更新、插座配置、照明設備、人工費',
+  [MinorCategory.APPLIANCES]: '冰箱、洗衣機、電視、瓦斯爐/微波爐',
+  [MinorCategory.OTHER_PRE_INV]: '搬運費、清潔費、申請/許可費用',
+  
+  // 押金支出
+  [MinorCategory.DEPOSIT]: '租約開始時支付金額、租約結束時退還金額、扣除項目（維修費、清潔費、違約金）',
+  
+  // 維修支出
+  [MinorCategory.AC_MAINTENANCE]: '定期清洗、零件更換（壓縮機、濾網）',
+  [MinorCategory.PIPE_REPAIR]: '漏水修補、水壓檢測',
+  [MinorCategory.APPLIANCE_REPAIR]: '零件更換、人工費',
+  [MinorCategory.ELEVATOR_REPAIR]: '年度檢修、零件更換、保養費',
+  [MinorCategory.FURNITURE_MAINT]: '沙發翻新、床架修補、櫃子維修',
+  [MinorCategory.OTHER_MAINT]: '油漆翻新、公共區域清潔',
+  
+  // 日常支出
+  [MinorCategory.WATER_BILL]: '每月帳單、超額用水費',
+  [MinorCategory.ELECTRIC_BILL]: '每月帳單、季節性高用電',
+  [MinorCategory.RENT_EXPENSE]: '每月租金支付',
+  [MinorCategory.OTHER_DAILY]: '管理費、清潔費、網路費、停車費',
+  
+  // 經營收入
+  [MinorCategory.LAUNDRY_INCOME]: '每月營收、電費、維護費',
+  [MinorCategory.EV_CHARGING_INCOME]: '每月營收、電費、設備維護',
+  [MinorCategory.RENTAL_INCOME]: '每月租金收入、租客資訊、租約日期'
+};
+
+// 大項分類對應的中項分類
+export const MajorToMinorCategories: Record<MajorCategory, MinorCategory[]> = {
+  [MajorCategory.PRE_INVESTMENT]: [
+    MinorCategory.DECORATION,
+    MinorCategory.FURNITURE,
+    MinorCategory.AIR_CONDITIONER,
+    MinorCategory.PLUMBING_ELEC,
+    MinorCategory.APPLIANCES,
+    MinorCategory.OTHER_PRE_INV
+  ],
+  [MajorCategory.DEPOSIT_EXPENSE]: [
+    MinorCategory.DEPOSIT
+  ],
+  [MajorCategory.MAINTENANCE_EXPENSE]: [
+    MinorCategory.AC_MAINTENANCE,
+    MinorCategory.PIPE_REPAIR,
+    MinorCategory.APPLIANCE_REPAIR,
+    MinorCategory.ELEVATOR_REPAIR,
+    MinorCategory.FURNITURE_MAINT,
+    MinorCategory.OTHER_MAINT
+  ],
+  [MajorCategory.DAILY_EXPENSE]: [
+    MinorCategory.WATER_BILL,
+    MinorCategory.ELECTRIC_BILL,
+    MinorCategory.RENT_EXPENSE,
+    MinorCategory.OTHER_DAILY
+  ],
+  [MajorCategory.OPERATIONAL_INCOME]: [
+    MinorCategory.LAUNDRY_INCOME,
+    MinorCategory.EV_CHARGING_INCOME,
+    MinorCategory.RENTAL_INCOME
+  ]
+};

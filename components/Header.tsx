@@ -8,9 +8,8 @@ export default function Header() {
   const property = getCurrentProperty()
   const tabs = [
     { key: 'rooms', icon: '🏠', label: 'roomsTab' },
-    { key: 'financial', icon: '💰', label: 'financialTab' },
+    { key: 'financial-management', icon: '💰', label: 'financialManagementTab' },
     { key: 'payments', icon: '💵', label: 'paymentsTab' },
-    { key: 'expenses', icon: '💸', label: 'expensesTab' },
     { key: 'utilities', icon: '💧', label: 'utilitiesTab' },
     { key: 'settings', icon: '⚙️', label: 'settingsTab' },
   ]
