@@ -18,7 +18,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined)
 export function AppProvider({ children }: { children: ReactNode }) {
   // 初始化狀態
   const [state, setState] = useState<AppState>({
-    tab: 'dashboard',
+    tab: 'rooms',
     lang: 'zh-TW',
     modal: null,
     filter: 'all',

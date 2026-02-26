@@ -1,7 +1,6 @@
 'use client'
 
 import Header from '@/components/Header'
-import Dashboard from '@/components/Dashboard'
 import Rooms from '@/components/Rooms'
 import AllPropertiesRooms from '@/components/AllPropertiesRooms'
 import AllPropertiesPayments from '@/components/AllPropertiesPayments'
@@ -33,7 +32,6 @@ export default function HomePage() {
           return <FinancialOverview properties={state.data.properties || []} />
         case 'payments':
           return <AllPropertiesPayments />
-        case 'dashboard':
         case 'expenses':
         case 'utilities':
         case 'reports':
@@ -83,8 +81,6 @@ export default function HomePage() {
 
     // 單一物業模式
     switch (state.tab) {
-      case 'dashboard':
-        return <Dashboard property={property} />
       case 'rooms':
         return state.currentProperty === 'all' 
           ? <AllPropertiesRooms properties={state.data.properties} />

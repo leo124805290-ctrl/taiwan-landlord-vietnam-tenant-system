@@ -7,7 +7,6 @@ export default function Header() {
   const { state, updateState, openModal, getCurrentProperty } = useApp()
   const property = getCurrentProperty()
   const tabs = [
-    { key: 'dashboard', icon: '📊', label: 'dashboard' },
     { key: 'rooms', icon: '🏠', label: 'roomsTab' },
     { key: 'financial', icon: '💰', label: 'financialTab' },
     { key: 'payments', icon: '💵', label: 'paymentsTab' },
