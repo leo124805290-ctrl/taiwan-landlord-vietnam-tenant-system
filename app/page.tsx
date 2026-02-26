@@ -5,7 +5,8 @@ import Rooms from '@/components/Rooms'
 import AllPropertiesRooms from '@/components/AllPropertiesRooms'
 import AllPropertiesPayments from '@/components/AllPropertiesPayments'
 import Payments from '@/components/Payments'
-import FinancialManagement from '@/components/FinancialManagement'
+import IncomeManagement from '@/components/IncomeManagement'
+import CostManagement from '@/components/CostManagement'
 import Settings from '@/components/Settings'
 import Modal from '@/components/Modal'
 import { useApp } from '@/contexts/AppContext'
@@ -25,15 +26,18 @@ export default function HomePage() {
       switch (state.tab) {
         case 'rooms':
           return <AllPropertiesRooms properties={state.data.properties || []} />
-        case 'financial-management':
+        case 'income-management':
+          return <IncomeManagement properties={state.data.properties || []} />
+        case 'cost-management':
+        case 'settings':
           return (
             <div className="card text-center py-12">
               <div className="text-6xl mb-4">🏢</div>
               <h2 className="text-2xl font-bold mb-4">全部物業模式</h2>
               <p className="text-gray-600 mb-6">
-                在「全部物業」模式下，財務管理功能需要選擇特定物業。
+                在「全部物業」模式下，收入管理功能可以查看所有物業的總收入。
                 <br />
-                請選擇特定物業以使用財務管理功能。
+                成本管理功能需要選擇特定物業以記錄成本支出。
               </p>
               <div className="flex flex-wrap gap-4 justify-center">
                 {state.data.properties.map((p: any) => (
@@ -50,16 +54,18 @@ export default function HomePage() {
           )
         case 'payments':
           return <AllPropertiesPayments />
-        case 'financial-management':
+        case 'income-management':
+          return <IncomeManagement properties={state.data.properties || []} />
+        case 'cost-management':
         case 'settings':
           return (
             <div className="card text-center py-12">
               <div className="text-6xl mb-4">🏢</div>
               <h2 className="text-2xl font-bold mb-4">全部物業模式</h2>
               <p className="text-gray-600 mb-6">
-                在「全部物業」模式下，目前只支援房間管理、財務總覽和繳費功能。
+                在「全部物業」模式下，收入管理功能可以查看所有物業的總收入。
                 <br />
-                請選擇特定物業以使用其他功能。
+                成本管理功能需要選擇特定物業以記錄成本支出。
               </p>
               <div className="flex flex-wrap gap-4 justify-center">
                 {state.data.properties.map((p: any) => (
@@ -101,14 +107,18 @@ export default function HomePage() {
         return state.currentProperty === 'all' 
           ? <AllPropertiesRooms properties={state.data.properties} />
           : <Rooms property={property} />
-      case 'financial-management':
-        return <FinancialManagement property={property} />
+      case 'income-management':
+        return <IncomeManagement properties={[property]} />
+      case 'cost-management':
+        return <CostManagement property={property} />
       case 'payments':
         return state.currentProperty === 'all'
           ? <AllPropertiesPayments />
           : <Payments property={property} />
-      case 'financial-management':
-        return <FinancialManagement property={property} />
+      case 'income-management':
+        return <IncomeManagement properties={[property]} />
+      case 'cost-management':
+        return <CostManagement property={property} />
       case 'settings':
         return <Settings />
       default:
