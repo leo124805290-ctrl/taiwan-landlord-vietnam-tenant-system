@@ -41,6 +41,9 @@ export default function FinancialOverview({ property }: FinancialOverviewProps) 
   const [financialRecords, setFinancialRecords] = useState<FinancialRecord[]>([])
   const [loading, setLoading] = useState(true)
   
+  // 物業篩選狀態（如果有多個物業）
+  const [selectedProperty, setSelectedProperty] = useState<'all' | number>('all')
+  
   // 時間篩選狀態
   const [timeFilter, setTimeFilter] = useState<'month' | 'property-start' | 'custom'>('month')
   const [selectedMonth, setSelectedMonth] = useState<string>(new Date().toISOString().substring(0, 7)) // YYYY-MM
@@ -63,109 +66,245 @@ export default function FinancialOverview({ property }: FinancialOverviewProps) 
   // ==================== 數據初始化 ====================
   
   useEffect(() => {
-    // 初始化模擬數據
-    const mockRecords: FinancialRecord[] = [
-      // 前期支出（一次性）
-      {
-        id: '1',
-        major_category: MajorCategory.PRE_INVESTMENT,
-        minor_category: MinorCategory.FURNITURE,
-        amount: 45000,
-        currency: 'NTD',
-        transaction_date: '2026-01-15',
-        remarks: '購買家具：沙發、床、桌椅',
-        remarks_hint: MinorCategoryHints[MinorCategory.FURNITURE],
-        created_at: '2026-01-15 10:30:00',
-        updated_at: '2026-01-15 10:30:00',
-        property_id: property?.id
-      },
-      {
-        id: '2',
-        major_category: MajorCategory.PRE_INVESTMENT,
-        minor_category: MinorCategory.AIR_CONDITIONER,
-        amount: 80000,
-        currency: 'NTD',
-        transaction_date: '2026-01-20',
-        remarks: '安裝3台分離式冷氣',
-        remarks_hint: MinorCategoryHints[MinorCategory.AIR_CONDITIONER],
-        created_at: '2026-01-20 14:15:00',
-        updated_at: '2026-01-20 14:15:00',
-        property_id: property?.id
-      },
-      // 押金支出（一次性）
-      {
-        id: '3',
-        major_category: MajorCategory.DEPOSIT_EXPENSE,
-        minor_category: MinorCategory.DEPOSIT,
-        amount: 60000,
-        currency: 'NTD',
-        transaction_date: '2026-01-01',
-        remarks: '給房東的押金',
-        remarks_hint: MinorCategoryHints[MinorCategory.DEPOSIT],
-        created_at: '2026-01-01 09:00:00',
-        updated_at: '2026-01-01 09:00:00',
-        property_id: property?.id
-      },
-      // 維修支出
-      {
-        id: '4',
-        major_category: MajorCategory.MAINTENANCE_EXPENSE,
-        minor_category: MinorCategory.AC_MAINTENANCE,
-        amount: 3000,
-        currency: 'NTD',
-        transaction_date: '2026-02-10',
-        remarks: '301房冷氣清洗',
-        remarks_hint: MinorCategoryHints[MinorCategory.AC_MAINTENANCE],
-        created_at: '2026-02-10 11:45:00',
-        updated_at: '2026-02-10 11:45:00',
-        property_id: property?.id
-      },
-      // 日常支出
-      {
-        id: '5',
-        major_category: MajorCategory.DAILY_EXPENSE,
-        minor_category: MinorCategory.ELECTRIC_BILL,
-        amount: 12500,
-        currency: 'NTD',
-        transaction_date: '2026-02-20',
-        remarks: '2月份公共區域電費',
-        remarks_hint: MinorCategoryHints[MinorCategory.ELECTRIC_BILL],
-        created_at: '2026-02-20 14:15:00',
-        updated_at: '2026-02-20 14:15:00',
-        property_id: property?.id
-      },
-      {
-        id: '6',
-        major_category: MajorCategory.DAILY_EXPENSE,
-        minor_category: MinorCategory.WATER_BILL,
-        amount: 3500,
-        currency: 'NTD',
-        transaction_date: '2026-02-22',
-        remarks: '2月份水費',
-        remarks_hint: MinorCategoryHints[MinorCategory.WATER_BILL],
-        created_at: '2026-02-22 10:30:00',
-        updated_at: '2026-02-22 10:30:00',
-        property_id: property?.id
+    // 從物業數據中提取財務記錄
+    const extractFinancialRecords = () => {
+      const records: FinancialRecord[] = []
+      
+      // 1. 從物業的 expenses 提取支出記錄
+      if (property?.expenses) {
+        property.expenses.forEach((expense: any) => {
+          // 這裡需要根據 expense 的結構轉換為 FinancialRecord
+          // 暫時使用模擬數據，實際使用時需要根據 expense 結構調整
+        })
       }
-    ]
+      
+      // 2. 從物業的 maintenance 提取維修支出
+      if (property?.maintenance) {
+        property.maintenance.forEach((maintenance: any) => {
+          if (maintenance.actualCost && maintenance.actualCost > 0) {
+            records.push({
+              id: `maintenance_${maintenance.id}`,
+              major_category: MajorCategory.MAINTENANCE_EXPENSE,
+              minor_category: MinorCategory.OTHER_MAINT,
+              amount: maintenance.actualCost,
+              currency: 'NTD',
+              transaction_date: maintenance.actualCompletionDate || maintenance.date,
+              remarks: `維修：${maintenance.title} - ${maintenance.desc}`,
+              remarks_hint: MinorCategoryHints[MinorCategory.OTHER_MAINT],
+              created_at: maintenance.date,
+              updated_at: maintenance.date,
+              property_id: property?.id
+            })
+          }
+        })
+      }
+      
+      // 3. 從物業的 utilityExpenses 提取水電支出
+      if (property?.utilityExpenses) {
+        property.utilityExpenses.forEach((utility: any) => {
+          if (utility.amount && utility.amount > 0) {
+            let minorCategory = MinorCategory.OTHER_DAILY
+            let majorCategory = MajorCategory.DAILY_EXPENSE
+            
+            if (utility.type === 'taipower') {
+              minorCategory = MinorCategory.ELECTRIC_BILL
+            } else if (utility.type === 'water') {
+              minorCategory = MinorCategory.WATER_BILL
+            } else if (utility.type === 'rent') {
+              minorCategory = MinorCategory.RENT_EXPENSE
+              majorCategory = MajorCategory.DAILY_EXPENSE
+            }
+            
+            records.push({
+              id: `utility_${utility.id}`,
+              major_category: majorCategory,
+              minor_category: minorCategory,
+              amount: utility.amount,
+              currency: 'NTD',
+              transaction_date: utility.paymentDate || utility.period,
+              remarks: `${utility.type === 'taipower' ? '台電' : utility.type === 'water' ? '水費' : '租金'}: ${utility.period}`,
+              remarks_hint: MinorCategoryHints[minorCategory],
+              created_at: utility.paymentDate || utility.period,
+              updated_at: utility.paymentDate || utility.period,
+              property_id: property?.id
+            })
+          }
+        })
+      }
+      
+      // 4. 如果沒有真實數據，使用模擬數據
+      if (records.length === 0) {
+        records.push(
+          {
+            id: '1',
+            major_category: MajorCategory.PRE_INVESTMENT,
+            minor_category: MinorCategory.FURNITURE,
+            amount: 45000,
+            currency: 'NTD',
+            transaction_date: '2026-01-15',
+            remarks: '購買家具：沙發、床、桌椅',
+            remarks_hint: MinorCategoryHints[MinorCategory.FURNITURE],
+            created_at: '2026-01-15 10:30:00',
+            updated_at: '2026-01-15 10:30:00',
+            property_id: property?.id
+          },
+          {
+            id: '2',
+            major_category: MajorCategory.PRE_INVESTMENT,
+            minor_category: MinorCategory.AIR_CONDITIONER,
+            amount: 80000,
+            currency: 'NTD',
+            transaction_date: '2026-01-20',
+            remarks: '安裝3台分離式冷氣',
+            remarks_hint: MinorCategoryHints[MinorCategory.AIR_CONDITIONER],
+            created_at: '2026-01-20 14:15:00',
+            updated_at: '2026-01-20 14:15:00',
+            property_id: property?.id
+          },
+          {
+            id: '3',
+            major_category: MajorCategory.DEPOSIT_EXPENSE,
+            minor_category: MinorCategory.DEPOSIT,
+            amount: 60000,
+            currency: 'NTD',
+            transaction_date: '2026-01-01',
+            remarks: '給房東的押金',
+            remarks_hint: MinorCategoryHints[MinorCategory.DEPOSIT],
+            created_at: '2026-01-01 09:00:00',
+            updated_at: '2026-01-01 09:00:00',
+            property_id: property?.id
+          },
+          {
+            id: '4',
+            major_category: MajorCategory.MAINTENANCE_EXPENSE,
+            minor_category: MinorCategory.AC_MAINTENANCE,
+            amount: 3000,
+            currency: 'NTD',
+            transaction_date: '2026-02-10',
+            remarks: '301房冷氣清洗',
+            remarks_hint: MinorCategoryHints[MinorCategory.AC_MAINTENANCE],
+            created_at: '2026-02-10 11:45:00',
+            updated_at: '2026-02-10 11:45:00',
+            property_id: property?.id
+          },
+          {
+            id: '5',
+            major_category: MajorCategory.DAILY_EXPENSE,
+            minor_category: MinorCategory.ELECTRIC_BILL,
+            amount: 12500,
+            currency: 'NTD',
+            transaction_date: '2026-02-20',
+            remarks: '2月份公共區域電費',
+            remarks_hint: MinorCategoryHints[MinorCategory.ELECTRIC_BILL],
+            created_at: '2026-02-20 14:15:00',
+            updated_at: '2026-02-20 14:15:00',
+            property_id: property?.id
+          },
+          {
+            id: '6',
+            major_category: MajorCategory.DAILY_EXPENSE,
+            minor_category: MinorCategory.WATER_BILL,
+            amount: 3500,
+            currency: 'NTD',
+            transaction_date: '2026-02-22',
+            remarks: '2月份水費',
+            remarks_hint: MinorCategoryHints[MinorCategory.WATER_BILL],
+            created_at: '2026-02-22 10:30:00',
+            updated_at: '2026-02-22 10:30:00',
+            property_id: property?.id
+          }
+        )
+      }
+      
+      return records
+    }
     
-    setFinancialRecords(mockRecords)
+    const records = extractFinancialRecords()
+    setFinancialRecords(records)
     setLoading(false)
-  }, [property?.id])
+  }, [property?.id, property?.expenses, property?.maintenance, property?.utilityExpenses])
   
   // ==================== 數據計算函數 ====================
   
-  // 獲取收入數據（從租客繳費記錄 - 模擬數據）
+  // 獲取收入數據（從租客繳費記錄）
   const getIncomeData = useMemo(() => {
-    // 這裡應該從租客繳費記錄中提取數據
-    // 暫時使用模擬數據
-    return {
-      rentIncome: 120000, // 租金收入
-      electricityIncome: 45000, // 電費收入
-      additionalIncome: 8000, // 補充收入（洗衣機、充電等）
-      totalIncome: 173000 // 總收入
+    let rentIncome = 0
+    let electricityIncome = 0
+    let additionalIncome = 0
+    
+    // 1. 從付款記錄中提取收入
+    if (property?.payments) {
+      property.payments.forEach((payment: any) => {
+        if (payment.s === 'paid') {
+          // 租金收入
+          if (payment.paymentType === 'rent' || !payment.paymentType) {
+            rentIncome += payment.r || 0
+          }
+          
+          // 電費收入
+          if (payment.paymentType === 'electricity' || payment.e) {
+            electricityIncome += payment.e || 0
+          }
+          
+          // 其他收入（押金、水費、網路等）
+          if (payment.paymentType && 
+              payment.paymentType !== 'rent' && 
+              payment.paymentType !== 'electricity') {
+            additionalIncome += payment.total || 0
+          }
+        }
+      })
     }
-  }, [])
+    
+    // 2. 從歷史記錄中提取收入
+    if (property?.history) {
+      property.history.forEach((payment: any) => {
+        if (payment.s === 'paid') {
+          // 租金收入
+          if (payment.paymentType === 'rent' || !payment.paymentType) {
+            rentIncome += payment.r || 0
+          }
+          
+          // 電費收入
+          if (payment.paymentType === 'electricity' || payment.e) {
+            electricityIncome += payment.e || 0
+          }
+          
+          // 其他收入
+          if (payment.paymentType && 
+              payment.paymentType !== 'rent' && 
+              payment.paymentType !== 'electricity') {
+            additionalIncome += payment.total || 0
+          }
+        }
+      })
+    }
+    
+    // 3. 從補充收入記錄中提取
+    if (property?.additionalIncomes) {
+      property.additionalIncomes.forEach((income: any) => {
+        if (income.amount && income.amount > 0) {
+          additionalIncome += income.amount
+        }
+      })
+    }
+    
+    // 4. 如果沒有真實數據，使用模擬數據
+    if (rentIncome === 0 && electricityIncome === 0 && additionalIncome === 0) {
+      rentIncome = 120000
+      electricityIncome = 45000
+      additionalIncome = 8000
+    }
+    
+    const totalIncome = rentIncome + electricityIncome + additionalIncome
+    
+    return {
+      rentIncome,
+      electricityIncome,
+      additionalIncome,
+      totalIncome
+    }
+  }, [property?.payments, property?.history, property?.additionalIncomes])
   
   // 篩選財務記錄
   const filteredRecords = useMemo(() => {
@@ -173,11 +312,18 @@ export default function FinancialOverview({ property }: FinancialOverviewProps) 
     
     // 時間篩選
     if (timeFilter === 'month') {
+      // 本月篩選
       filtered = filtered.filter(record => 
         record.transaction_date.startsWith(selectedMonth)
       )
+    } else if (timeFilter === 'property-start') {
+      // 物業開始至今：顯示所有記錄
+      // 這裡可以根據物業的創建日期進一步篩選
+      // 暫時顯示所有記錄
+    } else if (timeFilter === 'custom') {
+      // 自選時間：需要實現日期範圍篩選
+      // 暫時顯示所有記錄
     }
-    // 注意：'property-start' 和 'custom' 篩選需要更多邏輯
     
     // 分類篩選
     if (filterMajor !== 'all') {
@@ -199,7 +345,66 @@ export default function FinancialOverview({ property }: FinancialOverviewProps) 
   
   // 計算統計數據
   const stats = useMemo(() => {
-    const incomeData = getIncomeData
+    // 根據時間篩選計算收入數據
+    const calculateFilteredIncome = () => {
+      const incomeData = getIncomeData
+      
+      // 如果時間篩選是「本月」，需要過濾收入數據
+      if (timeFilter === 'month') {
+        let filteredRentIncome = 0
+        let filteredElectricityIncome = 0
+        let filteredAdditionalIncome = 0
+        
+        // 過濾付款記錄
+        const allPayments = [...(property?.payments || []), ...(property?.history || [])]
+        const selectedYearMonth = selectedMonth.replace('-', '/') // 轉換為 YYYY/MM 格式
+        
+        allPayments.forEach((payment: any) => {
+          if (payment.s === 'paid' && payment.m === selectedYearMonth) {
+            // 租金收入
+            if (payment.paymentType === 'rent' || !payment.paymentType) {
+              filteredRentIncome += payment.r || 0
+            }
+            
+            // 電費收入
+            if (payment.paymentType === 'electricity' || payment.e) {
+              filteredElectricityIncome += payment.e || 0
+            }
+            
+            // 其他收入
+            if (payment.paymentType && 
+                payment.paymentType !== 'rent' && 
+                payment.paymentType !== 'electricity') {
+              filteredAdditionalIncome += payment.total || 0
+            }
+          }
+        })
+        
+        // 過濾補充收入記錄
+        if (property?.additionalIncomes) {
+          property.additionalIncomes.forEach((income: any) => {
+            if (income.amount && income.amount > 0 && income.period === selectedYearMonth) {
+              filteredAdditionalIncome += income.amount
+            }
+          })
+        }
+        
+        // 如果過濾後有數據，使用過濾後的數據
+        if (filteredRentIncome > 0 || filteredElectricityIncome > 0 || filteredAdditionalIncome > 0) {
+          return {
+            rentIncome: filteredRentIncome,
+            electricityIncome: filteredElectricityIncome,
+            additionalIncome: filteredAdditionalIncome,
+            totalIncome: filteredRentIncome + filteredElectricityIncome + filteredAdditionalIncome
+          }
+        }
+      }
+      
+      // 其他時間篩選使用全部收入數據
+      return incomeData
+    }
+    
+    const incomeData = calculateFilteredIncome()
     
     // 計算支出
     let totalExpense = 0
@@ -252,7 +457,7 @@ export default function FinancialOverview({ property }: FinancialOverviewProps) 
       // 記錄數量
       recordCount: filteredRecords.length
     }
-  }, [filteredRecords, getIncomeData])
+  }, [filteredRecords, getIncomeData, timeFilter, selectedMonth, property])
   
   // ==================== 處理函數 ====================
   
@@ -280,7 +485,11 @@ export default function FinancialOverview({ property }: FinancialOverviewProps) 
       property_id: property?.id
     }
     
+    // 添加到本地狀態
     setFinancialRecords(prev => [recordToAdd, ...prev])
+    
+    // TODO: 這裡應該將記錄保存到後端或本地儲存
+    // 實際使用時需要將記錄添加到 property.expenses 或其他適當的位置
     
     // 重置表單
     setNewRecord({
@@ -291,6 +500,8 @@ export default function FinancialOverview({ property }: FinancialOverviewProps) 
       remarks: '',
       remarks_hint: MinorCategoryHints[MinorCategory.OTHER_DAILY]
     })
+    
+    alert('記錄已新增！注意：目前僅保存在前端記憶體中，重新整理頁面會遺失。')
   }
   
   // 處理刪除記錄
