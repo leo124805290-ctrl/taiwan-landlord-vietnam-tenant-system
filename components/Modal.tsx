@@ -4207,7 +4207,9 @@ export default function Modal() {
           e: 0,
           total: room.d,
           due: startInput.value,
-          s: 'pending' as const,
+          s: 'paid' as const,  // 默認為已收款
+          paid: startInput.value,  // 收款日期為入住日期
+          archived: true,  // 已歸檔
           paymentType: 'deposit' as const,
           isBackfill: true,
           notes: `歷史日期補登 - 押金 (${nameInput.value.trim()})`
@@ -4230,14 +4232,16 @@ export default function Modal() {
           e: 0,
           total: room.r,
           due: `${backfillYear}-${String(backfillMonth).padStart(2, '0')}-28`,
-          s: 'pending' as const,
+          s: 'paid' as const,  // 默認為已收款
+          paid: `${backfillYear}-${String(backfillMonth).padStart(2, '0')}-28`,  // 收款日期為到期日
+          archived: true,  // 已歸檔
           paymentType: 'rent' as const,
           isBackfill: true,
           notes: `歷史日期補登 - ${backfillYear}/${backfillMonth} 租金 (${nameInput.value.trim()})`
         })
       }
       
-      // 顯示確認訊息
+      // 顯示確認訊息並提供選擇
       if (backfillMonthCount > 0 || (room.d && room.d > 0)) {
         const confirmMessage = `檢測到歷史日期入住，將生成補登記錄：
         
@@ -4245,12 +4249,39 @@ export default function Modal() {
         • 租金補登：${backfillMonthCount} 個月
         • 總補登記錄：${newPayments.length} 筆
         
-        補登記錄將標記為「待確認」狀態，需在繳費分頁手動確認收款。
+        請選擇補登記錄的收款狀態：
         
-        是否繼續？`
+        1. ✅ 默認已收款（推薦）
+           - 補登記錄標記為「已收款」
+           - 不生成待收款項
+           - 影響對應月份的現金流統計
         
-        if (!confirm(confirmMessage)) {
+        2. ⏳ 設為待確認
+           - 補登記錄標記為「待確認」
+           - 在繳費分頁生成待收款項
+           - 管理者需手動點擊收款
+        
+        請輸入選擇（1 或 2）：`
+        
+        const userChoice = prompt(confirmMessage)
+        
+        if (userChoice === null) {
           return // 用戶取消
+        }
+        
+        if (userChoice === '2') {
+          // 用戶選擇「設為待確認」，將所有補登記錄狀態改為 pending
+          newPayments = newPayments.map(payment => ({
+            ...payment,
+            s: 'pending' as const,
+            paid: undefined,
+            archived: false
+          }))
+          
+          alert('已設定補登記錄為「待確認」狀態，將在繳費分頁生成待收款項。')
+        } else {
+          // 默認或選擇 1：保持已收款狀態
+          alert('補登記錄已設為「已收款」狀態，將影響對應月份的現金流統計。')
         }
       }
     }
@@ -4367,11 +4398,23 @@ export default function Modal() {
     // 添加補登記錄資訊
     if (needsBackfill) {
       const backfillCount = newPayments.filter(p => p.isBackfill).length
+      const backfillPaidCount = newPayments.filter(p => p.isBackfill && p.s === 'paid').length
+      const backfillPendingCount = newPayments.filter(p => p.isBackfill && p.s === 'pending').length
+      
       if (backfillCount > 0) {
-        successMessage += `\n\n📅 歷史日期補登：已生成 ${backfillCount} 筆補登記錄\n` +
-                         '• 補登記錄標記為「待確認」狀態\n' +
-                         '• 請到繳費分頁查看和確認補登記錄\n' +
-                         '• 補登記錄不影響當月現金流統計'
+        successMessage += `\n\n📅 歷史日期補登：已生成 ${backfillCount} 筆補登記錄\n`
+        
+        if (backfillPaidCount > 0) {
+          successMessage += `• ${backfillPaidCount} 筆已設為「已收款」狀態\n` +
+                           '• 將影響對應月份的現金流統計\n'
+        }
+        
+        if (backfillPendingCount > 0) {
+          successMessage += `• ${backfillPendingCount} 筆已設為「待確認」狀態\n` +
+                           '• 請到繳費分頁查看和確認補登記錄\n'
+        }
+        
+        successMessage += '• 所有補登記錄可在繳費分頁的歷史記錄中查詢'
       }
     }
     
