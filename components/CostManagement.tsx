@@ -30,11 +30,11 @@ import {
   AlertCircle
 } from 'lucide-react'
 
-interface FinancialOverviewProps {
+interface CostManagementProps {
   property: any
 }
 
-export default function FinancialOverview({ property }: FinancialOverviewProps) {
+export default function CostManagement({ property }: CostManagementProps) {
   const { state } = useApp()
   
   // ==================== 狀態管理 ====================
@@ -43,8 +43,15 @@ export default function FinancialOverview({ property }: FinancialOverviewProps) 
   const [financialRecords, setFinancialRecords] = useState<FinancialRecord[]>([])
   const [loading, setLoading] = useState(true)
   
-  // 物業篩選狀態（如果有多個物業）
+  // 物業篩選狀態
   const [selectedProperty, setSelectedProperty] = useState<'all' | number>('all')
+  
+  // 獲取可選擇的物業列表（從 props 或 context）
+  const availableProperties = useMemo(() => {
+    // 這裡應該從上層組件獲取物業列表
+    // 暫時假設只有當前物業
+    return property ? [property] : []
+  }, [property])
   
   // 時間篩選狀態
   const [timeFilter, setTimeFilter] = useState<'month' | 'property-start' | 'custom'>('month')
@@ -838,9 +845,14 @@ export default function FinancialOverview({ property }: FinancialOverviewProps) 
             </div>
           </div>
           
-          <div className="text-sm text-gray-600">
-            <Building className="inline h-4 w-4 mr-1" />
-            物業：{property?.name || '未命名物業'}
+          <div className="flex items-center gap-3">
+            <div className="text-sm text-gray-600">
+              <Building className="inline h-4 w-4 mr-1" />
+              物業：{property?.name || '未命名物業'}
+            </div>
+            <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+              單一物業模式
+            </div>
           </div>
         </div>
       </div>

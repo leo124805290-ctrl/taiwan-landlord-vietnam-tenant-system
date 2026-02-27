@@ -6,7 +6,7 @@ import AllPropertiesRooms from '@/components/AllPropertiesRooms'
 import AllPropertiesPayments from '@/components/AllPropertiesPayments'
 import Payments from '@/components/Payments'
 import IncomeManagement from '@/components/IncomeManagement'
-import FinancialOverview from '@/components/FinancialOverview'
+import CostManagement from '@/components/CostManagement'
 import Settings from '@/components/Settings'
 import Modal from '@/components/Modal'
 import { useApp } from '@/contexts/AppContext'
@@ -28,7 +28,7 @@ export default function HomePage() {
           return <AllPropertiesRooms properties={state.data.properties || []} />
         case 'income-management':
           return <IncomeManagement properties={state.data.properties || []} />
-        case 'financial-overview':
+        case 'cost-management':
         case 'settings':
           return (
             <div className="card text-center py-12">
@@ -56,7 +56,7 @@ export default function HomePage() {
           return <AllPropertiesPayments />
         case 'income-management':
           return <IncomeManagement properties={state.data.properties || []} />
-        case 'financial-overview':
+        case 'cost-management':
         case 'settings':
           return (
             <div className="card text-center py-12">
@@ -65,7 +65,7 @@ export default function HomePage() {
               <p className="text-gray-600 mb-6">
                 在「全部物業」模式下，收入管理功能可以查看所有物業的總收入。
                 <br />
-                財務視圖功能需要選擇特定物業以查看完整的財務狀況。
+                成本管理功能需要選擇特定物業以記錄成本支出。
               </p>
               <div className="flex flex-wrap gap-4 justify-center">
                 {state.data.properties.map((p: any) => (
@@ -109,8 +109,8 @@ export default function HomePage() {
           : <Rooms property={property} />
       case 'income-management':
         return <IncomeManagement properties={[property]} />
-      case 'financial-overview':
-        return <FinancialOverview property={property} />
+      case 'cost-management':
+        return <CostManagement property={property} />
       case 'payments':
         return state.currentProperty === 'all'
           ? <AllPropertiesPayments />
