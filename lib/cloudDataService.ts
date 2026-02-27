@@ -137,7 +137,7 @@ export class CloudDataService {
     }
   }
 
-  // 上傳本地數據到雲端
+  // 上傳本地數據到雲端（避免重複）
   async uploadToCloud(localData: any): Promise<{ success: boolean; message: string }> {
     try {
       // 1. 檢查登入狀態
@@ -145,30 +145,56 @@ export class CloudDataService {
         throw new Error('請先登入雲端帳號');
       }
 
-      // 2. 上傳物業數據
+      // 2. 先同步現有雲端數據，避免重複
+      const syncResult = await this.syncFromCloud();
+      if (!syncResult.success) {
+        console.warn('同步現有數據失敗，繼續上傳:', syncResult.message);
+      }
+
+      // 3. 上傳物業數據（檢查重複）
       const properties = localData.properties || [];
       let uploadedCount = 0;
+      let skippedCount = 0;
 
       for (const property of properties) {
         try {
-          await api.property.create({
+          // 檢查是否已存在
+          const existingProperty = this.localCache.properties.find(p => 
+            p.name === property.name || 
+            (property.address && p.address === property.address)
+          );
+
+          if (existingProperty) {
+            console.log(`物業「${property.name}」已存在，跳過`);
+            skippedCount++;
+            continue;
+          }
+
+          // 創建新物業
+          const result = await this.createProperty({
             name: property.name || '未命名物業',
             address: property.address,
             owner_name: property.owner_name,
             owner_phone: property.owner_phone,
           });
-          uploadedCount++;
+
+          if (result.success) {
+            uploadedCount++;
+          } else {
+            console.error(`上傳物業 ${property.name} 失敗:`, result.message);
+          }
         } catch (error) {
-          console.error(`上傳物業 ${property.name} 失敗:`, error);
+          console.error(`處理物業 ${property.name} 錯誤:`, error);
         }
       }
 
-      // 3. 同步最新數據
+      // 4. 再次同步最新數據
       await this.syncFromCloud();
 
+      const totalProcessed = uploadedCount + skippedCount;
       return {
         success: true,
-        message: `上傳成功！共上傳 ${uploadedCount} 個物業`,
+        message: `上傳完成！共處理 ${totalProcessed} 個物業（新增: ${uploadedCount}, 已存在: ${skippedCount}）`,
       };
 
     } catch (error) {
@@ -200,17 +226,32 @@ export class CloudDataService {
     return [...this.localCache.payments];
   }
 
-  // 創建物業
+  // 創建物業（檢查重複）
   async createProperty(data: Omit<CloudProperty, 'id' | 'created_at' | 'updated_at'>): Promise<{ success: boolean; property?: CloudProperty; message: string }> {
     try {
-      // 1. 上傳到雲端
+      // 1. 先檢查是否已存在相同名稱的物業
+      const existingProperties = this.localCache.properties;
+      const existingProperty = existingProperties.find(p => 
+        p.name === data.name || 
+        (data.address && p.address === data.address)
+      );
+
+      if (existingProperty) {
+        return {
+          success: true,
+          property: existingProperty,
+          message: '物業已存在，使用現有物業',
+        };
+      }
+
+      // 2. 上傳到雲端
       const result = await api.property.create(data);
       
       if (!result.success) {
         throw new Error(result.message);
       }
 
-      // 2. 更新本地緩存
+      // 3. 更新本地緩存
       this.localCache.properties.push(result.data.property);
       this.saveLocalCache();
 
