@@ -628,18 +628,72 @@ export default function Modal() {
                           const currentYear = today.getFullYear()
                           const currentMonth = today.getMonth()
                           
-                          // 計算月份差
+                          // 計算月份差（從起租月到上個月）
                           const monthDiff = (currentYear - startYear) * 12 + (currentMonth - startMonth)
-                          const backfillCount = Math.max(0, monthDiff - 1) // 減去當前月份
+                          const backfillMonthCount = Math.max(0, monthDiff - 1) // 減去當前月份
                           
-                          // 更新提醒內容
-                          const backfillCountElement = document.getElementById('backfillCount')
-                          const backfillAmountElement = document.getElementById('backfillAmount')
+                          // 生成補登預覽
+                          const backfillList = document.getElementById('backfillList')
+                          const backfillTotal = document.getElementById('backfillTotal')
+                          const backfillSummary = document.getElementById('backfillSummary')
                           
-                          if (backfillCountElement && backfillAmountElement) {
-                            backfillCountElement.textContent = backfillCount.toString()
-                            const totalAmount = backfillCount * checkInRoom.r
-                            backfillAmountElement.textContent = formatCurrency(totalAmount)
+                          if (backfillList && backfillTotal && backfillSummary) {
+                            let previewHTML = ''
+                            let totalRecords = 0
+                            let totalAmount = 0
+                            let depositCount = 0
+                            let rentCount = 0
+                            
+                            // 押金補登
+                            if (checkInRoom.d && checkInRoom.d > 0) {
+                              previewHTML += `
+                                <div class="flex justify-between items-center py-1 border-b border-amber-100">
+                                  <div>
+                                    <span class="font-medium">${startYear}/${String(startMonth + 1).padStart(2, '0')}</span>
+                                    <span class="text-xs text-amber-600 ml-1">押金</span>
+                                  </div>
+                                  <div class="font-bold">${formatCurrency(checkInRoom.d)}</div>
+                                </div>
+                              `
+                              totalRecords++
+                              totalAmount += checkInRoom.d
+                              depositCount++
+                            }
+                            
+                            // 租金補登（從起租月到上個月）
+                            for (let i = 0; i < backfillMonthCount; i++) {
+                              const monthOffset = i
+                              const backfillYear = startYear + Math.floor((startMonth + monthOffset) / 12)
+                              const backfillMonth = (startMonth + monthOffset) % 12 + 1
+                              
+                              previewHTML += `
+                                <div class="flex justify-between items-center py-1 border-b border-amber-100">
+                                  <div>
+                                    <span class="font-medium">${backfillYear}/${String(backfillMonth).padStart(2, '0')}</span>
+                                    <span class="text-xs text-amber-600 ml-1">租金</span>
+                                  </div>
+                                  <div class="font-bold">${formatCurrency(checkInRoom.r)}</div>
+                                </div>
+                              `
+                              totalRecords++
+                              totalAmount += checkInRoom.r
+                              rentCount++
+                            }
+                            
+                            // 當前月份租金（正常流程，非補登）
+                            previewHTML += `
+                              <div class="flex justify-between items-center py-1 border-b border-amber-100">
+                                <div>
+                                  <span class="font-medium">${currentYear}/${String(currentMonth + 1).padStart(2, '0')}</span>
+                                  <span class="text-xs text-gray-500 ml-1">本月租金</span>
+                                </div>
+                                <div class="font-bold text-gray-700">${formatCurrency(checkInRoom.r)}</div>
+                              </div>
+                            `
+                            
+                            backfillList.innerHTML = previewHTML
+                            backfillTotal.textContent = `${totalRecords} 筆記錄，${formatCurrency(totalAmount)}`
+                            backfillSummary.textContent = `押金 ${depositCount} 筆，租金 ${rentCount} 筆`
                           }
                         }
                       } else {
@@ -656,20 +710,35 @@ export default function Modal() {
                 <div id="backfillAlert" className="hidden mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
                   <div className="flex items-start gap-3">
                     <div className="text-2xl">📅</div>
-                    <div>
-                      <h4 className="font-bold text-amber-800 mb-1">歷史日期補登提醒</h4>
-                      <p className="text-sm text-amber-700 mb-2">
-                        您選擇的入住日期是歷史日期，系統將自動生成補登記錄：
+                    <div className="flex-1">
+                      <h4 className="font-bold text-amber-800 mb-2">歷史日期補登預覽</h4>
+                      <p className="text-sm text-amber-700 mb-3">
+                        您選擇的入住日期是歷史日期，系統將自動生成以下補登記錄：
                       </p>
-                      <ul className="text-sm text-amber-700 space-y-1 mb-3">
-                        <li>• 需要補登 <span id="backfillCount" className="font-bold">0</span> 個月的租金記錄</li>
-                        <li>• 補登總金額：<span id="backfillAmount" className="font-bold">$0</span></li>
-                        <li>• 押金記錄也會一併補登</li>
-                        <li>• 補登記錄將標記為「待確認」狀態</li>
-                        <li>• 需在繳費分頁手動確認收款</li>
-                      </ul>
-                      <div className="text-xs text-amber-600">
-                        💡 提示：補登記錄不影響當月現金流統計，僅作為歷史記錄保存。
+                      
+                      {/* 補登預覽列表 */}
+                      <div id="backfillPreview" className="mb-3">
+                        <div className="text-sm text-amber-800 font-medium mb-1">補登記錄預覽：</div>
+                        <div id="backfillList" className="text-sm text-amber-700 space-y-1 max-h-40 overflow-y-auto pr-2">
+                          {/* 這裡會動態生成補登記錄預覽 */}
+                          <div class="text-gray-500">選擇入住日期後顯示詳細記錄...</div>
+                        </div>
+                      </div>
+                      
+                      {/* 補登統計摘要 */}
+                      <div className="text-sm border-t border-amber-200 pt-2">
+                        <div className="flex justify-between">
+                          <span>總計：</span>
+                          <span id="backfillTotal" className="font-bold">0 筆記錄，$0</span>
+                        </div>
+                        <div className="flex justify-between text-xs text-amber-600">
+                          <span>包含：</span>
+                          <span id="backfillSummary">押金 0 筆，租金 0 筆</span>
+                        </div>
+                      </div>
+                      
+                      <div className="text-xs text-amber-600 mt-2">
+                        💡 提示：補登記錄將在繳費分頁中顯示，管理者可選擇確認收款狀態。
                       </div>
                     </div>
                   </div>
@@ -4243,13 +4312,31 @@ export default function Modal() {
       
       // 顯示確認訊息並提供選擇
       if (backfillMonthCount > 0 || (room.d && room.d > 0)) {
-        const confirmMessage = `檢測到歷史日期入住，將生成補登記錄：
+        // 生成詳細的補登記錄列表
+        let backfillDetails = '📅 歷史日期補登詳細記錄：\n\n'
         
-        • 押金補登：${room.d ? '有' : '無'}
-        • 租金補登：${backfillMonthCount} 個月
-        • 總補登記錄：${newPayments.length} 筆
+        // 押金補登
+        if (room.d && room.d > 0) {
+          backfillDetails += `1. ${startYear}/${String(startMonth + 1).padStart(2, '0')} 押金\n`
+          backfillDetails += `   • 金額：${formatCurrency(room.d)}\n`
+          backfillDetails += `   • 類型：一次性押金\n\n`
+        }
         
-        請選擇補登記錄的收款狀態：
+        // 租金補登
+        for (let i = 0; i < backfillMonthCount; i++) {
+          const monthOffset = i
+          const backfillYear = startYear + Math.floor((startMonth + monthOffset) / 12)
+          const backfillMonth = (startMonth + monthOffset) % 12 + 1
+          
+          backfillDetails += `${i + (room.d && room.d > 0 ? 2 : 1)}. ${backfillYear}/${String(backfillMonth).padStart(2, '0')} 租金\n`
+          backfillDetails += `   • 金額：${formatCurrency(room.r)}\n`
+          backfillDetails += `   • 電費：待更新\n\n`
+        }
+        
+        backfillDetails += `總計：${newPayments.length} 筆記錄\n`
+        backfillDetails += `總金額：${formatCurrency(newPayments.reduce((sum, p) => sum + p.total, 0))}\n\n`
+        
+        const confirmMessage = `${backfillDetails}請選擇補登記錄的收款狀態：
         
         1. ✅ 默認已收款（推薦）
            - 補登記錄標記為「已收款」
@@ -4278,10 +4365,10 @@ export default function Modal() {
             archived: false
           }))
           
-          alert('已設定補登記錄為「待確認」狀態，將在繳費分頁生成待收款項。')
+          alert(`已設定 ${newPayments.length} 筆補登記錄為「待確認」狀態，將在繳費分頁生成待收款項。`)
         } else {
           // 默認或選擇 1：保持已收款狀態
-          alert('補登記錄已設為「已收款」狀態，將影響對應月份的現金流統計。')
+          alert(`已設定 ${newPayments.length} 筆補登記錄為「已收款」狀態，將影響對應月份的現金流統計。`)
         }
       }
     }
