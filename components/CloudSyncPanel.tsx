@@ -13,9 +13,14 @@ import {
   History,
   Trash2,
   Shield,
-  Database
+  Database,
+  Server,
+  Globe,
+  Wifi,
+  WifiOff
 } from 'lucide-react';
 import { cloudSync, useCloudSync, SyncStatus } from '@/lib/cloudSync';
+import { cloudData, useCloudData } from '@/lib/cloudDataService';
 import api from '@/lib/api';
 
 const CloudSyncPanel: React.FC = () => {
