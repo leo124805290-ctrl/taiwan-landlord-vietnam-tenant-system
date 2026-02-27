@@ -7,6 +7,7 @@ import AllPropertiesPayments from '@/components/AllPropertiesPayments'
 import Payments from '@/components/Payments'
 import IncomeManagement from '@/components/IncomeManagement'
 import CostManagement from '@/components/CostManagement'
+import AllPropertiesCostManagement from '@/components/AllPropertiesCostManagement'
 import Settings from '@/components/Settings'
 import Modal from '@/components/Modal'
 import { useApp } from '@/contexts/AppContext'
@@ -29,43 +30,16 @@ export default function HomePage() {
         case 'income-management':
           return <IncomeManagement properties={state.data.properties || []} />
         case 'cost-management':
-        case 'settings':
-          return (
-            <div className="card text-center py-12">
-              <div className="text-6xl mb-4">🏢</div>
-              <h2 className="text-2xl font-bold mb-4">全部物業模式</h2>
-              <p className="text-gray-600 mb-6">
-                在「全部物業」模式下，收入管理功能可以查看所有物業的總收入。
-                <br />
-                成本管理功能需要選擇特定物業以記錄成本支出。
-              </p>
-              <div className="flex flex-wrap gap-4 justify-center">
-                {state.data.properties.map((p: any) => (
-                  <button
-                    key={p.id}
-                    onClick={() => updateState({ currentProperty: p.id })}
-                    className="btn bg-blue-600 text-white"
-                  >
-                    🏠 切換到 {p.name || '未命名物業'}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )
+          return <AllPropertiesCostManagement properties={state.data.properties || []} />
         case 'payments':
           return <AllPropertiesPayments />
-        case 'income-management':
-          return <IncomeManagement properties={state.data.properties || []} />
-        case 'cost-management':
         case 'settings':
           return (
             <div className="card text-center py-12">
               <div className="text-6xl mb-4">🏢</div>
               <h2 className="text-2xl font-bold mb-4">全部物業模式</h2>
               <p className="text-gray-600 mb-6">
-                在「全部物業」模式下，收入管理功能可以查看所有物業的總收入。
-                <br />
-                成本管理功能需要選擇特定物業以記錄成本支出。
+                在「全部物業」模式下，您可以查看所有物業的匯總數據。
               </p>
               <div className="flex flex-wrap gap-4 justify-center">
                 {state.data.properties.map((p: any) => (
@@ -81,44 +55,46 @@ export default function HomePage() {
             </div>
           )
         default:
-          return <AllPropertiesRooms properties={state.data.properties || []} />
+          return (
+            <div className="card text-center py-12">
+              <div className="text-6xl mb-4">❓</div>
+              <h2 className="text-2xl font-bold mb-4">未知分頁</h2>
+              <p className="text-gray-600">請選擇有效的分頁</p>
+            </div>
+          )
       }
-    }
-    
-    // 如果沒有選擇任何物業（包括全部物業）
-    if (!property) {
-      return (
-        <div className="card text-center py-12">
-          <div className="text-6xl mb-4">🏢</div>
-          <h2 className="text-2xl font-bold mb-4">【測試】尚未建立物業</h2>
-          <button 
-            onClick={() => openModal('addProperty')}
-            className="btn btn-primary"
-          >
-            ➕ 新增第一個物業
-          </button>
-        </div>
-      )
-    }
-
-    // 單一物業模式
-    switch (state.tab) {
-      case 'rooms':
-        return state.currentProperty === 'all' 
-          ? <AllPropertiesRooms properties={state.data.properties} />
-          : <Rooms property={property} />
-      case 'income-management':
-        return <IncomeManagement properties={[property]} />
-      case 'cost-management':
-        return <CostManagement property={property} />
-      case 'payments':
-        return state.currentProperty === 'all'
-          ? <AllPropertiesPayments />
-          : <Payments property={property} />
-      case 'settings':
-        return <Settings />
-      default:
-        return null
+    } else {
+      // 顯示單一物業的內容
+      if (!property) {
+        return (
+          <div className="card text-center py-12">
+            <div className="text-6xl mb-4">🏢</div>
+            <h2 className="text-2xl font-bold mb-4">請選擇物業</h2>
+            <p className="text-gray-600">請從上方選擇要管理的物業</p>
+          </div>
+        )
+      }
+      
+      switch (state.tab) {
+        case 'rooms':
+          return <Rooms property={property} />
+        case 'income-management':
+          return <IncomeManagement properties={[property]} />
+        case 'cost-management':
+          return <CostManagement property={property} />
+        case 'payments':
+          return <Payments property={property} />
+        case 'settings':
+          return <Settings />
+        default:
+          return (
+            <div className="card text-center py-12">
+              <div className="text-6xl mb-4">❓</div>
+              <h2 className="text-2xl font-bold mb-4">未知分頁</h2>
+              <p className="text-gray-600">請選擇有效的分頁</p>
+            </div>
+          )
+      }
     }
   }
 
@@ -137,7 +113,7 @@ export default function HomePage() {
       {/* 版本標記 - 僅開發環境顯示 */}
       {process.env.NODE_ENV === 'development' && (
         <div className="fixed bottom-2 right-2 text-xs text-gray-400 bg-white/80 px-2 py-1 rounded">
-          版本: 86c3b46 - 按鈕測試版
+          版本: 修復版 - 成本管理全部物業模式
         </div>
       )}
     </div>
