@@ -28,14 +28,69 @@ const MigrateToCloud: React.FC<MigrateToCloudProps> = ({ onComplete }) => {
     if (multiPropertyData) {
       try {
         const data = JSON.parse(multiPropertyData);
+        
         // 從 multiPropertyDataV2 結構中提取數據
+        // 注意：房間數據在每個物業的 rooms 屬性中！
+        const allRooms = [];
+        const allPayments = [];
+        const allHistory = [];
+        const allMaintenance = [];
+        
+        if (data.properties && Array.isArray(data.properties)) {
+          data.properties.forEach(property => {
+            // 收集房間
+            if (property.rooms && Array.isArray(property.rooms)) {
+              property.rooms.forEach(room => {
+                allRooms.push({
+                  ...room,
+                  property_id: property.id, // 添加物業ID
+                  property_name: property.name // 添加物業名稱
+                });
+              });
+            }
+            
+            // 收集付款記錄
+            if (property.payments && Array.isArray(property.payments)) {
+              property.payments.forEach(payment => {
+                allPayments.push({
+                  ...payment,
+                  property_id: property.id
+                });
+              });
+            }
+            
+            // 收集歷史記錄
+            if (property.history && Array.isArray(property.history)) {
+              property.history.forEach(history => {
+                allHistory.push({
+                  ...history,
+                  property_id: property.id
+                });
+              });
+            }
+            
+            // 收集維護記錄
+            if (property.maintenance && Array.isArray(property.maintenance)) {
+              property.maintenance.forEach(maintenance => {
+                allMaintenance.push({
+                  ...maintenance,
+                  property_id: property.id
+                });
+              });
+            }
+          });
+        }
+        
         return {
           properties: data.properties || [],
-          rooms: data.rooms || [],
-          payments: data.payments || [],
-          history: data.history || [],
-          maintenance: data.maintenance || [],
+          rooms: allRooms,
+          payments: allPayments,
+          history: allHistory,
+          maintenance: allMaintenance,
           utilityExpenses: data.utilityExpenses || [],
+          additionalIncomes: data.additionalIncomes || [],
+          electricityRate: data.electricityRate,
+          actualElectricityRate: data.actualElectricityRate
         };
       } catch (error) {
         console.error('解析 multiPropertyDataV2 失敗:', error);
@@ -116,7 +171,7 @@ const MigrateToCloud: React.FC<MigrateToCloudProps> = ({ onComplete }) => {
       setStatus({ 
         message: `找到 ${totalRecords} 條本地記錄`, 
         type: 'info',
-        details: `物業: ${localData.properties.length}, 房間: ${localData.rooms.length}, 付款: ${localData.payments.length}`
+        details: `物業: ${localData.properties.length}, 房間: ${localData.rooms.length}, 付款: ${localData.payments.length}, 歷史: ${localData.history?.length || 0}, 維護: ${localData.maintenance?.length || 0}`
       });
       await new Promise(resolve => setTimeout(resolve, 1000));
 
