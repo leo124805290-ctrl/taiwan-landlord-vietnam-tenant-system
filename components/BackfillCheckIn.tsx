@@ -266,8 +266,8 @@ export default function BackfillCheckIn() {
           s: 'occupied',
           t: tenantName.trim(),
           p: tenantPhone.trim(),
-          ci: checkInDate,
-          co: getMonthEndDate(checkInDate, contractMonths)
+          in: checkInDate,
+          out: getMonthEndDate(checkInDate, contractMonths)
         }
       }
       return r
