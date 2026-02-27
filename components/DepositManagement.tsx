@@ -31,7 +31,9 @@ export default function DepositManagement() {
   const { state } = useApp()
   
   // 狀態管理
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | number>('all')
   const [depositRecords, setDepositRecords] = useState<DepositRecord[]>([])
+  const [filteredRecords, setFilteredRecords] = useState<DepositRecord[]>([])
   const [summary, setSummary] = useState({
     totalAmount: 0,
     occupiedCount: 0,
@@ -43,6 +45,7 @@ export default function DepositManagement() {
   const [expiringDeposits, setExpiringDeposits] = useState<MonthDepositSummary[]>([])
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null)
   const [selectedMonthDetails, setSelectedMonthDetails] = useState<DepositRecord[]>([])
+  const [selectedDepositDetail, setSelectedDepositDetail] = useState<any>(null)
   
   // 獲取所有押金記錄
   const getAllDepositRecords = (): DepositRecord[] => {
@@ -50,6 +53,11 @@ export default function DepositManagement() {
     
     // 遍歷所有物業
     state.data.properties.forEach(property => {
+      // 如果選擇了特定物業，跳過其他物業
+      if (selectedPropertyId !== 'all' && property.id !== Number(selectedPropertyId)) {
+        return
+      }
+      
       // 獲取該物業的所有押金付款記錄
       const depositPayments = (property.payments || [])
         .filter((payment: any) => payment.paymentType === 'deposit')
@@ -179,9 +187,10 @@ export default function DepositManagement() {
     const newExpiringDeposits = calculateExpiringDeposits(allRecords)
     
     setDepositRecords(allRecords)
+    setFilteredRecords(allRecords)
     setSummary(newSummary)
     setExpiringDeposits(newExpiringDeposits)
-  }, [state.data])
+  }, [state.data, selectedPropertyId])
   
   // 處理月份卡片點擊
   const handleMonthCardClick = (month: string) => {
@@ -198,15 +207,59 @@ export default function DepositManagement() {
     setSelectedMonthDetails([])
   }
   
+  // 獲取詳細付款記錄
+  const getPaymentDetail = (record: DepositRecord) => {
+    const property = state.data.properties.find(p => p.id === record.propertyId)
+    if (!property) return null
+    
+    const payment = (property.payments || []).find((p: any) => p.id === record.paymentId)
+    return payment
+  }
+  
+  // 查看押金詳細資料
+  const viewDepositDetail = (record: DepositRecord) => {
+    const paymentDetail = getPaymentDetail(record)
+    if (paymentDetail) {
+      setSelectedDepositDetail({
+        ...record,
+        paymentDetail
+      })
+    }
+  }
+  
+  // 關閉押金詳細資料彈窗
+  const closeDepositDetailModal = () => {
+    setSelectedDepositDetail(null)
+  }
+  
   return (
     <div className="space-y-6">
       {/* 頁面標題 */}
       <div className="bg-white p-6 rounded-xl border shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="text-3xl">💰</div>
-          <div>
-            <h1 className="text-2xl font-bold">押金管理</h1>
-            <div className="text-gray-600 mt-1">管理押金（保管金）與合約到期預警</div>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="text-3xl">💰</div>
+            <div>
+              <h1 className="text-2xl font-bold">押金管理</h1>
+              <div className="text-gray-600 mt-1">管理押金（保管金）與合約到期預警</div>
+            </div>
+          </div>
+          
+          {/* 物業篩選器 */}
+          <div className="w-64">
+            <label className="block text-sm font-medium mb-1">篩選物業</label>
+            <select
+              value={selectedPropertyId}
+              onChange={(e) => setSelectedPropertyId(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+              className="w-full p-2 border rounded"
+            >
+              <option value="all">全部物業</option>
+              {state.data.properties.map(property => (
+                <option key={property.id} value={property.id}>
+                  {property.name}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       </div>
@@ -307,6 +360,7 @@ export default function DepositManagement() {
                   <th className="text-left py-3 px-4 font-medium">押金金額</th>
                   <th className="text-left py-3 px-4 font-medium">狀態</th>
                   <th className="text-left py-3 px-4 font-medium">合約期間</th>
+                  <th className="text-left py-3 px-4 font-medium">操作</th>
                 </tr>
               </thead>
               <tbody>
@@ -339,6 +393,14 @@ export default function DepositManagement() {
                         {' → '}
                         {record.contractEnd ? new Date(record.contractEnd).toLocaleDateString('zh-TW') : '-'}
                       </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <button
+                        onClick={() => viewDepositDetail(record)}
+                        className="px-3 py-1 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded text-sm"
+                      >
+                        查看
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -421,6 +483,118 @@ export default function DepositManagement() {
         </div>
       )}
       
+      {/* 押金詳細資料彈窗 */}
+      {selectedDepositDetail && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+            {/* 彈窗標題 */}
+            <div className="p-4 border-b flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-bold">押金詳細資料</h3>
+                <div className="text-sm text-gray-600">
+                  {selectedDepositDetail.propertyName} - {selectedDepositDetail.roomNumber}
+                </div>
+              </div>
+              <button
+                onClick={closeDepositDetailModal}
+                className="text-2xl hover:text-gray-700"
+              >
+                ×
+              </button>
+            </div>
+            
+            {/* 詳細資料內容 */}
+            <div className="overflow-y-auto max-h-[60vh] p-4">
+              <div className="space-y-4">
+                {/* 基本資訊 */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-sm text-gray-600">物業名稱</div>
+                    <div className="font-medium">{selectedDepositDetail.propertyName}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-600">房間號碼</div>
+                    <div className="font-medium">{selectedDepositDetail.roomNumber}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-600">租客姓名</div>
+                    <div className="font-medium">{selectedDepositDetail.tenantName}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-600">押金金額</div>
+                    <div className="font-medium">{formatCurrency(selectedDepositDetail.amount)}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-600">狀態</div>
+                    <div className={`px-2 py-1 rounded-full text-xs inline-block ${
+                      selectedDepositDetail.status === 'occupied'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-amber-100 text-amber-800'
+                    }`}>
+                      {selectedDepositDetail.status === 'occupied' ? '✅ 已入住' : '⏳ 待入住'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-600">付款ID</div>
+                    <div className="font-medium">{selectedDepositDetail.paymentId}</div>
+                  </div>
+                </div>
+                
+                {/* 合約期間 */}
+                <div>
+                  <div className="text-sm text-gray-600 mb-1">合約期間</div>
+                  <div className="font-medium">
+                    {selectedDepositDetail.contractStart ? new Date(selectedDepositDetail.contractStart).toLocaleDateString('zh-TW') : '-'}
+                    {' → '}
+                    {selectedDepositDetail.contractEnd ? new Date(selectedDepositDetail.contractEnd).toLocaleDateString('zh-TW') : '-'}
+                  </div>
+                </div>
+                
+                {/* 收款資訊 */}
+                <div>
+                  <div className="text-sm text-gray-600 mb-1">收款日期</div>
+                  <div className="font-medium">
+                    {selectedDepositDetail.receivedDate ? new Date(selectedDepositDetail.receivedDate).toLocaleDateString('zh-TW') : '-'}
+                  </div>
+                </div>
+                
+                {/* 付款記錄詳細資料 */}
+                {selectedDepositDetail.paymentDetail && (
+                  <div className="border-t pt-4">
+                    <h4 className="font-bold mb-2">付款記錄詳細資料</h4>
+                    <div className="bg-gray-50 p-3 rounded">
+                      <pre className="text-sm whitespace-pre-wrap">
+                        {JSON.stringify(selectedDepositDetail.paymentDetail, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                )}
+                
+                {/* 備註 */}
+                {selectedDepositDetail.notes && (
+                  <div>
+                    <div className="text-sm text-gray-600 mb-1">備註</div>
+                    <div className="bg-gray-50 p-3 rounded">
+                      {selectedDepositDetail.notes}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* 彈窗底部 */}
+            <div className="p-4 border-t">
+              <button
+                onClick={closeDepositDetailModal}
+                className="w-full py-2 bg-gray-200 hover:bg-gray-300 rounded"
+              >
+                關閉
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* 使用說明 */}
       <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
         <h4 className="font-bold text-blue-800 mb-2">💡 使用說明</h4>
@@ -429,6 +603,8 @@ export default function DepositManagement() {
           <li>• <strong>待入住押金</strong>：押金已收到，但租客尚未入住</li>
           <li>• <strong>合約到期預警</strong>：顯示未來3個月內即將到期的押金</li>
           <li>• <strong>點擊月份卡片</strong>：查看該月份到期的詳細客戶資料</li>
+          <li>• <strong>點擊查看按鈕</strong>：查看押金記錄的完整建檔資料</li>
+          <li>• <strong>物業篩選</strong>：使用右上角篩選器查看特定物業的押金</li>
           <li>• <strong>押金退還</strong>：一律按原押金金額退還，不考慮折舊或扣款</li>
           <li>• <strong>提前解約</strong>：已在退房時處理，不在此處計算</li>
         </ul>
