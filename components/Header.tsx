@@ -8,12 +8,12 @@ export default function Header() {
   const property = getCurrentProperty()
   const tabs = [
     { key: 'rooms', icon: '🏠', label: 'roomsTab' },
-    { key: 'backfill-checkin', icon: '📅', label: 'backfillCheckInTab' },
-    { key: 'backfill-history', icon: '📊', label: 'backfillHistoryTab' },
+    { key: 'payments', icon: '💵', label: 'paymentsTab' },
     { key: 'income-management', icon: '💰', label: 'incomeManagementTab' },
     { key: 'cost-management', icon: '💸', label: 'costManagementTab' },
-    { key: 'payments', icon: '💵', label: 'paymentsTab' },
     { key: 'settings', icon: '⚙️', label: 'settingsTab' },
+    { key: 'backfill-checkin', icon: '📅', label: 'backfillCheckInTab' },
+    { key: 'backfill-history', icon: '📊', label: 'backfillHistoryTab' },
   ]
 
   return (
