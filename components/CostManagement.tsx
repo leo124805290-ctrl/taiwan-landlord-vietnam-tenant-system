@@ -20,8 +20,6 @@ import {
   Search,
   TrendingUp,
   TrendingDown,
-  PieChart as PieChartIcon,
-  BarChart as BarChartIcon,
   Clock,
   Building,
   ChevronDown,
@@ -1020,200 +1018,38 @@ export default function CostManagement({ property }: CostManagementProps) {
         </div>
       )}
       
-      {/* 圖表和控制區域 */}
+      {/* 數據導出功能 */}
       <div className="card">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h2 className="text-lg font-bold">支出分類分析</h2>
+            <h2 className="text-lg font-bold">數據導出</h2>
             <p className="text-sm text-gray-600">
-              共 {chartData.length} 個分類，總支出 {formatCurrency(stats.totalExpense)}
+              將財務數據導出為 CSV 格式，方便離線分析和記錄
             </p>
           </div>
           
           <div className="flex flex-wrap gap-3">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setChartType('pie')}
-                className={`px-3 py-1 rounded-lg text-sm ${
-                  chartType === 'pie' 
-                    ? 'bg-blue-100 text-blue-700 border border-blue-300' 
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                <PieChartIcon className="inline h-4 w-4 mr-1" />
-                圓餅圖
-              </button>
-              <button
-                onClick={() => setChartType('bar')}
-                className={`px-3 py-1 rounded-lg text-sm ${
-                  chartType === 'bar' 
-                    ? 'bg-blue-100 text-blue-700 border border-blue-300' 
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                <BarChartIcon className="inline h-4 w-4 mr-1" />
-                柱狀圖
-              </button>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <button
-                onClick={exportToCSV}
-                className="px-3 py-1 rounded-lg text-sm bg-green-100 text-green-700 hover:bg-green-200 border border-green-300 flex items-center gap-1"
-              >
-                <Download className="h-4 w-4" />
-                導出記錄
-              </button>
-              <button
-                onClick={exportStatsToCSV}
-                className="px-3 py-1 rounded-lg text-sm bg-purple-100 text-purple-700 hover:bg-purple-200 border border-purple-300 flex items-center gap-1"
-              >
-                <Download className="h-4 w-4" />
-                導出統計
-              </button>
-            </div>
+            <button
+              onClick={exportToCSV}
+              className="px-4 py-2 rounded-lg text-sm bg-green-100 text-green-700 hover:bg-green-200 border border-green-300 flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              導出記錄 ({filteredRecords.length} 筆)
+            </button>
+            <button
+              onClick={exportStatsToCSV}
+              className="px-4 py-2 rounded-lg text-sm bg-purple-100 text-purple-700 hover:bg-purple-200 border border-purple-300 flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              導出統計數據
+            </button>
           </div>
         </div>
         
-        {/* 圖表顯示 */}
-        {showCharts && chartData.length > 0 ? (
-          <div className="mt-4">
-            {chartType === 'pie' ? (
-              // 圓餅圖（CSS 實現）
-              <div className="flex flex-col md:flex-row items-center gap-8">
-                <div className="relative w-64 h-64">
-                  {/* 圓餅圖容器 */}
-                  <div className="relative w-full h-full rounded-full overflow-hidden">
-                    {(() => {
-                      let currentAngle = 0
-                      const total = chartData.reduce((sum, item) => sum + item.value, 0)
-                      
-                      return chartData.map((item, index) => {
-                        const percentage = (item.value / total) * 100
-                        const angle = (percentage / 100) * 360
-                        
-                        const style = {
-                          backgroundColor: item.color,
-                          transform: `rotate(${currentAngle}deg)`,
-                          clipPath: `polygon(50% 50%, 50% 0%, ${
-                            50 + 50 * Math.cos((angle * Math.PI) / 180)
-                          }% ${
-                            50 + 50 * Math.sin((angle * Math.PI) / 180)
-                          }%)`
-                        }
-                        
-                        currentAngle += angle
-                        
-                        return (
-                          <div
-                            key={index}
-                            className="absolute top-0 left-0 w-full h-full origin-center"
-                            style={style}
-                            title={`${item.category}: ${formatCurrency(item.value)} (${percentage.toFixed(1)}%)`}
-                          />
-                        )
-                      })
-                    })()}
-                  </div>
-                  
-                  {/* 中心文字 */}
-                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-full w-32 h-32 flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold">{chartData.length}</div>
-                      <div className="text-xs text-gray-600">分類</div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* 圖例 */}
-                <div className="flex-1">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {chartData.map((item, index) => {
-                      const percentage = (item.value / stats.totalExpense) * 100
-                      return (
-                        <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-4 h-4 rounded" 
-                              style={{ backgroundColor: item.color }}
-                            />
-                            <span className="text-sm font-medium">{item.category}</span>
-                          </div>
-                          <div className="text-right">
-                            <div className="font-medium">{formatCurrency(item.value)}</div>
-                            <div className="text-xs text-gray-500">{percentage.toFixed(1)}%</div>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              // 柱狀圖（CSS 實現）
-              <div className="space-y-4">
-                <div className="flex items-end h-48 gap-2 border-b border-l border-gray-200 p-4">
-                  {chartData.map((item, index) => {
-                    const percentage = (item.value / stats.totalExpense) * 100
-                    const barHeight = Math.max(20, percentage * 1.5) // 最小高度20%，最大150%
-                    
-                    return (
-                      <div key={index} className="flex-1 flex flex-col items-center">
-                        <div
-                          className="w-full rounded-t transition-all duration-300 hover:opacity-80"
-                          style={{
-                            height: `${barHeight}%`,
-                            backgroundColor: item.color,
-                            minHeight: '20px'
-                          }}
-                          title={`${item.category}: ${formatCurrency(item.value)} (${percentage.toFixed(1)}%)`}
-                        />
-                        <div className="mt-2 text-xs text-gray-600 text-center truncate w-full">
-                          {item.category}
-                        </div>
-                        <div className="text-xs font-medium mt-1">
-                          {formatCurrency(item.value)}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-                
-                {/* 圖例 */}
-                <div className="flex flex-wrap gap-2 justify-center">
-                  {chartData.map((item, index) => {
-                    const percentage = (item.value / stats.totalExpense) * 100
-                    return (
-                      <div key={index} className="flex items-center gap-1 px-3 py-1 bg-gray-50 rounded-full">
-                        <div 
-                          className="w-3 h-3 rounded" 
-                          style={{ backgroundColor: item.color }}
-                        />
-                        <span className="text-xs">{item.category}</span>
-                        <span className="text-xs font-medium text-gray-700">
-                          ({percentage.toFixed(1)}%)
-                        </span>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="text-center py-8 text-gray-500">
-            {chartData.length === 0 ? '沒有支出數據可以顯示圖表' : '圖表已隱藏'}
-          </div>
-        )}
-        
-        {/* 圖表控制 */}
-        <div className="mt-4 pt-4 border-t border-gray-200">
-          <button
-            onClick={() => setShowCharts(!showCharts)}
-            className="text-sm text-blue-600 hover:text-blue-800"
-          >
-            {showCharts ? '隱藏圖表' : '顯示圖表'}
-          </button>
+        <div className="mt-4 text-sm text-gray-600">
+          <p>• 導出記錄：包含所有篩選後的詳細財務記錄</p>
+          <p>• 導出統計：包含總收入、總支出、淨收支等統計數據</p>
+          <p>• 檔案格式：CSV（可用 Excel、Google Sheets 等軟體開啟）</p>
         </div>
       </div>
       
