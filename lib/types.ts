@@ -125,6 +125,7 @@ export interface Payment {
   period?: string; // 期間（如：2026-02、入住前）
   tenantType?: 'new' | 'existing'; // 租客類型
   overdueDays?: number; // 逾期天數
+  isBackfill?: boolean; // 是否為補登記錄
 }
 
 // 維修記錄

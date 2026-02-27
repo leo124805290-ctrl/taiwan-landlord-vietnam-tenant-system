@@ -10,6 +10,8 @@ interface PaymentViewsProps {
   onCollectPayment: (payment: Payment) => void
   onUpdateElectricity: (paymentId: number) => void
   onRestorePayment: (paymentId: number) => void
+  onToggleBackfillSelection?: (paymentId: number, checked: boolean) => void
+  selectedBackfillIds?: number[]
   lang: string
 }
 
@@ -29,6 +31,11 @@ export default function PaymentViews({
         <table className="table-auto w-full border-collapse">
           <thead>
             <tr className="bg-gray-50">
+              {onToggleBackfillSelection && (
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b w-12">
+                  選擇
+                </th>
+              )}
               <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">房間</th>
               <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">租客</th>
               <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">月份</th>
@@ -45,7 +52,21 @@ export default function PaymentViews({
                                new Date(payment.due) < new Date()
               
               return (
-                <tr key={payment.id} className="hover:bg-gray-50 border-b">
+                <tr key={payment.id} className={`hover:bg-gray-50 border-b ${payment.isBackfill ? 'bg-amber-50/30' : ''}`}>
+                  {onToggleBackfillSelection && (
+                    <td className="px-4 py-3">
+                      {payment.isBackfill && payment.s === 'pending' ? (
+                        <input
+                          type="checkbox"
+                          checked={selectedBackfillIds?.includes(payment.id) || false}
+                          onChange={(e) => onToggleBackfillSelection(payment.id, e.target.checked)}
+                          className="h-4 w-4 text-blue-600 rounded"
+                        />
+                      ) : (
+                        <div className="w-4 h-4"></div>
+                      )}
+                    </td>
+                  )}
                   <td className="px-4 py-3">
                     <div className="font-medium">{payment.n}</div>
                   </td>
@@ -84,8 +105,10 @@ export default function PaymentViews({
                           isOverdue 
                             ? 'bg-red-100 text-red-800' 
                             : 'bg-yellow-100 text-yellow-800'
-                        }`}>
+                        } ${payment.isBackfill ? 'border border-amber-500 bg-amber-50' : ''}`}>
+                          {payment.isBackfill ? '📅 ' : ''}
                           {isOverdue ? '⚠️ 逾期' : '⏳ 待收'}
+                          {payment.isBackfill ? ' (補登)' : ''}
                         </div>
                         {payment.due && (
                           <div className="text-xs text-gray-500 mt-1">
@@ -94,8 +117,10 @@ export default function PaymentViews({
                         )}
                       </div>
                     ) : (
-                      <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 ${payment.isBackfill ? 'border border-amber-500 bg-amber-50' : ''}`}>
+                        {payment.isBackfill ? '📅 ' : ''}
                         ✅ 已收
+                        {payment.isBackfill ? ' (補登)' : ''}
                       </div>
                     )}
                   </td>

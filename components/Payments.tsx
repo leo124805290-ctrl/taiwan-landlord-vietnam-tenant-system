@@ -25,9 +25,12 @@ export default function Payments({ property }: PaymentsProps) {
   const allPayments = [...property.payments, ...(property.history || [])]
     .sort((a, b) => (b.paid || b.due).localeCompare(a.paid || a.due))
   
-  // 獲取待收款項（未歸檔的 pending 狀態）
+  // 獲取補登記錄（isBackfill: true）
+  const backfillPayments = allPayments.filter(p => p.isBackfill === true)
+  
+  // 獲取待收款項（未歸檔的 pending 狀態，排除補登記錄）
   const pendingPayments = allPayments.filter(p => 
-    p.s === 'pending' && !p.archived
+    p.s === 'pending' && !p.archived && !p.isBackfill
   )
   
   // 獲取已收款項（已歸檔的 paid 狀態）
@@ -45,7 +48,12 @@ export default function Payments({ property }: PaymentsProps) {
   const [roomFilter, setRoomFilter] = React.useState('all')
   const [tenantFilter, setTenantFilter] = React.useState('all')
   const [statusFilter, setStatusFilter] = React.useState<'all' | 'pending' | 'paid'>('all')
+  const [backfillFilter, setBackfillFilter] = React.useState<'all' | 'backfill' | 'normal'>('all')
   const [searchTerm, setSearchTerm] = React.useState('')
+  
+  // 批量操作狀態
+  const [selectedBackfillIds, setSelectedBackfillIds] = React.useState<number[]>([])
+  const [showBulkConfirm, setShowBulkConfirm] = React.useState(false)
 
   // 分類篩選邏輯
   const filterByCategory = (payment: any) => {
@@ -108,6 +116,10 @@ export default function Payments({ property }: PaymentsProps) {
     if (statusFilter === 'pending' && payment.s !== 'pending') return false
     if (statusFilter === 'paid' && payment.s !== 'paid') return false
     
+    // 補登記錄篩選
+    if (backfillFilter === 'backfill' && !payment.isBackfill) return false
+    if (backfillFilter === 'normal' && payment.isBackfill) return false
+    
     // 搜索篩選
     if (searchTerm) {
       const term = searchTerm.toLowerCase()
@@ -125,13 +137,23 @@ export default function Payments({ property }: PaymentsProps) {
     return true
   })
 
-  // 按房號排序
+  // 排序邏輯：補登記錄優先，然後按房號和月份排序
   const sortedPayments = [...filteredPayments].sort((a, b) => {
-    // 先按房號排序
+    // 補登記錄優先（isBackfill: true）
+    if (a.isBackfill && !b.isBackfill) return -1
+    if (!a.isBackfill && b.isBackfill) return 1
+    
+    // 狀態優先：待確認的補登記錄優先
+    if (a.isBackfill && b.isBackfill) {
+      if (a.s === 'pending' && b.s !== 'pending') return -1
+      if (a.s !== 'pending' && b.s === 'pending') return 1
+    }
+    
+    // 然後按房號排序
     const roomCompare = (a.n || '').localeCompare(b.n || '')
     if (roomCompare !== 0) return roomCompare
     
-    // 房號相同時按月份排序
+    // 房號相同時按月份排序（新的月份在前）
     return (b.m || '').localeCompare(a.m || '')
   })
 
@@ -211,6 +233,59 @@ export default function Payments({ property }: PaymentsProps) {
     return room?.lastMeter || room?.lm || 0
   }
 
+  // 批量確認補登記錄
+  const bulkConfirmBackfillPayments = () => {
+    if (selectedBackfillIds.length === 0) {
+      alert('請先選擇要確認的補登記錄')
+      return
+    }
+    
+    const password = prompt('請輸入密碼以批量確認補登記錄（密碼：123456）')
+    if (password !== '123456') {
+      alert('密碼錯誤，操作取消')
+      return
+    }
+    
+    // 獲取選中的補登記錄
+    const selectedBackfillPayments = allPayments.filter(p => 
+      selectedBackfillIds.includes(p.id) && p.isBackfill && p.s === 'pending'
+    )
+    
+    if (selectedBackfillPayments.length === 0) {
+      alert('沒有找到待確認的補登記錄')
+      return
+    }
+    
+    // 更新付款記錄狀態
+    const updatedPayments = property.payments.map((payment: any) => {
+      if (selectedBackfillIds.includes(payment.id) && payment.isBackfill && payment.s === 'pending') {
+        return {
+          ...payment,
+          s: 'paid',
+          paid: new Date().toISOString().split('T')[0],
+          archived: true
+        }
+      }
+      return payment
+    })
+    
+    // 更新物業數據
+    updateData({
+      properties: state.data.properties.map((p: any) => 
+        p.id === property.id 
+          ? { ...p, payments: updatedPayments }
+          : p
+      )
+    })
+    
+    // 顯示成功訊息
+    alert(`成功確認 ${selectedBackfillPayments.length} 筆補登記錄`)
+    
+    // 重置選擇
+    setSelectedBackfillIds([])
+    setShowBulkConfirm(false)
+  }
+  
   // 重新計算電費函數（保留現有功能）
   const recalculateElectricityFees = () => {
     if (!property || !property.rooms || !property.payments) {
@@ -419,7 +494,7 @@ export default function Payments({ property }: PaymentsProps) {
 
       {/* 篩選面板 */}
       <div className="card p-4">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
           {/* 月份篩選 */}
           <div>
             <div className="text-sm text-gray-600 mb-1">{t('month', state.lang)}</div>
@@ -479,6 +554,20 @@ export default function Payments({ property }: PaymentsProps) {
             </select>
           </div>
           
+          {/* 補登記錄篩選 */}
+          <div>
+            <div className="text-sm text-gray-600 mb-1">記錄類型</div>
+            <select 
+              value={backfillFilter}
+              onChange={(e) => setBackfillFilter(e.target.value as any)}
+              className="w-full input-field"
+            >
+              <option value="all">全部記錄</option>
+              <option value="backfill">只看補登記錄 ({backfillPayments.length})</option>
+              <option value="normal">排除補登記錄</option>
+            </select>
+          </div>
+          
           {/* 搜索 */}
           <div>
             <div className="text-sm text-gray-600 mb-1">{t('search', state.lang)}</div>
@@ -506,6 +595,17 @@ export default function Payments({ property }: PaymentsProps) {
               )}
             </div>
             <div className="flex gap-2">
+              {/* 批量確認補登記錄按鈕 */}
+              {selectedBackfillIds.length > 0 && (
+                <button
+                  onClick={bulkConfirmBackfillPayments}
+                  className="px-3 py-1 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm"
+                  title="批量確認選中的補登記錄"
+                >
+                  📅 批量確認補登記錄 ({selectedBackfillIds.length})
+                </button>
+              )}
+              
               <button
                 onClick={recalculateElectricityFees}
                 className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
@@ -547,6 +647,14 @@ export default function Payments({ property }: PaymentsProps) {
             onCollectPayment={collectPayment}
             onUpdateElectricity={updateElectricityFee}
             onRestorePayment={restorePayment}
+            onToggleBackfillSelection={(paymentId, checked) => {
+              if (checked) {
+                setSelectedBackfillIds(prev => [...prev, paymentId])
+              } else {
+                setSelectedBackfillIds(prev => prev.filter(id => id !== paymentId))
+              }
+            }}
+            selectedBackfillIds={selectedBackfillIds}
             lang={state.lang}
           />
         )}
