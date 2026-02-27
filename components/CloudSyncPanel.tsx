@@ -46,7 +46,7 @@ const CloudSyncPanel: React.FC = () => {
     if (api.auth.isAuthenticated()) {
       try {
         const result = await api.auth.getCurrentUser();
-        if (result.success) {
+        if (result.success && result.data?.user) {
           setUserInfo(result.data.user);
         }
       } catch (error) {
@@ -102,7 +102,7 @@ const CloudSyncPanel: React.FC = () => {
 
     try {
       const result = await api.auth.login({ username, password });
-      if (result.success) {
+      if (result.success && result.data?.user) {
         setUserInfo(result.data.user);
         alert('登入成功！');
         loadInitialData();
@@ -131,7 +131,7 @@ const CloudSyncPanel: React.FC = () => {
         role, 
         full_name 
       });
-      if (result.success) {
+      if (result.success && result.data?.user) {
         setUserInfo(result.data.user);
         alert('註冊成功！已自動登入');
         loadInitialData();

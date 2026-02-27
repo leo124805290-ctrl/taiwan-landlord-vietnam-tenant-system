@@ -65,14 +65,15 @@ export const authAPI = {
   }) => {
     const result = await apiRequest<{
       success: boolean;
-      data: { user: any; token: string };
+      data?: { user: any; token: string };
       message: string;
+      error?: string;
     }>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(data),
     });
 
-    if (result.success && result.data.token) {
+    if (result.success && result.data?.token) {
       setToken(result.data.token);
     }
 
@@ -83,14 +84,15 @@ export const authAPI = {
   login: async (data: { username: string; password: string }) => {
     const result = await apiRequest<{
       success: boolean;
-      data: { user: any; token: string };
+      data?: { user: any; token: string };
       message: string;
+      error?: string;
     }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify(data),
     });
 
-    if (result.success && result.data.token) {
+    if (result.success && result.data?.token) {
       setToken(result.data.token);
     }
 
