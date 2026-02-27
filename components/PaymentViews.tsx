@@ -21,6 +21,8 @@ export default function PaymentViews({
   onCollectPayment, 
   onUpdateElectricity,
   onRestorePayment,
+  onToggleBackfillSelection,
+  selectedBackfillIds,
   lang 
 }: PaymentViewsProps) {
   
