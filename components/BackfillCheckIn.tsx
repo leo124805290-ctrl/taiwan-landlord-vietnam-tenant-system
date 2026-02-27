@@ -21,7 +21,17 @@ export default function BackfillCheckIn() {
   // 計算數據
   const [backfillPreview, setBackfillPreview] = useState<any[]>([])
   const [backfillSummary, setBackfillSummary] = useState({ total: 0, amount: 0, deposit: 0, rent: 0, electricity: 0 })
-  const [electricityRates, setElectricityRates] = useState<{[key: string]: number}>({}) // 儲存各月電費
+  const [electricityRates, setElectricityRates] = useState<{[key: string]: number}>({}) // 儲存各月電費金額
+  const [electricityDetails, setElectricityDetails] = useState<{[key: string]: {
+    previousReading: number
+    currentReading: number
+    rate: number
+    usage: number
+    amount: number
+  }}>({}) // 儲存各月電費詳細資訊
+  
+  // 錯誤狀態
+  const [errors, setErrors] = useState<{[key: string]: string}>({})
   
   // 獲取當前物業
   const property = selectedPropertyId 
@@ -129,8 +139,36 @@ export default function BackfillCheckIn() {
   
   // 生成補登記錄
   const generateBackfillRecords = () => {
-    if (!selectedRoomId || !checkInDate || !property || !tenantName.trim()) {
-      alert('請填寫所有必填欄位')
+    // 防呆處理：檢查所有必填欄位
+    const errors = []
+    
+    if (!selectedRoomId) {
+      errors.push('請選擇房間')
+    }
+    
+    if (!checkInDate) {
+      errors.push('請選擇入住日期')
+    } else {
+      const startDate = new Date(checkInDate)
+      const today = new Date()
+      const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+      
+      if (startDate >= firstDayOfMonth) {
+        errors.push('請選擇歷史日期（早於當前月份第一天）')
+      }
+    }
+    
+    if (!tenantName.trim()) {
+      errors.push('請輸入租客姓名')
+    }
+    
+    if (errors.length > 0) {
+      alert(`❌ 請修正以下問題：\n\n• ${errors.join('\n• ')}`)
+      return
+    }
+    
+    if (!property) {
+      alert('請選擇物業')
       return
     }
     
@@ -153,9 +191,9 @@ export default function BackfillCheckIn() {
     const currentYear = today.getFullYear()
     const currentMonth = today.getMonth()
     
-    // 計算月份差（從起租月到上個月）
+    // 計算月份差（從起租月到當前月）
     const monthDiff = (currentYear - startYear) * 12 + (currentMonth - startMonth)
-    const backfillMonthCount = Math.max(0, monthDiff - 1)
+    const backfillMonthCount = Math.max(0, monthDiff)
     
     // 生成付款記錄
     const newPayments = []
@@ -190,6 +228,8 @@ export default function BackfillCheckIn() {
       const monthKey = `${backfillYear}/${String(backfillMonth).padStart(2, '0')}`
       const electricityAmount = electricityRates[monthKey] || 0
       
+      const electricityDetail = electricityDetails[monthKey]
+      
       newPayments.push({
         id: paymentId++,
         rid: selectedRoomId,
@@ -205,7 +245,12 @@ export default function BackfillCheckIn() {
         archived: backfillStatus === 'paid',
         paymentType: 'rent',
         isBackfill: true,
-        notes: `歷史日期補登 - ${backfillYear}/${backfillMonth} 租金${electricityAmount > 0 ? ` + 電費${electricityAmount}` : ''} (${tenantName.trim()})`
+        // 電費詳細資訊
+        u: electricityDetail?.usage || 0, // 用電度數
+        lastMeter: electricityDetail?.previousReading || 0, // 前期度數
+        lastMeterUsage: electricityDetail?.usage || 0, // 用電度數
+        electricityRate: electricityDetail?.rate || state.data.electricityRate || 5, // 電費單價
+        notes: `歷史日期補登 - ${backfillYear}/${backfillMonth} 租金${electricityAmount > 0 ? ` + 電費${electricityAmount}元 (${electricityDetail?.usage || 0}度)` : ''} (${tenantName.trim()})`
       })
     }
     
@@ -257,17 +302,122 @@ export default function BackfillCheckIn() {
     resetForm()
   }
   
-  // 更新電費
-  const updateElectricity = (monthKey: string, amount: number) => {
+  // 更新電費詳細資訊
+  const updateElectricityDetails = (monthKey: string, field: string, value: number) => {
+    const currentDetails = electricityDetails[monthKey] || {
+      previousReading: 0,
+      currentReading: 0,
+      rate: state.data.electricityRate || 5, // 默認每度5元
+      usage: 0,
+      amount: 0
+    }
+    
+    const updatedDetails = { ...currentDetails }
+    
+    switch (field) {
+      case 'previousReading':
+        updatedDetails.previousReading = value
+        break
+      case 'currentReading':
+        updatedDetails.currentReading = value
+        break
+      case 'rate':
+        updatedDetails.rate = value
+        break
+    }
+    
+    // 計算用電度數和金額
+    updatedDetails.usage = Math.max(0, updatedDetails.currentReading - updatedDetails.previousReading)
+    updatedDetails.amount = updatedDetails.usage * updatedDetails.rate
+    
+    // 更新狀態
+    setElectricityDetails(prev => ({
+      ...prev,
+      [monthKey]: updatedDetails
+    }))
+    
     setElectricityRates(prev => ({
       ...prev,
-      [monthKey]: amount
+      [monthKey]: updatedDetails.amount
     }))
     
     // 重新計算預覽
     setTimeout(() => {
       calculateBackfillPreview()
     }, 100)
+  }
+  
+  // 簡化函數：直接更新電費金額（兼容舊代碼）
+  const updateElectricity = (monthKey: string, amount: number) => {
+    const currentDetails = electricityDetails[monthKey] || {
+      previousReading: 0,
+      currentReading: 0,
+      rate: state.data.electricityRate || 5,
+      usage: 0,
+      amount: 0
+    }
+    
+    const updatedDetails = {
+      ...currentDetails,
+      amount: amount,
+      usage: amount > 0 ? Math.ceil(amount / currentDetails.rate) : 0,
+      currentReading: currentDetails.previousReading + Math.ceil(amount / currentDetails.rate)
+    }
+    
+    setElectricityDetails(prev => ({
+      ...prev,
+      [monthKey]: updatedDetails
+    }))
+    
+    setElectricityRates(prev => ({
+      ...prev,
+      [monthKey]: amount
+    }))
+    
+    setTimeout(() => {
+      calculateBackfillPreview()
+    }, 100)
+  }
+  
+  // 驗證函數
+  const validateField = (field: string, value: any) => {
+    const newErrors = { ...errors }
+    
+    switch (field) {
+      case 'tenantName':
+        if (!value.trim()) {
+          newErrors.tenantName = '請輸入租客姓名'
+        } else {
+          delete newErrors.tenantName
+        }
+        break
+        
+      case 'checkInDate':
+        if (!value) {
+          newErrors.checkInDate = '請選擇入住日期'
+        } else {
+          const startDate = new Date(value)
+          const today = new Date()
+          const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+          
+          if (startDate >= firstDayOfMonth) {
+            newErrors.checkInDate = '請選擇歷史日期（早於當前月份第一天）'
+          } else {
+            delete newErrors.checkInDate
+          }
+        }
+        break
+        
+      case 'selectedRoomId':
+        if (!value) {
+          newErrors.selectedRoomId = '請選擇房間'
+        } else {
+          delete newErrors.selectedRoomId
+        }
+        break
+    }
+    
+    setErrors(newErrors)
   }
   
   // 重置表單
@@ -282,6 +432,8 @@ export default function BackfillCheckIn() {
     setBackfillPreview([])
     setBackfillSummary({ total: 0, amount: 0, deposit: 0, rent: 0, electricity: 0 })
     setElectricityRates({})
+    setElectricityDetails({})
+    setErrors({})
   }
   
   return (
@@ -326,6 +478,12 @@ export default function BackfillCheckIn() {
           {property && (
             <div className="card">
               <h3 className="text-lg font-bold mb-4">2. 選擇房間</h3>
+              
+              {errors.selectedRoomId && (
+                <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded">
+                  <div className="text-sm text-red-600">{errors.selectedRoomId}</div>
+                </div>
+              )}
               
               {availableRooms.length === 0 ? (
                 <div className="text-center py-6 text-gray-500">
@@ -377,7 +535,10 @@ export default function BackfillCheckIn() {
                           </td>
                           <td className="py-3 px-3">
                             <button
-                              onClick={() => setSelectedRoomId(room.id)}
+                              onClick={() => {
+                                setSelectedRoomId(room.id)
+                                validateField('selectedRoomId', room.id)
+                              }}
                               className={`px-4 py-1 rounded ${
                                 selectedRoomId === room.id 
                                   ? 'bg-blue-600 text-white' 
@@ -406,10 +567,17 @@ export default function BackfillCheckIn() {
                   <input
                     type="text"
                     value={tenantName}
-                    onChange={(e) => setTenantName(e.target.value)}
-                    className="input-field"
+                    onChange={(e) => {
+                      setTenantName(e.target.value)
+                      validateField('tenantName', e.target.value)
+                    }}
+                    onBlur={() => validateField('tenantName', tenantName)}
+                    className={`input-field ${errors.tenantName ? 'border-red-500' : ''}`}
                     placeholder="請輸入租客姓名"
                   />
+                  {errors.tenantName && (
+                    <div className="text-xs text-red-500 mt-1">{errors.tenantName}</div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm mb-1">租客電話</label>
@@ -438,13 +606,21 @@ export default function BackfillCheckIn() {
                   <input
                     type="date"
                     value={checkInDate}
-                    onChange={(e) => setCheckInDate(e.target.value)}
-                    className="input-field"
+                    onChange={(e) => {
+                      setCheckInDate(e.target.value)
+                      validateField('checkInDate', e.target.value)
+                    }}
+                    onBlur={() => validateField('checkInDate', checkInDate)}
+                    className={`input-field ${errors.checkInDate ? 'border-red-500' : ''}`}
                     max={new Date().toISOString().split('T')[0]}
                   />
-                  <div className="text-xs text-gray-500 mt-1">
-                    請選擇歷史日期（早於當前月份第一天）
-                  </div>
+                  {errors.checkInDate ? (
+                    <div className="text-xs text-red-500 mt-1">{errors.checkInDate}</div>
+                  ) : (
+                    <div className="text-xs text-gray-500 mt-1">
+                      請選擇歷史日期（早於當前月份第一天）
+                    </div>
+                  )}
                 </div>
                 
                 <div>
@@ -531,20 +707,62 @@ export default function BackfillCheckIn() {
                           <span className="text-gray-600">租金：</span>
                           <span className="font-medium">{formatCurrency(record.amount)}</span>
                         </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600">電費：</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-500">$</span>
-                            <input
-                              type="number"
-                              value={record.electricity || 0}
-                              onChange={(e) => updateElectricity(record.month, parseFloat(e.target.value) || 0)}
-                              className="w-24 px-2 py-1 border rounded text-sm"
-                              placeholder="電費金額"
-                              min="0"
-                              step="1"
-                            />
-                            <span className="text-xs text-gray-500">元</span>
+                        <div className="space-y-2 mt-2 p-2 bg-gray-50 rounded">
+                          <div className="text-xs font-medium text-gray-700">電費計算：</div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <div className="text-xs text-gray-600 mb-1">前期度數</div>
+                              <input
+                                type="number"
+                                value={electricityDetails[record.month]?.previousReading || 0}
+                                onChange={(e) => updateElectricityDetails(record.month, 'previousReading', parseFloat(e.target.value) || 0)}
+                                className="w-full px-2 py-1 border rounded text-sm"
+                                placeholder="前期度數"
+                                min="0"
+                                step="1"
+                              />
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-600 mb-1">目前度數</div>
+                              <input
+                                type="number"
+                                value={electricityDetails[record.month]?.currentReading || 0}
+                                onChange={(e) => updateElectricityDetails(record.month, 'currentReading', parseFloat(e.target.value) || 0)}
+                                className="w-full px-2 py-1 border rounded text-sm"
+                                placeholder="目前度數"
+                                min="0"
+                                step="1"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="text-xs text-gray-600">每度電費</div>
+                              <div className="flex items-center gap-1">
+                                <input
+                                  type="number"
+                                  value={electricityDetails[record.month]?.rate || state.data.electricityRate || 5}
+                                  onChange={(e) => updateElectricityDetails(record.month, 'rate', parseFloat(e.target.value) || 0)}
+                                  className="w-16 px-2 py-1 border rounded text-sm"
+                                  placeholder="單價"
+                                  min="0"
+                                  step="0.1"
+                                />
+                                <span className="text-xs text-gray-500">元/度</span>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-xs text-gray-600">用電度數</div>
+                              <div className="text-sm font-medium">
+                                {electricityDetails[record.month]?.usage || 0} 度
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-xs text-gray-600">電費金額</div>
+                              <div className="text-sm font-medium text-green-600">
+                                {formatCurrency(electricityDetails[record.month]?.amount || 0)}
+                              </div>
+                            </div>
                           </div>
                         </div>
                         <div className="flex justify-between text-sm border-t border-amber-100 pt-1">
@@ -607,9 +825,14 @@ export default function BackfillCheckIn() {
               <div className="space-y-3">
                 <button
                   onClick={generateBackfillRecords}
-                  className="w-full btn btn-primary py-3 text-lg"
+                  disabled={Object.keys(errors).length > 0 || !selectedRoomId || !checkInDate || !tenantName.trim()}
+                  className={`w-full btn py-3 text-lg ${
+                    Object.keys(errors).length > 0 || !selectedRoomId || !checkInDate || !tenantName.trim()
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'btn-primary'
+                  }`}
                 >
-                  🚀 生成補登記錄並完成入住
+                  {Object.keys(errors).length > 0 ? '❌ 請修正錯誤' : '🚀 生成補登記錄並完成入住'}
                 </button>
                 
                 <button
