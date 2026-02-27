@@ -9,6 +9,7 @@ import IncomeManagement from '@/components/IncomeManagement'
 import CostManagement from '@/components/CostManagement'
 import AllPropertiesCostManagement from '@/components/AllPropertiesCostManagement'
 import BackfillCheckIn from '@/components/BackfillCheckIn'
+import BackfillHistory from '@/components/BackfillHistory'
 import Settings from '@/components/Settings'
 import Modal from '@/components/Modal'
 import { useApp } from '@/contexts/AppContext'
@@ -49,6 +50,8 @@ export default function HomePage() {
               </div>
             </div>
           )
+        case 'backfill-history':
+          return <BackfillHistory />
         case 'income-management':
           return <IncomeManagement properties={state.data.properties || []} />
         case 'cost-management':
@@ -102,6 +105,8 @@ export default function HomePage() {
           return <Rooms property={property} />
         case 'backfill-checkin':
           return <BackfillCheckIn />
+        case 'backfill-history':
+          return <BackfillHistory />
         case 'income-management':
           return <IncomeManagement properties={[property]} />
         case 'cost-management':
