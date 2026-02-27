@@ -8,7 +8,7 @@ export default function BackfillHistory() {
   const { state } = useApp()
   
   // 篩選狀態
-  const [selectedPropertyId, setSelectedPropertyId] = useState<string>('all')
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | number>('all')
   const [selectedMonth, setSelectedMonth] = useState<string>('all')
   const [selectedRoom, setSelectedRoom] = useState<string>('all')
   const [selectedTenant, setSelectedTenant] = useState<string>('all')
@@ -31,7 +31,7 @@ export default function BackfillHistory() {
   // 獲取當前物業
   const currentProperty = selectedPropertyId === 'all' 
     ? null 
-    : state.data.properties.find(p => p.id === selectedPropertyId)
+    : state.data.properties.find(p => p.id === Number(selectedPropertyId))
   
   // 獲取所有補登記錄
   const getAllBackfillRecords = () => {
@@ -39,7 +39,7 @@ export default function BackfillHistory() {
     
     // 遍歷所有物業
     state.data.properties.forEach(property => {
-      if (selectedPropertyId !== 'all' && property.id !== selectedPropertyId) {
+      if (selectedPropertyId !== 'all' && property.id !== Number(selectedPropertyId)) {
         return
       }
       
