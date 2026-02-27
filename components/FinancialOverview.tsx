@@ -63,6 +63,17 @@ export default function FinancialOverview({ property }: FinancialOverviewProps) 
   const [filterMajor, setFilterMajor] = useState<string>('all')
   const [searchText, setSearchText] = useState<string>('')
   
+  // 互動篩選狀態
+  const [activeFilter, setActiveFilter] = useState<{
+    type: 'category' | 'month' | 'card' | null
+    value: string | null
+    label: string | null
+  }>({
+    type: null,
+    value: null,
+    label: null
+  })
+  
   // ==================== 數據初始化 ====================
   
   useEffect(() => {
@@ -310,27 +321,63 @@ export default function FinancialOverview({ property }: FinancialOverviewProps) 
   const filteredRecords = useMemo(() => {
     let filtered = financialRecords
     
-    // 時間篩選
-    if (timeFilter === 'month') {
-      // 本月篩選
+    // 1. 互動篩選優先
+    if (activeFilter.type === 'category') {
+      // 分類篩選
+      filtered = filtered.filter(record => record.major_category === activeFilter.value)
+    } else if (activeFilter.type === 'month') {
+      // 月份篩選
       filtered = filtered.filter(record => 
-        record.transaction_date.startsWith(selectedMonth)
+        record.transaction_date.startsWith(activeFilter.value || '')
       )
-    } else if (timeFilter === 'property-start') {
-      // 物業開始至今：顯示所有記錄
-      // 這裡可以根據物業的創建日期進一步篩選
-      // 暫時顯示所有記錄
-    } else if (timeFilter === 'custom') {
-      // 自選時間：需要實現日期範圍篩選
-      // 暫時顯示所有記錄
+    } else if (activeFilter.type === 'card') {
+      // 卡片篩選（根據卡片類型）
+      if (activeFilter.value === 'total-income') {
+        // 總收入卡片：顯示所有記錄（收入和支出）
+        // 不進行篩選
+      } else if (activeFilter.value === 'total-expense') {
+        // 總支出卡片：只顯示支出記錄
+        filtered = filtered.filter(record => 
+          record.major_category !== MajorCategory.OPERATIONAL_INCOME
+        )
+      } else if (activeFilter.value === 'net-income-without-onetime') {
+        // 淨收支（不含一次性）：顯示經常性支出
+        filtered = filtered.filter(record => 
+          record.major_category !== MajorCategory.PRE_INVESTMENT &&
+          record.major_category !== MajorCategory.DEPOSIT_EXPENSE &&
+          record.major_category !== MajorCategory.OPERATIONAL_INCOME
+        )
+      } else if (activeFilter.value === 'net-income-with-onetime') {
+        // 淨收支（含一次性）：顯示所有支出
+        filtered = filtered.filter(record => 
+          record.major_category !== MajorCategory.OPERATIONAL_INCOME
+        )
+      }
     }
     
-    // 分類篩選
-    if (filterMajor !== 'all') {
+    // 2. 時間篩選（如果沒有互動月份篩選）
+    if (activeFilter.type !== 'month') {
+      if (timeFilter === 'month') {
+        // 本月篩選
+        filtered = filtered.filter(record => 
+          record.transaction_date.startsWith(selectedMonth)
+        )
+      } else if (timeFilter === 'property-start') {
+        // 物業開始至今：顯示所有記錄
+        // 這裡可以根據物業的創建日期進一步篩選
+        // 暫時顯示所有記錄
+      } else if (timeFilter === 'custom') {
+        // 自選時間：需要實現日期範圍篩選
+        // 暫時顯示所有記錄
+      }
+    }
+    
+    // 3. 分類篩選（如果沒有互動分類篩選）
+    if (activeFilter.type !== 'category' && filterMajor !== 'all') {
       filtered = filtered.filter(record => record.major_category === filterMajor)
     }
     
-    // 文字搜索
+    // 4. 文字搜索
     if (searchText) {
       const searchLower = searchText.toLowerCase()
       filtered = filtered.filter(record => 
@@ -341,7 +388,7 @@ export default function FinancialOverview({ property }: FinancialOverviewProps) 
     }
     
     return filtered
-  }, [financialRecords, timeFilter, selectedMonth, filterMajor, searchText])
+  }, [financialRecords, timeFilter, selectedMonth, filterMajor, searchText, activeFilter])
   
   // 計算統計數據
   const stats = useMemo(() => {
@@ -511,6 +558,68 @@ export default function FinancialOverview({ property }: FinancialOverviewProps) 
     }
   }
   
+  // ==================== 互動篩選函數 ====================
+  
+  // 處理卡片點擊
+  const handleCardClick = (cardType: string, cardLabel: string) => {
+    setActiveFilter({
+      type: 'card',
+      value: cardType,
+      label: cardLabel
+    })
+    
+    // 根據卡片類型設置其他篩選
+    if (cardType === 'total-income') {
+      setFilterMajor('all')
+    } else if (cardType === 'total-expense') {
+      setFilterMajor('all')
+    } else if (cardType === 'net-income-without-onetime') {
+      setFilterMajor('all')
+      setIncludeOneTimeExpenses(false)
+    } else if (cardType === 'net-income-with-onetime') {
+      setFilterMajor('all')
+      setIncludeOneTimeExpenses(true)
+    }
+  }
+  
+  // 處理月份點擊
+  const handleMonthClick = (month: string, monthLabel: string) => {
+    setActiveFilter({
+      type: 'month',
+      value: month,
+      label: monthLabel
+    })
+    
+    // 設置時間篩選
+    setTimeFilter('month')
+    setSelectedMonth(month)
+  }
+  
+  // 處理分類點擊
+  const handleCategoryClick = (category: string, categoryLabel: string) => {
+    setActiveFilter({
+      type: 'category',
+      value: category,
+      label: categoryLabel
+    })
+    
+    // 設置分類篩選
+    setFilterMajor(category)
+  }
+  
+  // 清除所有篩選
+  const clearAllFilters = () => {
+    setActiveFilter({
+      type: null,
+      value: null,
+      label: null
+    })
+    setFilterMajor('all')
+    setSearchText('')
+    setTimeFilter('month')
+    setSelectedMonth(new Date().toISOString().substring(0, 7))
+  }
+  
   // ==================== 渲染函數 ====================
   
   if (loading) {
@@ -574,7 +683,15 @@ export default function FinancialOverview({ property }: FinancialOverviewProps) 
       {/* 統計概覽卡片 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* 總收入卡片 */}
-        <div className="card bg-gradient-to-r from-green-50 to-green-100">
+        <div 
+          className={`card bg-gradient-to-r from-green-50 to-green-100 cursor-pointer transition-all duration-200 hover:shadow-lg ${
+            activeFilter.type === 'card' && activeFilter.value === 'total-income' 
+              ? 'ring-2 ring-green-500 ring-offset-2' 
+              : ''
+          }`}
+          onClick={() => handleCardClick('total-income', '總收入')}
+          title="點擊篩選總收入相關記錄"
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">總收入</p>
@@ -592,7 +709,15 @@ export default function FinancialOverview({ property }: FinancialOverviewProps) 
         </div>
         
         {/* 總支出卡片 */}
-        <div className="card bg-gradient-to-r from-red-50 to-red-100">
+        <div 
+          className={`card bg-gradient-to-r from-red-50 to-red-100 cursor-pointer transition-all duration-200 hover:shadow-lg ${
+            activeFilter.type === 'card' && activeFilter.value === 'total-expense' 
+              ? 'ring-2 ring-red-500 ring-offset-2' 
+              : ''
+          }`}
+          onClick={() => handleCardClick('total-expense', '總支出')}
+          title="點擊篩選支出記錄"
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">總支出</p>
@@ -609,9 +734,17 @@ export default function FinancialOverview({ property }: FinancialOverviewProps) 
         </div>
         
         {/* 淨收支（不含一次性）卡片 */}
-        <div className={`card bg-gradient-to-r ${
-          stats.netIncomeWithoutOneTime >= 0 ? 'from-blue-50 to-blue-100' : 'from-orange-50 to-orange-100'
-        }`}>
+        <div 
+          className={`card bg-gradient-to-r cursor-pointer transition-all duration-200 hover:shadow-lg ${
+            stats.netIncomeWithoutOneTime >= 0 ? 'from-blue-50 to-blue-100' : 'from-orange-50 to-orange-100'
+          } ${
+            activeFilter.type === 'card' && activeFilter.value === 'net-income-without-onetime' 
+              ? 'ring-2 ring-blue-500 ring-offset-2' 
+              : ''
+          }`}
+          onClick={() => handleCardClick('net-income-without-onetime', '淨收支（不含一次性）')}
+          title="點擊篩選經常性支出記錄"
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">淨收支（不含一次性）</p>
@@ -632,9 +765,17 @@ export default function FinancialOverview({ property }: FinancialOverviewProps) 
         </div>
         
         {/* 淨收支（含一次性）卡片 */}
-        <div className={`card bg-gradient-to-r ${
-          stats.netIncomeWithOneTime >= 0 ? 'from-purple-50 to-purple-100' : 'from-amber-50 to-amber-100'
-        }`}>
+        <div 
+          className={`card bg-gradient-to-r cursor-pointer transition-all duration-200 hover:shadow-lg ${
+            stats.netIncomeWithOneTime >= 0 ? 'from-purple-50 to-purple-100' : 'from-amber-50 to-amber-100'
+          } ${
+            activeFilter.type === 'card' && activeFilter.value === 'net-income-with-onetime' 
+              ? 'ring-2 ring-purple-500 ring-offset-2' 
+              : ''
+          }`}
+          onClick={() => handleCardClick('net-income-with-onetime', '淨收支（含一次性）')}
+          title="點擊篩選所有支出記錄"
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">淨收支（含一次性）</p>
@@ -654,6 +795,30 @@ export default function FinancialOverview({ property }: FinancialOverviewProps) 
           </div>
         </div>
       </div>
+      
+      {/* 當前篩選狀態 */}
+      {activeFilter.type && (
+        <div className="card bg-blue-50 border border-blue-200">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-blue-600" />
+              <span className="text-sm text-gray-700">
+                當前篩選：
+                <span className="font-medium text-blue-700 ml-1">
+                  {activeFilter.label}
+                </span>
+              </span>
+            </div>
+            <button
+              onClick={clearAllFilters}
+              className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+            >
+              <span>清除篩選</span>
+              <span className="text-lg">×</span>
+            </button>
+          </div>
+        </div>
+      )}
       
       {/* 快速新增記錄（表格式輸入） */}
       <div className="card">
@@ -826,8 +991,30 @@ export default function FinancialOverview({ property }: FinancialOverviewProps) 
               <tbody>
                 {filteredRecords.map((record) => (
                   <tr key={record.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-3 px-4 text-sm">{record.transaction_date}</td>
-                    <td className="py-3 px-4 text-sm">{record.major_category}</td>
+                    <td className="py-3 px-4 text-sm">
+                      <button
+                        onClick={() => handleMonthClick(
+                          record.transaction_date.substring(0, 7),
+                          `${record.transaction_date.substring(0, 7)}月份`
+                        )}
+                        className="text-blue-600 hover:text-blue-800 hover:underline"
+                        title="點擊篩選此月份"
+                      >
+                        {record.transaction_date}
+                      </button>
+                    </td>
+                    <td className="py-3 px-4 text-sm">
+                      <button
+                        onClick={() => handleCategoryClick(
+                          record.major_category,
+                          record.major_category
+                        )}
+                        className="text-blue-600 hover:text-blue-800 hover:underline"
+                        title="點擊篩選此分類"
+                      >
+                        {record.major_category}
+                      </button>
+                    </td>
                     <td className="py-3 px-4 text-sm">{record.minor_category}</td>
                     <td className="py-3 px-4 text-sm font-medium text-red-600">
                       {formatCurrency(record.amount)}
