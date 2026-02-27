@@ -8,6 +8,7 @@ import Payments from '@/components/Payments'
 import IncomeManagement from '@/components/IncomeManagement'
 import CostManagement from '@/components/CostManagement'
 import AllPropertiesCostManagement from '@/components/AllPropertiesCostManagement'
+import BackfillCheckIn from '@/components/BackfillCheckIn'
 import Settings from '@/components/Settings'
 import Modal from '@/components/Modal'
 import { useApp } from '@/contexts/AppContext'
@@ -27,6 +28,27 @@ export default function HomePage() {
       switch (state.tab) {
         case 'rooms':
           return <AllPropertiesRooms properties={state.data.properties || []} />
+        case 'backfill-checkin':
+          return (
+            <div className="card text-center py-12">
+              <div className="text-6xl mb-4">📅</div>
+              <h2 className="text-2xl font-bold mb-4">房間出租(補) - 全部物業模式</h2>
+              <p className="text-gray-600 mb-6">
+                在「全部物業」模式下，請選擇單一物業以使用補登入住功能。
+              </p>
+              <div className="flex flex-wrap gap-4 justify-center">
+                {state.data.properties.map((p: any) => (
+                  <button
+                    key={p.id}
+                    onClick={() => updateState({ currentProperty: p.id })}
+                    className="btn bg-amber-600 text-white"
+                  >
+                    📅 選擇 {p.name || '未命名物業'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )
         case 'income-management':
           return <IncomeManagement properties={state.data.properties || []} />
         case 'cost-management':
@@ -78,6 +100,8 @@ export default function HomePage() {
       switch (state.tab) {
         case 'rooms':
           return <Rooms property={property} />
+        case 'backfill-checkin':
+          return <BackfillCheckIn />
         case 'income-management':
           return <IncomeManagement properties={[property]} />
         case 'cost-management':

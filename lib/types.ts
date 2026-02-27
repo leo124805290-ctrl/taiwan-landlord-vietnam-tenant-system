@@ -256,7 +256,7 @@ export interface AppData {
 
 // 應用狀態
 export interface AppState {
-  tab: 'rooms' | 'income-management' | 'cost-management' | 'payments' | 'paymentHistory' | 'maintenance' | 'settings';
+  tab: 'rooms' | 'backfill-checkin' | 'income-management' | 'cost-management' | 'payments' | 'paymentHistory' | 'maintenance' | 'settings';
   lang: 'zh-TW' | 'vi-VN';
   modal: {
     type: string;
