@@ -133,6 +133,13 @@ export default function HomePage() {
       {state.modal && (
         <Modal />
       )}
+      
+      {/* 版本標記 - 僅開發環境顯示 */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="fixed bottom-2 right-2 text-xs text-gray-400 bg-white/80 px-2 py-1 rounded">
+          版本: 86c3b46 - 按鈕測試版
+        </div>
+      )}
     </div>
   )
 }
