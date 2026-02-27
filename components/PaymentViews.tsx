@@ -10,6 +10,7 @@ interface PaymentViewsProps {
   onCollectPayment: (payment: Payment) => void
   onUpdateElectricity: (paymentId: number) => void
   onRestorePayment: (paymentId: number) => void
+  onEditBackfillPayment?: (payment: Payment) => void
   onToggleBackfillSelection?: (paymentId: number, checked: boolean) => void
   selectedBackfillIds?: number[]
   lang: string
@@ -21,6 +22,7 @@ export default function PaymentViews({
   onCollectPayment, 
   onUpdateElectricity,
   onRestorePayment,
+  onEditBackfillPayment,
   onToggleBackfillSelection,
   selectedBackfillIds,
   lang 
@@ -127,39 +129,52 @@ export default function PaymentViews({
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    {payment.s === 'pending' ? (
-                      <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2">
+                      {payment.s === 'pending' ? (
+                        <>
+                          <button
+                            onClick={() => onCollectPayment(payment)}
+                            className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                          >
+                            💰 收款
+                          </button>
+                          {(payment.e === 0 || payment.e === undefined) && (
+                            <button
+                              onClick={() => onUpdateElectricity(payment.id)}
+                              className="px-2 py-1 bg-blue-100 text-blue-600 rounded text-xs hover:bg-blue-200"
+                            >
+                              ⚡ 更新電費
+                            </button>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <div className="text-xs text-gray-500">
+                            {payment.paid && `已收於 ${payment.paid}`}
+                          </div>
+                          {payment.archived && (
+                            <button
+                              onClick={() => onRestorePayment(payment.id)}
+                              className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs hover:bg-yellow-200"
+                              title="恢復為待收狀態"
+                            >
+                              🔄 恢復
+                            </button>
+                          )}
+                        </>
+                      )}
+                      
+                      {/* 編輯按鈕（僅對補登記錄顯示） */}
+                      {payment.isBackfill && onEditBackfillPayment && (
                         <button
-                          onClick={() => onCollectPayment(payment)}
-                          className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                          onClick={() => onEditBackfillPayment(payment)}
+                          className="px-2 py-1 bg-amber-100 text-amber-700 rounded text-xs hover:bg-amber-200"
+                          title="編輯補登記錄"
                         >
-                          💰 收款
+                          ✏️ 編輯
                         </button>
-                        {(payment.e === 0 || payment.e === undefined) && (
-                          <button
-                            onClick={() => onUpdateElectricity(payment.id)}
-                            className="px-2 py-1 bg-blue-100 text-blue-600 rounded text-xs hover:bg-blue-200"
-                          >
-                            ⚡ 更新電費
-                          </button>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="flex flex-col gap-2">
-                        <div className="text-xs text-gray-500">
-                          {payment.paid && `已收於 ${payment.paid}`}
-                        </div>
-                        {payment.archived && (
-                          <button
-                            onClick={() => onRestorePayment(payment.id)}
-                            className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs hover:bg-yellow-200"
-                            title="恢復為待收狀態"
-                          >
-                            🔄 恢復
-                          </button>
-                        )}
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </td>
                 </tr>
               )

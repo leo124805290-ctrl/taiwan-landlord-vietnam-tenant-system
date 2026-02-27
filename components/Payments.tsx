@@ -54,6 +54,10 @@ export default function Payments({ property }: PaymentsProps) {
   // 批量操作狀態
   const [selectedBackfillIds, setSelectedBackfillIds] = React.useState<number[]>([])
   const [showBulkConfirm, setShowBulkConfirm] = React.useState(false)
+  
+  // 編輯狀態
+  const [editingPayment, setEditingPayment] = React.useState<any>(null)
+  const [showEditModal, setShowEditModal] = React.useState(false)
 
   // 分類篩選邏輯
   const filterByCategory = (payment: any) => {
@@ -233,6 +237,64 @@ export default function Payments({ property }: PaymentsProps) {
     return room?.lastMeter || room?.lm || 0
   }
 
+  // 編輯補登記錄
+  const editBackfillPayment = (payment: any) => {
+    // 檢查密碼
+    const password = prompt('請輸入密碼以編輯補登記錄（密碼：123456）')
+    if (password !== '123456') {
+      alert('密碼錯誤，編輯操作取消')
+      return
+    }
+    
+    // 設置正在編輯的記錄
+    setEditingPayment(payment)
+    setShowEditModal(true)
+  }
+  
+  // 保存編輯
+  const saveEditedPayment = (updatedPayment: any) => {
+    // 再次檢查密碼
+    const password = prompt('請再次輸入密碼以確認保存修改（密碼：123456）')
+    if (password !== '123456') {
+      alert('密碼錯誤，保存操作取消')
+      return
+    }
+    
+    // 重新計算總金額
+    const total = (updatedPayment.r || 0) + (updatedPayment.e || 0)
+    
+    // 更新付款記錄
+    const updatedPayments = property.payments.map((payment: any) => {
+      if (payment.id === updatedPayment.id) {
+        return {
+          ...payment,
+          ...updatedPayment,
+          total: total,
+          // 記錄修改時間
+          lastModified: new Date().toISOString(),
+          modifiedBy: '管理員'
+        }
+      }
+      return payment
+    })
+    
+    // 更新物業數據
+    updateData({
+      properties: state.data.properties.map((p: any) => 
+        p.id === property.id 
+          ? { ...p, payments: updatedPayments }
+          : p
+      )
+    })
+    
+    // 顯示成功訊息
+    alert('補登記錄修改成功')
+    
+    // 關閉編輯模態框
+    setShowEditModal(false)
+    setEditingPayment(null)
+  }
+  
   // 批量確認補登記錄
   const bulkConfirmBackfillPayments = () => {
     if (selectedBackfillIds.length === 0) {
@@ -647,6 +709,7 @@ export default function Payments({ property }: PaymentsProps) {
             onCollectPayment={collectPayment}
             onUpdateElectricity={updateElectricityFee}
             onRestorePayment={restorePayment}
+            onEditBackfillPayment={editBackfillPayment}
             onToggleBackfillSelection={(paymentId, checked) => {
               if (checked) {
                 setSelectedBackfillIds(prev => [...prev, paymentId])
@@ -659,6 +722,102 @@ export default function Payments({ property }: PaymentsProps) {
           />
         )}
       </div>
+      
+      {/* 編輯補登記錄模態框 */}
+      {showEditModal && editingPayment && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div className="p-6">
+              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                <span>✏️</span>
+                編輯補登記錄
+              </h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <div className="text-sm text-gray-600 mb-1">房間</div>
+                  <div className="font-medium">{editingPayment.n}</div>
+                </div>
+                
+                <div>
+                  <div className="text-sm text-gray-600 mb-1">租客</div>
+                  <div className="font-medium">{editingPayment.t}</div>
+                </div>
+                
+                <div>
+                  <div className="text-sm text-gray-600 mb-1">月份</div>
+                  <div className="font-medium">{editingPayment.m}</div>
+                </div>
+                
+                <div>
+                  <div className="text-sm text-gray-600 mb-1">租金</div>
+                  <input
+                    type="number"
+                    defaultValue={editingPayment.r}
+                    onChange={(e) => setEditingPayment({
+                      ...editingPayment,
+                      r: parseFloat(e.target.value) || 0
+                    })}
+                    className="w-full input-field"
+                  />
+                </div>
+                
+                <div>
+                  <div className="text-sm text-gray-600 mb-1">電費</div>
+                  <input
+                    type="number"
+                    defaultValue={editingPayment.e || 0}
+                    onChange={(e) => setEditingPayment({
+                      ...editingPayment,
+                      e: parseFloat(e.target.value) || 0
+                    })}
+                    className="w-full input-field"
+                  />
+                </div>
+                
+                <div>
+                  <div className="text-sm text-gray-600 mb-1">總金額</div>
+                  <div className="font-bold text-green-600">
+                    {formatCurrency((editingPayment.r || 0) + (editingPayment.e || 0))}
+                  </div>
+                </div>
+                
+                <div>
+                  <div className="text-sm text-gray-600 mb-1">備註</div>
+                  <textarea
+                    defaultValue={editingPayment.notes || ''}
+                    onChange={(e) => setEditingPayment({
+                      ...editingPayment,
+                      notes: e.target.value
+                    })}
+                    className="w-full input-field"
+                    rows={3}
+                    placeholder="可選：添加修改說明"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex gap-3 mt-6 pt-4 border-t border-gray-200">
+                <button
+                  onClick={() => {
+                    setShowEditModal(false)
+                    setEditingPayment(null)
+                  }}
+                  className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={() => saveEditedPayment(editingPayment)}
+                  className="flex-1 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700"
+                >
+                  保存修改
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
