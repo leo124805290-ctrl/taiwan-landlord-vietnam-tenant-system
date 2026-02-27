@@ -20,7 +20,8 @@ export default function BackfillCheckIn() {
   
   // 計算數據
   const [backfillPreview, setBackfillPreview] = useState<any[]>([])
-  const [backfillSummary, setBackfillSummary] = useState({ total: 0, amount: 0, deposit: 0, rent: 0 })
+  const [backfillSummary, setBackfillSummary] = useState({ total: 0, amount: 0, deposit: 0, rent: 0, electricity: 0 })
+  const [electricityRates, setElectricityRates] = useState<{[key: string]: number}>({}) // 儲存各月電費
   
   // 獲取當前物業
   const property = selectedPropertyId 
@@ -68,14 +69,15 @@ export default function BackfillCheckIn() {
     const currentYear = today.getFullYear()
     const currentMonth = today.getMonth()
     
-    // 計算月份差（從起租月到上個月）
+    // 計算月份差（從起租月到當前月）
     const monthDiff = (currentYear - startYear) * 12 + (currentMonth - startMonth)
-    const backfillMonthCount = Math.max(0, monthDiff - 1) // 減去當前月份
+    const backfillMonthCount = Math.max(0, monthDiff) // 包含當前月份
     
     const preview = []
     let totalAmount = 0
     let depositCount = 0
     let rentCount = 0
+    let electricityTotal = 0
     
     // 押金補登
     if (room.d && room.d > 0) {
@@ -89,36 +91,39 @@ export default function BackfillCheckIn() {
       depositCount++
     }
     
-    // 租金補登（從起租月到上個月）
+    // 租金補登（從起租月到當前月）
     for (let i = 0; i < backfillMonthCount; i++) {
       const monthOffset = i
       const backfillYear = startYear + Math.floor((startMonth + monthOffset) / 12)
       const backfillMonth = (startMonth + monthOffset) % 12 + 1
       
+      // 判斷是否是入住當月（只有租金和押金，沒有電費）
+      const isCheckInMonth = i === 0
+      
+      const monthKey = `${backfillYear}/${String(backfillMonth).padStart(2, '0')}`
+      const electricityAmount = electricityRates[monthKey] || 0
+      
       preview.push({
         type: 'rent',
-        month: `${backfillYear}/${String(backfillMonth).padStart(2, '0')}`,
+        month: monthKey,
         amount: room.r,
-        description: '月租金'
+        electricity: electricityAmount,
+        total: room.r + electricityAmount,
+        description: isCheckInMonth ? '月租金（入住當月）' : '月租金',
+        isCheckInMonth: isCheckInMonth
       })
-      totalAmount += room.r
+      totalAmount += room.r + electricityAmount
+      electricityTotal += electricityAmount
       rentCount++
     }
-    
-    // 當前月份租金（正常流程，非補登）
-    preview.push({
-      type: 'current',
-      month: `${currentYear}/${String(currentMonth + 1).padStart(2, '0')}`,
-      amount: room.r,
-      description: '本月租金（正常流程）'
-    })
     
     setBackfillPreview(preview)
     setBackfillSummary({
       total: preview.length,
       amount: totalAmount,
       deposit: depositCount,
-      rent: rentCount
+      rent: rentCount,
+      electricity: electricityTotal
     })
   }
   
@@ -177,28 +182,30 @@ export default function BackfillCheckIn() {
       })
     }
     
-    // 租金補登記錄（從起租月到上個月）
+    // 租金補登記錄（從起租月到當前月）
     for (let i = 0; i < backfillMonthCount; i++) {
       const monthOffset = i
       const backfillYear = startYear + Math.floor((startMonth + monthOffset) / 12)
       const backfillMonth = (startMonth + monthOffset) % 12 + 1
+      const monthKey = `${backfillYear}/${String(backfillMonth).padStart(2, '0')}`
+      const electricityAmount = electricityRates[monthKey] || 0
       
       newPayments.push({
         id: paymentId++,
         rid: selectedRoomId,
         n: room.n,
         t: tenantName.trim(),
-        m: `${backfillYear}/${String(backfillMonth).padStart(2, '0')}`,
+        m: monthKey,
         r: room.r,
-        e: 0,
-        total: room.r,
+        e: electricityAmount,
+        total: room.r + electricityAmount,
         due: `${backfillYear}-${String(backfillMonth).padStart(2, '0')}-28`,
         s: backfillStatus,
         paid: backfillStatus === 'paid' ? `${backfillYear}-${String(backfillMonth).padStart(2, '0')}-28` : undefined,
         archived: backfillStatus === 'paid',
         paymentType: 'rent',
         isBackfill: true,
-        notes: `歷史日期補登 - ${backfillYear}/${backfillMonth} 租金 (${tenantName.trim()})`
+        notes: `歷史日期補登 - ${backfillYear}/${backfillMonth} 租金${electricityAmount > 0 ? ` + 電費${electricityAmount}` : ''} (${tenantName.trim()})`
       })
     }
     
@@ -250,6 +257,19 @@ export default function BackfillCheckIn() {
     resetForm()
   }
   
+  // 更新電費
+  const updateElectricity = (monthKey: string, amount: number) => {
+    setElectricityRates(prev => ({
+      ...prev,
+      [monthKey]: amount
+    }))
+    
+    // 重新計算預覽
+    setTimeout(() => {
+      calculateBackfillPreview()
+    }, 100)
+  }
+  
   // 重置表單
   const resetForm = () => {
     setSelectedRoomId(null)
@@ -260,7 +280,8 @@ export default function BackfillCheckIn() {
     setPaymentOption('full')
     setBackfillStatus('paid')
     setBackfillPreview([])
-    setBackfillSummary({ total: 0, amount: 0, deposit: 0, rent: 0 })
+    setBackfillSummary({ total: 0, amount: 0, deposit: 0, rent: 0, electricity: 0 })
+    setElectricityRates({})
   }
   
   return (
@@ -301,26 +322,77 @@ export default function BackfillCheckIn() {
             </div>
           </div>
           
-          {/* 房間選擇 */}
+          {/* 房間選擇 - 表格列表 */}
           {property && (
             <div className="card">
               <h3 className="text-lg font-bold mb-4">2. 選擇房間</h3>
-              <div className="space-y-2">
-                {availableRooms.map(room => (
-                  <button
-                    key={room.id}
-                    onClick={() => setSelectedRoomId(room.id)}
-                    className={`w-full p-3 border rounded-lg text-left hover:bg-gray-50 ${
-                      selectedRoomId === room.id ? 'border-blue-500 bg-blue-50' : ''
-                    }`}
-                  >
-                    <div className="font-medium">{room.n} ({room.f}F)</div>
-                    <div className="text-sm text-gray-600">
-                      租金：{formatCurrency(room.r)} • 押金：{formatCurrency(room.d || 0)}
-                    </div>
-                  </button>
-                ))}
-              </div>
+              
+              {availableRooms.length === 0 ? (
+                <div className="text-center py-6 text-gray-500">
+                  <div className="text-4xl mb-2">🏚️</div>
+                  <div>沒有可補登的空房間</div>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-2 px-3 text-sm font-medium text-gray-700">房間</th>
+                        <th className="text-left py-2 px-3 text-sm font-medium text-gray-700">樓層</th>
+                        <th className="text-left py-2 px-3 text-sm font-medium text-gray-700">租金</th>
+                        <th className="text-left py-2 px-3 text-sm font-medium text-gray-700">押金</th>
+                        <th className="text-left py-2 px-3 text-sm font-medium text-gray-700">狀態</th>
+                        <th className="text-left py-2 px-3 text-sm font-medium text-gray-700">操作</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {availableRooms.map(room => (
+                        <tr 
+                          key={room.id}
+                          className={`border-b border-gray-100 hover:bg-gray-50 ${
+                            selectedRoomId === room.id ? 'bg-blue-50' : ''
+                          }`}
+                        >
+                          <td className="py-3 px-3">
+                            <div className="font-medium">{room.n}</div>
+                          </td>
+                          <td className="py-3 px-3">
+                            <div className="text-gray-600">{room.f}F</div>
+                          </td>
+                          <td className="py-3 px-3">
+                            <div className="font-medium text-amber-600">{formatCurrency(room.r)}</div>
+                          </td>
+                          <td className="py-3 px-3">
+                            <div className="font-medium text-blue-600">{formatCurrency(room.d || 0)}</div>
+                          </td>
+                          <td className="py-3 px-3">
+                            <div className="text-sm">
+                              <span className={`px-2 py-1 rounded-full ${
+                                room.s === 'available' ? 'bg-green-100 text-green-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {room.s === 'available' ? '空房' : '待出租'}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3">
+                            <button
+                              onClick={() => setSelectedRoomId(room.id)}
+                              className={`px-4 py-1 rounded ${
+                                selectedRoomId === room.id 
+                                  ? 'bg-blue-600 text-white' 
+                                  : 'bg-gray-200 hover:bg-gray-300'
+                              }`}
+                            >
+                              {selectedRoomId === room.id ? '已選擇' : '選擇'}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
           
@@ -439,23 +511,47 @@ export default function BackfillCheckIn() {
                       'bg-gray-50 border-gray-200'
                     }`}
                   >
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center mb-2">
                       <div>
                         <div className="font-medium">{record.month}</div>
                         <div className="text-sm text-gray-600">{record.description}</div>
                       </div>
                       <div className="font-bold">
-                        {formatCurrency(record.amount)}
+                        {formatCurrency(record.total || record.amount)}
                       </div>
                     </div>
+                    
                     {record.type === 'deposit' && (
-                      <div className="text-xs text-blue-600 mt-1">一次性押金</div>
+                      <div className="text-xs text-blue-600">一次性押金</div>
                     )}
+                    
                     {record.type === 'rent' && (
-                      <div className="text-xs text-amber-600 mt-1">歷史租金補登</div>
-                    )}
-                    {record.type === 'current' && (
-                      <div className="text-xs text-gray-600 mt-1">本月租金（正常流程）</div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">租金：</span>
+                          <span className="font-medium">{formatCurrency(record.amount)}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">電費：</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-500">$</span>
+                            <input
+                              type="number"
+                              value={record.electricity || 0}
+                              onChange={(e) => updateElectricity(record.month, parseFloat(e.target.value) || 0)}
+                              className="w-24 px-2 py-1 border rounded text-sm"
+                              placeholder="電費金額"
+                              min="0"
+                              step="1"
+                            />
+                            <span className="text-xs text-gray-500">元</span>
+                          </div>
+                        </div>
+                        <div className="flex justify-between text-sm border-t border-amber-100 pt-1">
+                          <span className="text-gray-700">小計：</span>
+                          <span className="font-bold">{formatCurrency(record.total)}</span>
+                        </div>
+                      </div>
                     )}
                   </div>
                 ))}
@@ -474,6 +570,10 @@ export default function BackfillCheckIn() {
                 <div className="flex justify-between text-sm mb-2">
                   <span>租金記錄：</span>
                   <span className="font-bold text-amber-600">{backfillSummary.rent} 筆</span>
+                </div>
+                <div className="flex justify-between text-sm mb-2">
+                  <span>電費總計：</span>
+                  <span className="font-bold text-green-600">{formatCurrency(backfillSummary.electricity)}</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold border-t border-gray-300 pt-2 mt-2">
                   <span>總金額：</span>

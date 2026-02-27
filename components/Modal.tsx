@@ -607,10 +607,11 @@ export default function Modal() {
                     type="date" 
                     id="checkInContractStart" 
                     defaultValue={new Date().toISOString().split('T')[0]} 
+                    min={new Date().toISOString().split('T')[0]} // 不能選擇過去的日期
                     className="input-field" 
                     required 
                     onChange={(e) => {
-                      // 歷史日期檢測
+                      // 歷史日期檢測和提醒
                       const startDate = new Date(e.target.value)
                       const today = new Date()
                       const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
@@ -628,11 +629,11 @@ export default function Modal() {
                           const currentYear = today.getFullYear()
                           const currentMonth = today.getMonth()
                           
-                          // 計算月份差（從起租月到上個月）
+                          // 計算月份差（從起租月到當前月）
                           const monthDiff = (currentYear - startYear) * 12 + (currentMonth - startMonth)
-                          const backfillMonthCount = Math.max(0, monthDiff - 1) // 減去當前月份
+                          const backfillMonthCount = Math.max(0, monthDiff) // 包含當前月份
                           
-                          // 生成補登預覽
+                          // 更新提醒內容
                           const backfillList = document.getElementById('backfillList')
                           const backfillTotal = document.getElementById('backfillTotal')
                           const backfillSummary = document.getElementById('backfillSummary')
@@ -660,7 +661,7 @@ export default function Modal() {
                               depositCount++
                             }
                             
-                            // 租金補登（從起租月到上個月）
+                            // 租金補登（從起租月到當前月）
                             for (let i = 0; i < backfillMonthCount; i++) {
                               const monthOffset = i
                               const backfillYear = startYear + Math.floor((startMonth + monthOffset) / 12)
@@ -679,17 +680,6 @@ export default function Modal() {
                               totalAmount += checkInRoom.r
                               rentCount++
                             }
-                            
-                            // 當前月份租金（正常流程，非補登）
-                            previewHTML += `
-                              <div className="flex justify-between items-center py-1 border-b border-amber-100">
-                                <div>
-                                  <span className="font-medium">${currentYear}/${String(currentMonth + 1).padStart(2, '0')}</span>
-                                  <span className="text-xs text-gray-500 ml-1">本月租金</span>
-                                </div>
-                                <div className="font-bold text-gray-700">${formatCurrency(checkInRoom.r)}</div>
-                              </div>
-                            `
                             
                             backfillList.innerHTML = previewHTML
                             backfillTotal.textContent = `${totalRecords} 筆記錄，${formatCurrency(totalAmount)}`
@@ -738,8 +728,19 @@ export default function Modal() {
                       </div>
                       
                       <div className="text-xs text-amber-600 mt-2">
-                        💡 提示：補登記錄將在繳費分頁中顯示，管理者可選擇確認收款狀態。
+                        ⚠️ 注意：您選擇了歷史日期入住。請使用「房間出租(補)」分頁進行補登操作。
                       </div>
+                      <button
+                        onClick={() => {
+                          // 關閉模態框
+                          closeModal()
+                          // 切換到補登分頁
+                          updateState({ tab: 'backfill-checkin' })
+                        }}
+                        className="w-full mt-3 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm font-medium"
+                      >
+                        📅 前往「房間出租(補)」分頁
+                      </button>
                     </div>
                   </div>
                 </div>
