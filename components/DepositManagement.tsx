@@ -83,8 +83,8 @@ export default function DepositManagement() {
           tenantName: payment.t || room.t || '未知租客',
           amount: payment.total || payment.r || 0,
           status,
-          contractStart: room.ci || payment.due || '',
-          contractEnd: room.co || '',
+          contractStart: room.in || payment.due || '',
+          contractEnd: room.out || '',
           receivedDate: payment.paid || payment.due || '',
           paymentId: payment.id,
           notes: payment.notes
