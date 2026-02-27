@@ -80,8 +80,10 @@ export default function BackfillCheckIn() {
     const currentMonth = today.getMonth()
     
     // 計算月份差（從起租月到當前月）
+    // 注意：需要包含當前月份，所以月份差要加1
+    // 但如果是當月入住（startDate >= firstDayOfMonth），則不需要補登
     const monthDiff = (currentYear - startYear) * 12 + (currentMonth - startMonth)
-    const backfillMonthCount = Math.max(0, monthDiff) // 包含當前月份
+    const backfillMonthCount = Math.max(0, monthDiff + 1) // 包含當前月份，所以要加1
     
     const preview = []
     let totalAmount = 0
@@ -192,8 +194,10 @@ export default function BackfillCheckIn() {
     const currentMonth = today.getMonth()
     
     // 計算月份差（從起租月到當前月）
+    // 注意：需要包含當前月份，所以月份差要加1
+    // 但如果是當月入住（startDate >= firstDayOfMonth），則不需要補登
     const monthDiff = (currentYear - startYear) * 12 + (currentMonth - startMonth)
-    const backfillMonthCount = Math.max(0, monthDiff)
+    const backfillMonthCount = Math.max(0, monthDiff + 1) // 包含當前月份，所以要加1
     
     // 生成付款記錄
     const newPayments = []
