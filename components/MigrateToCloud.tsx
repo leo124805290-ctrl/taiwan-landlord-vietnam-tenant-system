@@ -23,6 +23,26 @@ const MigrateToCloud: React.FC<MigrateToCloudProps> = ({ onComplete }) => {
   const getLocalData = () => {
     if (typeof window === 'undefined') return { properties: [], rooms: [], payments: [] };
 
+    // 方法 1：檢查 multiPropertyDataV2（你的應用使用的鍵）
+    const multiPropertyData = localStorage.getItem('multiPropertyDataV2');
+    if (multiPropertyData) {
+      try {
+        const data = JSON.parse(multiPropertyData);
+        // 從 multiPropertyDataV2 結構中提取數據
+        return {
+          properties: data.properties || [],
+          rooms: data.rooms || [],
+          payments: data.payments || [],
+          history: data.history || [],
+          maintenance: data.maintenance || [],
+          utilityExpenses: data.utilityExpenses || [],
+        };
+      } catch (error) {
+        console.error('解析 multiPropertyDataV2 失敗:', error);
+      }
+    }
+
+    // 方法 2：檢查獨立鍵（舊方法）
     const getData = (key: string): any[] => {
       try {
         const data = localStorage.getItem(key);
@@ -66,11 +86,27 @@ const MigrateToCloud: React.FC<MigrateToCloudProps> = ({ onComplete }) => {
       const localData = getLocalData();
       const totalRecords = Object.values(localData).reduce((sum, arr) => sum + arr.length, 0);
       
+      // 調試信息：顯示實際找到的數據
+      console.log('本地數據結構:', localData);
+      console.log('找到的鍵:', Object.keys(localData).filter(key => localData[key].length > 0));
+      
       if (totalRecords === 0) {
+        // 顯示詳細的調試信息
+        const debugInfo = [];
+        Object.keys(localData).forEach(key => {
+          debugInfo.push(`${key}: ${localData[key].length}`);
+        });
+        
+        // 檢查 localStorage 中實際有什麼
+        const allKeys = Object.keys(localStorage);
+        const relevantKeys = allKeys.filter(key => 
+          !key.includes('auth') && !key.includes('sync') && !key.includes('cache')
+        );
+        
         setStatus({ 
-          message: '本地沒有數據可遷移', 
+          message: '本地沒有找到可遷移的數據', 
           type: 'warning',
-          details: '請先在本地創建一些數據'
+          details: `數據鍵: ${debugInfo.join(', ')} | localStorage 鍵: ${relevantKeys.join(', ')}`
         });
         setIsLoading(false);
         return;
