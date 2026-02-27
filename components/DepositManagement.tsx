@@ -12,7 +12,7 @@ interface DepositRecord {
   roomNumber: string
   tenantName: string
   amount: number
-  status: 'occupied' | 'pending' | 'checkout'
+  status: 'occupied' | 'pending'
   contractStart: string
   contractEnd: string
   receivedDate: string
@@ -63,18 +63,16 @@ export default function DepositManagement() {
         if (!room) return
         
         // 判斷押金狀態
-        let status: 'occupied' | 'pending' | 'checkout' = 'pending'
+        let status: 'occupied' | 'pending' = 'pending'
         
         if (room.s === 'occupied') {
           status = 'occupied'
         } else if (room.s === 'available' || room.s === 'maintenance') {
           status = 'pending'
-        } else if (room.s === 'checkout') {
-          status = 'checkout'
         }
         
         // 只處理 occupied 和 pending 狀態的押金
-        if (status !== 'occupied' && status !== 'pending') return
+        // 其他狀態（如已退租）的押金已經退還，不在此處顯示
         
         records.push({
           id: payment.id,
