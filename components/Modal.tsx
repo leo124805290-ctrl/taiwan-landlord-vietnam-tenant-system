@@ -647,12 +647,12 @@ export default function Modal() {
                             // 押金補登
                             if (checkInRoom.d && checkInRoom.d > 0) {
                               previewHTML += `
-                                <div class="flex justify-between items-center py-1 border-b border-amber-100">
+                                <div className="flex justify-between items-center py-1 border-b border-amber-100">
                                   <div>
-                                    <span class="font-medium">${startYear}/${String(startMonth + 1).padStart(2, '0')}</span>
-                                    <span class="text-xs text-amber-600 ml-1">押金</span>
+                                    <span className="font-medium">${startYear}/${String(startMonth + 1).padStart(2, '0')}</span>
+                                    <span className="text-xs text-amber-600 ml-1">押金</span>
                                   </div>
-                                  <div class="font-bold">${formatCurrency(checkInRoom.d)}</div>
+                                  <div className="font-bold">${formatCurrency(checkInRoom.d)}</div>
                                 </div>
                               `
                               totalRecords++
@@ -667,12 +667,12 @@ export default function Modal() {
                               const backfillMonth = (startMonth + monthOffset) % 12 + 1
                               
                               previewHTML += `
-                                <div class="flex justify-between items-center py-1 border-b border-amber-100">
+                                <div className="flex justify-between items-center py-1 border-b border-amber-100">
                                   <div>
-                                    <span class="font-medium">${backfillYear}/${String(backfillMonth).padStart(2, '0')}</span>
-                                    <span class="text-xs text-amber-600 ml-1">租金</span>
+                                    <span className="font-medium">${backfillYear}/${String(backfillMonth).padStart(2, '0')}</span>
+                                    <span className="text-xs text-amber-600 ml-1">租金</span>
                                   </div>
-                                  <div class="font-bold">${formatCurrency(checkInRoom.r)}</div>
+                                  <div className="font-bold">${formatCurrency(checkInRoom.r)}</div>
                                 </div>
                               `
                               totalRecords++
@@ -682,12 +682,12 @@ export default function Modal() {
                             
                             // 當前月份租金（正常流程，非補登）
                             previewHTML += `
-                              <div class="flex justify-between items-center py-1 border-b border-amber-100">
+                              <div className="flex justify-between items-center py-1 border-b border-amber-100">
                                 <div>
-                                  <span class="font-medium">${currentYear}/${String(currentMonth + 1).padStart(2, '0')}</span>
-                                  <span class="text-xs text-gray-500 ml-1">本月租金</span>
+                                  <span className="font-medium">${currentYear}/${String(currentMonth + 1).padStart(2, '0')}</span>
+                                  <span className="text-xs text-gray-500 ml-1">本月租金</span>
                                 </div>
-                                <div class="font-bold text-gray-700">${formatCurrency(checkInRoom.r)}</div>
+                                <div className="font-bold text-gray-700">${formatCurrency(checkInRoom.r)}</div>
                               </div>
                             `
                             
@@ -721,7 +721,7 @@ export default function Modal() {
                         <div className="text-sm text-amber-800 font-medium mb-1">補登記錄預覽：</div>
                         <div id="backfillList" className="text-sm text-amber-700 space-y-1 max-h-40 overflow-y-auto pr-2">
                           {/* 這裡會動態生成補登記錄預覽 */}
-                          <div class="text-gray-500">選擇入住日期後顯示詳細記錄...</div>
+                          <div className="text-gray-500">選擇入住日期後顯示詳細記錄...</div>
                         </div>
                       </div>
                       
