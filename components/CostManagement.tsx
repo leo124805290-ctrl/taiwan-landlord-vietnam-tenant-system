@@ -964,9 +964,11 @@ export default function CostManagement({ property }: CostManagementProps) {
                 總支出 {formatCurrency(stats.totalExpense)}
               </div>
             </div>
-            <PieChartIcon className={`h-8 w-8 ${
-              stats.netIncomeWithOneTime >= 0 ? 'text-purple-600' : 'text-amber-600'
-            }`} />
+            {stats.netIncomeWithOneTime >= 0 ? (
+              <TrendingUp className="h-8 w-8 text-purple-600" />
+            ) : (
+              <TrendingDown className="h-8 w-8 text-amber-600" />
+            )}
           </div>
         </div>
       </div>
