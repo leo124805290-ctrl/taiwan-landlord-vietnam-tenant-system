@@ -12,6 +12,7 @@ import BackfillHistory from '@/components/BackfillHistory'
 import DepositManagement from '@/components/DepositManagement'
 import Settings from '@/components/Settings'
 import Modal from '@/components/Modal'
+import CloudSyncPanel from '@/components/CloudSyncPanel'
 import { useApp } from '@/contexts/AppContext'
 
 export default function HomePage() {
@@ -139,10 +140,13 @@ export default function HomePage() {
         <Modal />
       )}
       
+      {/* 雲端同步面板 */}
+      <CloudSyncPanel />
+      
       {/* 版本標記 - 僅開發環境顯示 */}
       {process.env.NODE_ENV === 'development' && (
         <div className="fixed bottom-2 right-2 text-xs text-gray-400 bg-white/80 px-2 py-1 rounded">
-          版本: 修復版 - 成本管理全部物業模式
+          版本: 修復版 - 成本管理全部物業模式 + 雲端同步
         </div>
       )}
     </div>
