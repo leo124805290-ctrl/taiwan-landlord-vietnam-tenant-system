@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { formatCurrency } from '@/lib/utils'
 import { Payment, Room } from '@/lib/types'
 
@@ -10,13 +11,21 @@ interface PaymentStatsPanelProps {
 }
 
 export default function PaymentStatsPanel({ property, payments, rooms }: PaymentStatsPanelProps) {
+  // 是否包含補登記錄
+  const [includeBackfill, setIncludeBackfill] = useState(false)
+  
   // 過濾掉已歸檔的房間
   const activeRooms = rooms.filter(room => !room.archived)
   
   // 計算統計數據
   const calculateStats = () => {
+    // 根據用戶選擇過濾付款記錄
+    const filteredPayments = includeBackfill 
+      ? payments  // 包含補登記錄
+      : payments.filter(p => !p.isBackfill)  // 排除補登記錄
+    
     // 1. 前期欠收款項（逾期未付）
-    const overduePayments = payments.filter(p => 
+    const overduePayments = filteredPayments.filter(p => 
       p.s === 'pending' && 
       p.due && 
       new Date(p.due) < new Date() &&
@@ -31,7 +40,7 @@ export default function PaymentStatsPanel({ property, payments, rooms }: Payment
     
     // 2. 本月應收款項
     const currentMonth = new Date().toISOString().slice(0, 7).replace('-', '/') // YYYY/MM
-    const currentMonthPayments = payments.filter(p => 
+    const currentMonthPayments = filteredPayments.filter(p => 
       p.m === currentMonth && 
       p.s === 'pending' &&
       !p.archived
@@ -53,7 +62,7 @@ export default function PaymentStatsPanel({ property, payments, rooms }: Payment
         return sum
       }, 0),
       
-      collectedRent: payments.filter(p => 
+      collectedRent: filteredPayments.filter(p => 
         p.m === currentMonth && 
         p.s === 'paid' && 
         p.paymentType === 'rent'
@@ -63,7 +72,7 @@ export default function PaymentStatsPanel({ property, payments, rooms }: Payment
         sum + (room.d || 0), 0
       ),
       
-      collectedDeposit: payments.filter(p => 
+      collectedDeposit: filteredPayments.filter(p => 
         p.s === 'paid' && 
         p.paymentType === 'deposit'
       ).reduce((sum, p) => sum + (p.total || 0), 0),
@@ -95,8 +104,40 @@ export default function PaymentStatsPanel({ property, payments, rooms }: Payment
   
   const stats = calculateStats()
   
+  // 計算補登記錄統計
+  const backfillStats = {
+    total: payments.filter(p => p.isBackfill).length,
+    pending: payments.filter(p => p.isBackfill && p.s === 'pending').length,
+    paid: payments.filter(p => p.isBackfill && p.s === 'paid').length,
+    totalAmount: payments.filter(p => p.isBackfill && p.s === 'pending')
+      .reduce((sum, p) => sum + (p.total || 0), 0)
+  }
+  
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div className="space-y-4 mb-6">
+      {/* 控制區域 */}
+      <div className="flex justify-between items-center">
+        <div className="text-sm text-gray-600">
+          統計數據 {includeBackfill ? '(包含補登記錄)' : '(排除補登記錄)'}
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="text-sm text-gray-600">包含補登記錄：</div>
+          <button
+            onClick={() => setIncludeBackfill(!includeBackfill)}
+            className={`px-3 py-1 rounded-lg text-sm ${includeBackfill ? 'bg-amber-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+          >
+            {includeBackfill ? '✅ 已包含' : '❌ 已排除'}
+          </button>
+          {backfillStats.total > 0 && (
+            <div className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
+              📅 補登記錄: {backfillStats.pending}待確認 / {backfillStats.paid}已確認
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* 統計卡片 */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {/* 前期欠收 */}
       <div className="card bg-red-50 border-red-200">
         <h3 className="font-bold text-red-700 mb-2 flex items-center gap-2">
@@ -251,6 +292,7 @@ export default function PaymentStatsPanel({ property, payments, rooms }: Payment
           </div>
         </div>
       </div>
+      </div> {/* 關閉網格容器 */}
     </div>
   )
 }
