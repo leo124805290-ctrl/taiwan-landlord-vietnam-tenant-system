@@ -162,7 +162,13 @@ export class CloudSyncService {
         properties: localData.properties.length,
         rooms: localData.rooms.length,
         payments: localData.payments.length,
-        total: Object.values(localData).reduce((sum, arr) => sum + arr.length, 0),
+        total: Object.keys(localData).reduce((sum: number, key: string) => {
+          const value = localData[key];
+          if (Array.isArray(value)) {
+            return sum + value.length;
+          }
+          return sum;
+        }, 0),
       };
 
       // 4. 創建備份記錄
@@ -243,7 +249,13 @@ export class CloudSyncService {
         properties: data.properties?.length || 0,
         rooms: data.rooms?.length || 0,
         payments: data.payments?.length || 0,
-        total: Object.values(data).reduce((sum: number, arr: any) => sum + (Array.isArray(arr) ? arr.length : 0), 0),
+        total: Object.keys(data).reduce((sum: number, key: string) => {
+          const value = data[key];
+          if (Array.isArray(value)) {
+            return sum + value.length;
+          }
+          return sum;
+        }, 0),
       };
       this.saveSyncStatus();
 
