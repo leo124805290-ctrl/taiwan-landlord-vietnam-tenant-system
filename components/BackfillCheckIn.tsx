@@ -59,7 +59,7 @@ export default function BackfillCheckIn() {
     // 檢查是否為歷史日期
     if (startDate >= firstDayOfMonth) {
       setBackfillPreview([])
-      setBackfillSummary({ total: 0, amount: 0, deposit: 0, rent: 0 })
+      setBackfillSummary({ total: 0, amount: 0, deposit: 0, rent: 0, electricity: 0 })
       return
     }
     
