@@ -93,6 +93,63 @@ const CloudSyncPanel: React.FC = () => {
     alert('已啟用每小時自動同步');
   };
 
+  const handleLogin = async () => {
+    const username = prompt('請輸入用戶名:');
+    if (!username) return;
+    
+    const password = prompt('請輸入密碼:');
+    if (!password) return;
+
+    try {
+      const result = await api.auth.login({ username, password });
+      if (result.success) {
+        setUserInfo(result.data.user);
+        alert('登入成功！');
+        loadInitialData();
+      } else {
+        alert(`登入失敗: ${result.error || result.message}`);
+      }
+    } catch (error) {
+      alert(`登入錯誤: ${error.message}`);
+    }
+  };
+
+  const handleRegister = async () => {
+    const username = prompt('請輸入用戶名:');
+    if (!username) return;
+    
+    const password = prompt('請輸入密碼:');
+    if (!password) return;
+
+    const full_name = prompt('請輸入姓名（可選）:') || username;
+    const role = prompt('請選擇角色 (admin/viewer，默認 admin):') || 'admin';
+
+    try {
+      const result = await api.auth.register({ 
+        username, 
+        password, 
+        role, 
+        full_name 
+      });
+      if (result.success) {
+        setUserInfo(result.data.user);
+        alert('註冊成功！已自動登入');
+        loadInitialData();
+      } else {
+        alert(`註冊失敗: ${result.error || result.message}`);
+      }
+    } catch (error) {
+      alert(`註冊錯誤: ${error.message}`);
+    }
+  };
+
+  const handleLogout = () => {
+    api.auth.logout();
+    setUserInfo(null);
+    alert('已登出');
+    loadInitialData();
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleString('zh-TW', {
@@ -243,23 +300,53 @@ const CloudSyncPanel: React.FC = () => {
 
           {/* 操作按鈕 */}
           <div className="flex flex-wrap gap-3 mb-6">
-            <button
-              onClick={handleBackup}
-              disabled={sync.status.syncInProgress || !connectionStatus?.connected}
-              className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white px-4 py-3 rounded-lg transition-colors"
-            >
-              <Upload size={20} />
-              <span>立即備份到雲端</span>
-            </button>
+            {!userInfo ? (
+              <>
+                <button
+                  onClick={handleLogin}
+                  className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors"
+                >
+                  <Cloud size={20} />
+                  <span>登入雲端帳號</span>
+                </button>
 
-            <button
-              onClick={handleStartAutoSync}
-              disabled={!connectionStatus?.connected}
-              className="flex-1 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white px-4 py-3 rounded-lg transition-colors"
-            >
-              <RefreshCw size={20} />
-              <span>啟用自動同步</span>
-            </button>
+                <button
+                  onClick={handleRegister}
+                  className="flex-1 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg transition-colors"
+                >
+                  <Cloud size={20} />
+                  <span>註冊雲端帳號</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={handleBackup}
+                  disabled={sync.status.syncInProgress || !connectionStatus?.connected}
+                  className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white px-4 py-3 rounded-lg transition-colors"
+                >
+                  <Upload size={20} />
+                  <span>立即備份到雲端</span>
+                </button>
+
+                <button
+                  onClick={handleStartAutoSync}
+                  disabled={!connectionStatus?.connected}
+                  className="flex-1 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white px-4 py-3 rounded-lg transition-colors"
+                >
+                  <RefreshCw size={20} />
+                  <span>啟用自動同步</span>
+                </button>
+
+                <button
+                  onClick={handleLogout}
+                  className="flex-1 flex items-center justify-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-3 rounded-lg transition-colors"
+                >
+                  <CloudOff size={20} />
+                  <span>登出</span>
+                </button>
+              </>
+            )}
           </div>
 
           {/* 備份歷史 */}
