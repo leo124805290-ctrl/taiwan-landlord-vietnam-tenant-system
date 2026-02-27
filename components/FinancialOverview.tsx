@@ -20,12 +20,14 @@ import {
   Search,
   TrendingUp,
   TrendingDown,
-  PieChart,
-  BarChart,
+  PieChart as PieChartIcon,
+  BarChart as BarChartIcon,
   Clock,
   Building,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Download,
+  AlertCircle
 } from 'lucide-react'
 
 interface FinancialOverviewProps {
@@ -73,6 +75,10 @@ export default function FinancialOverview({ property }: FinancialOverviewProps) 
     value: null,
     label: null
   })
+  
+  // 圖表顯示狀態
+  const [showCharts, setShowCharts] = useState(true)
+  const [chartType, setChartType] = useState<'pie' | 'bar'>('pie')
   
   // ==================== 數據初始化 ====================
   
@@ -506,6 +512,46 @@ export default function FinancialOverview({ property }: FinancialOverviewProps) 
     }
   }, [filteredRecords, getIncomeData, timeFilter, selectedMonth, property])
   
+  // 計算圖表數據
+  const chartData = useMemo(() => {
+    const data: Array<{ category: string; value: number; color: string }> = []
+    
+    // 按大項分類統計
+    Object.entries(stats.expenseByCategory).forEach(([category, value]) => {
+      if (value > 0) {
+        let color = '#3b82f6' // 預設藍色
+        
+        // 根據分類設置顏色
+        switch (category) {
+          case MajorCategory.PRE_INVESTMENT:
+            color = '#ef4444' // 紅色
+            break
+          case MajorCategory.DEPOSIT_EXPENSE:
+            color = '#f59e0b' // 黃色
+            break
+          case MajorCategory.MAINTENANCE_EXPENSE:
+            color = '#10b981' // 綠色
+            break
+          case MajorCategory.DAILY_EXPENSE:
+            color = '#8b5cf6' // 紫色
+            break
+          case MajorCategory.OPERATIONAL_INCOME:
+            color = '#06b6d4' // 青色
+            break
+        }
+        
+        data.push({
+          category,
+          value,
+          color
+        })
+      }
+    })
+    
+    // 按值排序（從大到小）
+    return data.sort((a, b) => b.value - a.value)
+  }, [stats.expenseByCategory])
+  
   // ==================== 處理函數 ====================
   
   // 處理新增記錄
@@ -619,6 +665,125 @@ export default function FinancialOverview({ property }: FinancialOverviewProps) 
     setTimeFilter('month')
     setSelectedMonth(new Date().toISOString().substring(0, 7))
   }
+  
+  // ==================== 數據導出函數 ====================
+  
+  // 導出為 CSV
+  const exportToCSV = () => {
+    if (filteredRecords.length === 0) {
+      alert('沒有數據可以導出')
+      return
+    }
+    
+    // CSV 標頭
+    const headers = ['日期', '大項分類', '中項分類', '金額(NTD)', '備註', '備註提示']
+    
+    // CSV 內容
+    const rows = filteredRecords.map(record => [
+      record.transaction_date,
+      record.major_category,
+      record.minor_category,
+      record.amount.toString(),
+      record.remarks,
+      record.remarks_hint || ''
+    ])
+    
+    // 創建 CSV 內容
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n')
+    
+    // 創建下載連結
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `財務記錄_${new Date().toISOString().split('T')[0]}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+    
+    alert(`已導出 ${filteredRecords.length} 筆記錄到 CSV 檔案`)
+  }
+  
+  // 導出統計數據
+  const exportStatsToCSV = () => {
+    // 統計數據
+    const statsHeaders = ['項目', '金額(NTD)', '說明']
+    const statsRows = [
+      ['總收入', stats.totalIncome, '租金 + 電費 + 其他收入'],
+      ['租金收入', stats.rentIncome, ''],
+      ['電費收入', stats.electricityIncome, ''],
+      ['其他收入', stats.additionalIncome, ''],
+      ['總支出', stats.totalExpense, '經常性 + 一次性'],
+      ['經常性支出', stats.recurringExpense, ''],
+      ['一次性支出', stats.oneTimeExpense, '前期支出 + 押金'],
+      ['淨收支（不含一次性）', stats.netIncomeWithoutOneTime, '收入 - 經常性支出'],
+      ['淨收支（含一次性）', stats.netIncomeWithOneTime, '收入 - 總支出']
+    ]
+    
+    const csvContent = [
+      statsHeaders.join(','),
+      ...statsRows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n')
+    
+    // 創建下載連結
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `財務統計_${new Date().toISOString().split('T')[0]}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+    
+    alert('已導出統計數據到 CSV 檔案')
+  }
+  
+  // ==================== 提醒功能 ====================
+  
+  // 檢查異常支出
+  const checkExpenseAlerts = useMemo(() => {
+    const alerts: Array<{ type: 'warning' | 'info'; message: string }> = []
+    
+    // 1. 檢查淨收支是否為負
+    if (stats.netIncomeWithOneTime < 0) {
+      alerts.push({
+        type: 'warning',
+        message: `警告：淨收支為負數 (${formatCurrency(stats.netIncomeWithOneTime)})，請檢查支出是否過高`
+      })
+    }
+    
+    // 2. 檢查是否有大額一次性支出
+    if (stats.oneTimeExpense > stats.totalIncome * 0.3) {
+      alerts.push({
+        type: 'warning',
+        message: `注意：一次性支出佔總收入 ${((stats.oneTimeExpense / stats.totalIncome) * 100).toFixed(1)}%，請確認是否合理`
+      })
+    }
+    
+    // 3. 檢查日常支出是否異常
+    const dailyExpense = stats.expenseByCategory[MajorCategory.DAILY_EXPENSE] || 0
+    if (dailyExpense > stats.totalIncome * 0.5) {
+      alerts.push({
+        type: 'warning',
+        message: `注意：日常支出佔總收入 ${((dailyExpense / stats.totalIncome) * 100).toFixed(1)}%，請檢查是否有異常`
+      })
+    }
+    
+    // 4. 檢查是否有收入
+    if (stats.totalIncome === 0) {
+      alerts.push({
+        type: 'info',
+        message: '提示：目前沒有收入記錄，請確認是否已錄入租金收入'
+      })
+    }
+    
+    return alerts
+  }, [stats])
   
   // ==================== 渲染函數 ====================
   
@@ -789,7 +954,7 @@ export default function FinancialOverview({ property }: FinancialOverviewProps) 
                 總支出 {formatCurrency(stats.totalExpense)}
               </div>
             </div>
-            <PieChart className={`h-8 w-8 ${
+            <PieChartIcon className={`h-8 w-8 ${
               stats.netIncomeWithOneTime >= 0 ? 'text-purple-600' : 'text-amber-600'
             }`} />
           </div>
@@ -819,6 +984,226 @@ export default function FinancialOverview({ property }: FinancialOverviewProps) 
           </div>
         </div>
       )}
+      
+      {/* 提醒區域 */}
+      {checkExpenseAlerts.length > 0 && (
+        <div className="space-y-2">
+          {checkExpenseAlerts.map((alert, index) => (
+            <div
+              key={index}
+              className={`card border ${
+                alert.type === 'warning' 
+                  ? 'border-yellow-200 bg-yellow-50' 
+                  : 'border-blue-200 bg-blue-50'
+              }`}
+            >
+              <div className="flex items-start gap-2">
+                <AlertCircle className={`h-5 w-5 mt-0.5 ${
+                  alert.type === 'warning' ? 'text-yellow-600' : 'text-blue-600'
+                }`} />
+                <span className="text-sm">{alert.message}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      
+      {/* 圖表和控制區域 */}
+      <div className="card">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+          <div>
+            <h2 className="text-lg font-bold">支出分類分析</h2>
+            <p className="text-sm text-gray-600">
+              共 {chartData.length} 個分類，總支出 {formatCurrency(stats.totalExpense)}
+            </p>
+          </div>
+          
+          <div className="flex flex-wrap gap-3">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setChartType('pie')}
+                className={`px-3 py-1 rounded-lg text-sm ${
+                  chartType === 'pie' 
+                    ? 'bg-blue-100 text-blue-700 border border-blue-300' 
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <PieChartIcon className="inline h-4 w-4 mr-1" />
+                圓餅圖
+              </button>
+              <button
+                onClick={() => setChartType('bar')}
+                className={`px-3 py-1 rounded-lg text-sm ${
+                  chartType === 'bar' 
+                    ? 'bg-blue-100 text-blue-700 border border-blue-300' 
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <BarChartIcon className="inline h-4 w-4 mr-1" />
+                柱狀圖
+              </button>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <button
+                onClick={exportToCSV}
+                className="px-3 py-1 rounded-lg text-sm bg-green-100 text-green-700 hover:bg-green-200 border border-green-300 flex items-center gap-1"
+              >
+                <Download className="h-4 w-4" />
+                導出記錄
+              </button>
+              <button
+                onClick={exportStatsToCSV}
+                className="px-3 py-1 rounded-lg text-sm bg-purple-100 text-purple-700 hover:bg-purple-200 border border-purple-300 flex items-center gap-1"
+              >
+                <Download className="h-4 w-4" />
+                導出統計
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        {/* 圖表顯示 */}
+        {showCharts && chartData.length > 0 ? (
+          <div className="mt-4">
+            {chartType === 'pie' ? (
+              // 圓餅圖（CSS 實現）
+              <div className="flex flex-col md:flex-row items-center gap-8">
+                <div className="relative w-64 h-64">
+                  {/* 圓餅圖容器 */}
+                  <div className="relative w-full h-full rounded-full overflow-hidden">
+                    {(() => {
+                      let currentAngle = 0
+                      const total = chartData.reduce((sum, item) => sum + item.value, 0)
+                      
+                      return chartData.map((item, index) => {
+                        const percentage = (item.value / total) * 100
+                        const angle = (percentage / 100) * 360
+                        
+                        const style = {
+                          backgroundColor: item.color,
+                          transform: `rotate(${currentAngle}deg)`,
+                          clipPath: `polygon(50% 50%, 50% 0%, ${
+                            50 + 50 * Math.cos((angle * Math.PI) / 180)
+                          }% ${
+                            50 + 50 * Math.sin((angle * Math.PI) / 180)
+                          }%)`
+                        }
+                        
+                        currentAngle += angle
+                        
+                        return (
+                          <div
+                            key={index}
+                            className="absolute top-0 left-0 w-full h-full origin-center"
+                            style={style}
+                            title={`${item.category}: ${formatCurrency(item.value)} (${percentage.toFixed(1)}%)`}
+                          />
+                        )
+                      })
+                    })()}
+                  </div>
+                  
+                  {/* 中心文字 */}
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-full w-32 h-32 flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold">{chartData.length}</div>
+                      <div className="text-xs text-gray-600">分類</div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* 圖例 */}
+                <div className="flex-1">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {chartData.map((item, index) => {
+                      const percentage = (item.value / stats.totalExpense) * 100
+                      return (
+                        <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-4 h-4 rounded" 
+                              style={{ backgroundColor: item.color }}
+                            />
+                            <span className="text-sm font-medium">{item.category}</span>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-medium">{formatCurrency(item.value)}</div>
+                            <div className="text-xs text-gray-500">{percentage.toFixed(1)}%</div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // 柱狀圖（CSS 實現）
+              <div className="space-y-4">
+                <div className="flex items-end h-48 gap-2 border-b border-l border-gray-200 p-4">
+                  {chartData.map((item, index) => {
+                    const percentage = (item.value / stats.totalExpense) * 100
+                    const barHeight = Math.max(20, percentage * 1.5) // 最小高度20%，最大150%
+                    
+                    return (
+                      <div key={index} className="flex-1 flex flex-col items-center">
+                        <div
+                          className="w-full rounded-t transition-all duration-300 hover:opacity-80"
+                          style={{
+                            height: `${barHeight}%`,
+                            backgroundColor: item.color,
+                            minHeight: '20px'
+                          }}
+                          title={`${item.category}: ${formatCurrency(item.value)} (${percentage.toFixed(1)}%)`}
+                        />
+                        <div className="mt-2 text-xs text-gray-600 text-center truncate w-full">
+                          {item.category}
+                        </div>
+                        <div className="text-xs font-medium mt-1">
+                          {formatCurrency(item.value)}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+                
+                {/* 圖例 */}
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {chartData.map((item, index) => {
+                    const percentage = (item.value / stats.totalExpense) * 100
+                    return (
+                      <div key={index} className="flex items-center gap-1 px-3 py-1 bg-gray-50 rounded-full">
+                        <div 
+                          className="w-3 h-3 rounded" 
+                          style={{ backgroundColor: item.color }}
+                        />
+                        <span className="text-xs">{item.category}</span>
+                        <span className="text-xs font-medium text-gray-700">
+                          ({percentage.toFixed(1)}%)
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            {chartData.length === 0 ? '沒有支出數據可以顯示圖表' : '圖表已隱藏'}
+          </div>
+        )}
+        
+        {/* 圖表控制 */}
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <button
+            onClick={() => setShowCharts(!showCharts)}
+            className="text-sm text-blue-600 hover:text-blue-800"
+          >
+            {showCharts ? '隱藏圖表' : '顯示圖表'}
+          </button>
+        </div>
+      </div>
       
       {/* 快速新增記錄（表格式輸入） */}
       <div className="card">
