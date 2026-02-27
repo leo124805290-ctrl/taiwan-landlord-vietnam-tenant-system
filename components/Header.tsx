@@ -9,7 +9,7 @@ export default function Header() {
   const tabs = [
     { key: 'rooms', icon: '🏠', label: 'roomsTab' },
     { key: 'payments', icon: '💵', label: 'paymentsTab' },
-    { key: 'income-management', icon: '💰', label: 'incomeManagementTab' },
+    { key: 'deposit-management', icon: '💰', label: 'depositManagementTab' },
     { key: 'cost-management', icon: '💸', label: 'costManagementTab' },
     { key: 'settings', icon: '⚙️', label: 'settingsTab' },
     { key: 'backfill-checkin', icon: '📅', label: 'backfillCheckInTab' },
