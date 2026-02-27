@@ -32,7 +32,7 @@ export default function BackfillCheckIn() {
   
   // 獲取可補登的房間（空房或待出租）
   const availableRooms = property?.rooms?.filter(room => 
-    room.s === 'vacant' || room.s === 'pending_rental'
+    room.s === 'available' || room.s === 'pending_rental'
   ) || []
   
   // 當選擇變化時重新計算補登預覽
@@ -294,7 +294,7 @@ export default function BackfillCheckIn() {
                 >
                   <div className="font-medium">{prop.name}</div>
                   <div className="text-sm text-gray-600">
-                    {prop.rooms?.filter(r => r.s === 'vacant').length || 0} 間空房
+                    {prop.rooms?.filter(r => r.s === 'available').length || 0} 間空房
                   </div>
                 </button>
               ))}
