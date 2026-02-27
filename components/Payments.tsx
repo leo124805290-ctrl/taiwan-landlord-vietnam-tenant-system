@@ -20,28 +20,36 @@ export default function Payments({ property }: PaymentsProps) {
   // 分類篩選狀態
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'new_tenant' | 'current_month' | 'overdue' | 'collected'>('all')
   
-  // 獲取所有付款記錄（待付款 + 歷史）
-  // 注意：已歸檔的付款記錄不會在待收列表中顯示
-  const allPayments = [...property.payments, ...(property.history || [])]
-    .sort((a, b) => (b.paid || b.due).localeCompare(a.paid || a.due))
-  
-  // 獲取補登記錄（isBackfill: true）
-  const backfillPayments = allPayments.filter(p => p.isBackfill === true)
-  
-  // 獲取待收款項（未歸檔的 pending 狀態，排除補登記錄）
-  const pendingPayments = allPayments.filter(p => 
-    p.s === 'pending' && !p.archived && !p.isBackfill
-  )
-  
-  // 獲取已收款項（已歸檔的 paid 狀態）
-  const collectedPayments = allPayments.filter(p => 
-    p.s === 'paid' && p.archived
-  )
+  // 使用 useMemo 優化計算，避免不必要的重新計算
+  const { allPayments, backfillPayments, pendingPayments, collectedPayments } = React.useMemo(() => {
+    // 獲取所有付款記錄（待付款 + 歷史）
+    // 注意：已歸檔的付款記錄不會在待收列表中顯示
+    const all = [...property.payments, ...(property.history || [])]
+      .sort((a, b) => (b.paid || b.due).localeCompare(a.paid || a.due))
+    
+    // 獲取補登記錄（isBackfill: true）
+    const backfill = all.filter(p => p.isBackfill === true)
+    
+    // 獲取待收款項（未歸檔的 pending 狀態，排除補登記錄）
+    const pending = all.filter(p => 
+      p.s === 'pending' && !p.archived && !p.isBackfill
+    )
+    
+    // 獲取已收款項（已歸檔的 paid 狀態）
+    const collected = all.filter(p => 
+      p.s === 'paid' && p.archived
+    )
+    
+    return { allPayments: all, backfillPayments: backfill, pendingPayments: pending, collectedPayments: collected }
+  }, [property.payments, property.history])
 
-  // 獲取所有唯一的月份、房間和租客（用於篩選）
-  const allMonths = Array.from(new Set(allPayments.map((p: any) => p.m))).sort().reverse()
-  const allRooms = Array.from(new Set(allPayments.map((p: any) => p.n))).sort()
-  const allTenants = Array.from(new Set(allPayments.map((p: any) => p.t))).sort()
+  // 使用 useMemo 優化篩選選項計算
+  const { allMonths, allRooms, allTenants } = React.useMemo(() => {
+    const months = Array.from(new Set(allPayments.map((p: any) => p.m))).sort().reverse()
+    const rooms = Array.from(new Set(allPayments.map((p: any) => p.n))).sort()
+    const tenants = Array.from(new Set(allPayments.map((p: any) => p.t))).sort()
+    return { allMonths: months, allRooms: rooms, allTenants: tenants }
+  }, [allPayments])
   
   // 篩選狀態
   const [monthFilter, setMonthFilter] = React.useState('all')
@@ -58,6 +66,10 @@ export default function Payments({ property }: PaymentsProps) {
   // 編輯狀態
   const [editingPayment, setEditingPayment] = React.useState<any>(null)
   const [showEditModal, setShowEditModal] = React.useState(false)
+  
+  // 錯誤和反饋狀態
+  const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = React.useState<string | null>(null)
 
   // 分類篩選邏輯
   const filterByCategory = (payment: any) => {
@@ -103,67 +115,75 @@ export default function Payments({ property }: PaymentsProps) {
   }
   
   // 篩選付款記錄
-  const filteredPayments = allPayments.filter(payment => {
-    // 分類篩選
-    if (!filterByCategory(payment)) return false
-    
-    // 月份篩選
-    if (monthFilter && monthFilter !== 'all' && payment.m !== monthFilter) return false
-    
-    // 房間篩選
-    if (roomFilter && roomFilter !== 'all' && payment.n !== roomFilter) return false
-    
-    // 租客篩選
-    if (tenantFilter && tenantFilter !== 'all' && payment.t !== tenantFilter) return false
-    
-    // 狀態篩選
-    if (statusFilter === 'pending' && payment.s !== 'pending') return false
-    if (statusFilter === 'paid' && payment.s !== 'paid') return false
-    
-    // 補登記錄篩選
-    if (backfillFilter === 'backfill' && !payment.isBackfill) return false
-    if (backfillFilter === 'normal' && payment.isBackfill) return false
-    
-    // 搜索篩選
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase()
-      const roomName = payment.n?.toLowerCase() || ''
-      const tenantName = payment.t?.toLowerCase() || ''
-      const month = payment.m?.toLowerCase() || ''
+  // 使用 useMemo 優化篩選和排序計算
+  const { filteredPayments, sortedPayments } = React.useMemo(() => {
+    const filtered = allPayments.filter(payment => {
+      // 分類篩選
+      if (!filterByCategory(payment)) return false
       
-      if (!roomName.includes(term) && 
-          !tenantName.includes(term) && 
-          !month.includes(term)) {
-        return false
+      // 月份篩選
+      if (monthFilter && monthFilter !== 'all' && payment.m !== monthFilter) return false
+      
+      // 房間篩選
+      if (roomFilter && roomFilter !== 'all' && payment.n !== roomFilter) return false
+      
+      // 租客篩選
+      if (tenantFilter && tenantFilter !== 'all' && payment.t !== tenantFilter) return false
+      
+      // 狀態篩選
+      if (statusFilter === 'pending' && payment.s !== 'pending') return false
+      if (statusFilter === 'paid' && payment.s !== 'paid') return false
+      
+      // 補登記錄篩選
+      if (backfillFilter === 'backfill' && !payment.isBackfill) return false
+      if (backfillFilter === 'normal' && payment.isBackfill) return false
+      
+      // 搜索篩選
+      if (searchTerm) {
+        const term = searchTerm.toLowerCase()
+        const roomName = payment.n?.toLowerCase() || ''
+        const tenantName = payment.t?.toLowerCase() || ''
+        const month = payment.m?.toLowerCase() || ''
+        
+        if (!roomName.includes(term) && 
+            !tenantName.includes(term) && 
+            !month.includes(term)) {
+          return false
+        }
       }
-    }
-    
-    return true
-  })
+      
+      return true
+    })
 
-  // 排序邏輯：補登記錄優先，然後按房號和月份排序
-  const sortedPayments = [...filteredPayments].sort((a, b) => {
-    // 補登記錄優先（isBackfill: true）
-    if (a.isBackfill && !b.isBackfill) return -1
-    if (!a.isBackfill && b.isBackfill) return 1
+    // 排序邏輯：補登記錄優先，然後按房號和月份排序
+    const sorted = [...filtered].sort((a, b) => {
+      // 補登記錄優先（isBackfill: true）
+      if (a.isBackfill && !b.isBackfill) return -1
+      if (!a.isBackfill && b.isBackfill) return 1
+      
+      // 狀態優先：待確認的補登記錄優先
+      if (a.isBackfill && b.isBackfill) {
+        if (a.s === 'pending' && b.s !== 'pending') return -1
+        if (a.s !== 'pending' && b.s === 'pending') return 1
+      }
+      
+      // 然後按房號排序
+      const roomCompare = (a.n || '').localeCompare(b.n || '')
+      if (roomCompare !== 0) return roomCompare
+      
+      // 房號相同時按月份排序（新的月份在前）
+      return (b.m || '').localeCompare(a.m || '')
+    })
     
-    // 狀態優先：待確認的補登記錄優先
-    if (a.isBackfill && b.isBackfill) {
-      if (a.s === 'pending' && b.s !== 'pending') return -1
-      if (a.s !== 'pending' && b.s === 'pending') return 1
-    }
-    
-    // 然後按房號排序
-    const roomCompare = (a.n || '').localeCompare(b.n || '')
-    if (roomCompare !== 0) return roomCompare
-    
-    // 房號相同時按月份排序（新的月份在前）
-    return (b.m || '').localeCompare(a.m || '')
-  })
+    return { filteredPayments: filtered, sortedPayments: sorted }
+  }, [allPayments, monthFilter, roomFilter, tenantFilter, statusFilter, backfillFilter, searchTerm, categoryFilter])
 
-  // 計算統計（使用前面定義的 pendingPayments）
-  const totalPendingAmount = pendingPayments.reduce((sum: number, p: any) => sum + p.total, 0)
-  const totalPendingRooms = new Set(pendingPayments.map(p => p.n)).size
+  // 使用 useMemo 優化統計計算
+  const { totalPendingAmount, totalPendingRooms } = React.useMemo(() => {
+    const amount = pendingPayments.reduce((sum: number, p: any) => sum + p.total, 0)
+    const rooms = new Set(pendingPayments.map(p => p.n)).size
+    return { totalPendingAmount: amount, totalPendingRooms: rooms }
+  }, [pendingPayments])
 
   // 收款函數
   const collectPayment = (payment: any) => {
@@ -239,113 +259,147 @@ export default function Payments({ property }: PaymentsProps) {
 
   // 編輯補登記錄
   const editBackfillPayment = (payment: any) => {
-    // 檢查密碼
-    const password = prompt('請輸入密碼以編輯補登記錄（密碼：123456）')
-    if (password !== '123456') {
-      alert('密碼錯誤，編輯操作取消')
-      return
+    try {
+      // 檢查密碼
+      const password = prompt('請輸入密碼以編輯補登記錄（密碼：123456）')
+      if (password !== '123456') {
+        setErrorMessage('密碼錯誤，編輯操作取消')
+        setTimeout(() => setErrorMessage(null), 3000)
+        return
+      }
+      
+      // 設置正在編輯的記錄
+      setEditingPayment(payment)
+      setShowEditModal(true)
+      setErrorMessage(null)
+    } catch (error) {
+      setErrorMessage(`編輯操作失敗: ${error}`)
+      setTimeout(() => setErrorMessage(null), 5000)
     }
-    
-    // 設置正在編輯的記錄
-    setEditingPayment(payment)
-    setShowEditModal(true)
   }
   
   // 保存編輯
   const saveEditedPayment = (updatedPayment: any) => {
-    // 再次檢查密碼
-    const password = prompt('請再次輸入密碼以確認保存修改（密碼：123456）')
-    if (password !== '123456') {
-      alert('密碼錯誤，保存操作取消')
-      return
-    }
-    
-    // 重新計算總金額
-    const total = (updatedPayment.r || 0) + (updatedPayment.e || 0)
-    
-    // 更新付款記錄
-    const updatedPayments = property.payments.map((payment: any) => {
-      if (payment.id === updatedPayment.id) {
-        return {
-          ...payment,
-          ...updatedPayment,
-          total: total,
-          // 記錄修改時間
-          lastModified: new Date().toISOString(),
-          modifiedBy: '管理員'
-        }
+    try {
+      // 再次檢查密碼
+      const password = prompt('請再次輸入密碼以確認保存修改（密碼：123456）')
+      if (password !== '123456') {
+        setErrorMessage('密碼錯誤，保存操作取消')
+        setTimeout(() => setErrorMessage(null), 3000)
+        return
       }
-      return payment
-    })
-    
-    // 更新物業數據
-    updateData({
-      properties: state.data.properties.map((p: any) => 
-        p.id === property.id 
-          ? { ...p, payments: updatedPayments }
-          : p
-      )
-    })
-    
-    // 顯示成功訊息
-    alert('補登記錄修改成功')
-    
-    // 關閉編輯模態框
-    setShowEditModal(false)
-    setEditingPayment(null)
+      
+      // 重新計算總金額
+      const total = (updatedPayment.r || 0) + (updatedPayment.e || 0)
+      
+      // 驗證數據
+      if (total <= 0) {
+        setErrorMessage('總金額必須大於0')
+        setTimeout(() => setErrorMessage(null), 3000)
+        return
+      }
+      
+      // 更新付款記錄
+      const updatedPayments = property.payments.map((payment: any) => {
+        if (payment.id === updatedPayment.id) {
+          return {
+            ...payment,
+            ...updatedPayment,
+            total: total,
+            // 記錄修改時間
+            lastModified: new Date().toISOString(),
+            modifiedBy: '管理員'
+          }
+        }
+        return payment
+      })
+      
+      // 更新物業數據
+      updateData({
+        properties: state.data.properties.map((p: any) => 
+          p.id === property.id 
+            ? { ...p, payments: updatedPayments }
+            : p
+        )
+      })
+      
+      // 顯示成功訊息
+      setSuccessMessage('補登記錄修改成功')
+      setTimeout(() => setSuccessMessage(null), 3000)
+      
+      // 關閉編輯模態框
+      setShowEditModal(false)
+      setEditingPayment(null)
+      setErrorMessage(null)
+    } catch (error) {
+      setErrorMessage(`保存失敗: ${error}`)
+      setTimeout(() => setErrorMessage(null), 5000)
+    }
   }
   
   // 批量確認補登記錄
   const bulkConfirmBackfillPayments = () => {
-    if (selectedBackfillIds.length === 0) {
-      alert('請先選擇要確認的補登記錄')
-      return
-    }
-    
-    const password = prompt('請輸入密碼以批量確認補登記錄（密碼：123456）')
-    if (password !== '123456') {
-      alert('密碼錯誤，操作取消')
-      return
-    }
-    
-    // 獲取選中的補登記錄
-    const selectedBackfillPayments = allPayments.filter(p => 
-      selectedBackfillIds.includes(p.id) && p.isBackfill && p.s === 'pending'
-    )
-    
-    if (selectedBackfillPayments.length === 0) {
-      alert('沒有找到待確認的補登記錄')
-      return
-    }
-    
-    // 更新付款記錄狀態
-    const updatedPayments = property.payments.map((payment: any) => {
-      if (selectedBackfillIds.includes(payment.id) && payment.isBackfill && payment.s === 'pending') {
-        return {
-          ...payment,
-          s: 'paid',
-          paid: new Date().toISOString().split('T')[0],
-          archived: true
-        }
+    try {
+      if (selectedBackfillIds.length === 0) {
+        setErrorMessage('請先選擇要確認的補登記錄')
+        setTimeout(() => setErrorMessage(null), 3000)
+        return
       }
-      return payment
-    })
-    
-    // 更新物業數據
-    updateData({
-      properties: state.data.properties.map((p: any) => 
-        p.id === property.id 
-          ? { ...p, payments: updatedPayments }
-          : p
+      
+      const password = prompt('請輸入密碼以批量確認補登記錄（密碼：123456）')
+      if (password !== '123456') {
+        setErrorMessage('密碼錯誤，操作取消')
+        setTimeout(() => setErrorMessage(null), 3000)
+        return
+      }
+      
+      // 獲取選中的補登記錄
+      const selectedBackfillPayments = allPayments.filter(p => 
+        selectedBackfillIds.includes(p.id) && p.isBackfill && p.s === 'pending'
       )
-    })
-    
-    // 顯示成功訊息
-    alert(`成功確認 ${selectedBackfillPayments.length} 筆補登記錄`)
-    
-    // 重置選擇
-    setSelectedBackfillIds([])
-    setShowBulkConfirm(false)
+      
+      if (selectedBackfillPayments.length === 0) {
+        setErrorMessage('沒有找到待確認的補登記錄')
+        setTimeout(() => setErrorMessage(null), 3000)
+        return
+      }
+      
+      // 更新付款記錄狀態
+      const updatedPayments = property.payments.map((payment: any) => {
+        if (selectedBackfillIds.includes(payment.id) && payment.isBackfill && payment.s === 'pending') {
+          return {
+            ...payment,
+            s: 'paid',
+            paid: new Date().toISOString().split('T')[0],
+            archived: true,
+            // 記錄批量確認時間
+            batchConfirmedAt: new Date().toISOString()
+          }
+        }
+        return payment
+      })
+      
+      // 更新物業數據
+      updateData({
+        properties: state.data.properties.map((p: any) => 
+          p.id === property.id 
+            ? { ...p, payments: updatedPayments }
+            : p
+        )
+      })
+      
+      // 顯示成功訊息
+      setSuccessMessage(`成功確認 ${selectedBackfillPayments.length} 筆補登記錄`)
+      setTimeout(() => setSuccessMessage(null), 3000)
+      
+      // 重置選擇
+      setSelectedBackfillIds([])
+      setShowBulkConfirm(false)
+      setErrorMessage(null)
+    } catch (error) {
+      setErrorMessage(`批量確認失敗: ${error}`)
+      setTimeout(() => setErrorMessage(null), 5000)
+    }
   }
   
   // 重新計算電費函數（保留現有功能）
@@ -450,6 +504,25 @@ export default function Payments({ property }: PaymentsProps) {
 
   return (
     <div className="space-y-6">
+      {/* 錯誤和成功訊息顯示 */}
+      {errorMessage && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          <div className="flex items-center gap-2">
+            <span>❌</span>
+            <span>{errorMessage}</span>
+          </div>
+        </div>
+      )}
+      
+      {successMessage && (
+        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+          <div className="flex items-center gap-2">
+            <span>✅</span>
+            <span>{successMessage}</span>
+          </div>
+        </div>
+      )}
+      
       {/* 頁面標題和視圖控制 */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
