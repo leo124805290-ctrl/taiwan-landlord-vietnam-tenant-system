@@ -280,85 +280,49 @@ export default function CostManagement({ property }: CostManagementProps) {
   
   // ==================== 數據計算函數 ====================
   
-  // 獲取收入數據（從租客繳費記錄）
+  // 獲取收入數據（只從租客繳費記錄）
   const getIncomeData = useMemo(() => {
     let rentIncome = 0
     let electricityIncome = 0
-    let additionalIncome = 0
     
-    // 1. 從付款記錄中提取收入
+    // 1. 從付款記錄中提取收入（只計算已繳費）
     if (property?.payments) {
       property.payments.forEach((payment: any) => {
-        if (payment.s === 'paid') {
+        if (payment.s === 'paid') { // 只計算已繳費
           // 租金收入
-          if (payment.paymentType === 'rent' || !payment.paymentType) {
-            rentIncome += payment.r || 0
-          }
-          
+          rentIncome += payment.r || 0
           // 電費收入
-          if (payment.paymentType === 'electricity' || payment.e) {
-            electricityIncome += payment.e || 0
-          }
-          
-          // 其他收入（押金、水費、網路等）
-          if (payment.paymentType && 
-              payment.paymentType !== 'rent' && 
-              payment.paymentType !== 'electricity') {
-            additionalIncome += payment.total || 0
-          }
+          electricityIncome += payment.e || 0
         }
       })
     }
     
-    // 2. 從歷史記錄中提取收入
+    // 2. 從歷史記錄中提取收入（只計算已繳費）
     if (property?.history) {
       property.history.forEach((payment: any) => {
-        if (payment.s === 'paid') {
+        if (payment.s === 'paid') { // 只計算已繳費
           // 租金收入
-          if (payment.paymentType === 'rent' || !payment.paymentType) {
-            rentIncome += payment.r || 0
-          }
-          
+          rentIncome += payment.r || 0
           // 電費收入
-          if (payment.paymentType === 'electricity' || payment.e) {
-            electricityIncome += payment.e || 0
-          }
-          
-          // 其他收入
-          if (payment.paymentType && 
-              payment.paymentType !== 'rent' && 
-              payment.paymentType !== 'electricity') {
-            additionalIncome += payment.total || 0
-          }
+          electricityIncome += payment.e || 0
         }
       })
     }
     
-    // 3. 從補充收入記錄中提取
-    if (property?.additionalIncomes) {
-      property.additionalIncomes.forEach((income: any) => {
-        if (income.amount && income.amount > 0) {
-          additionalIncome += income.amount
-        }
-      })
-    }
-    
-    // 4. 如果沒有真實數據，使用模擬數據
-    if (rentIncome === 0 && electricityIncome === 0 && additionalIncome === 0) {
+    // 3. 如果沒有真實數據，使用模擬數據
+    if (rentIncome === 0 && electricityIncome === 0) {
       rentIncome = 120000
       electricityIncome = 45000
-      additionalIncome = 8000
     }
     
-    const totalIncome = rentIncome + electricityIncome + additionalIncome
+    const totalIncome = rentIncome + electricityIncome
     
     return {
       rentIncome,
       electricityIncome,
-      additionalIncome,
       totalIncome
     }
-  }, [property?.payments, property?.history, property?.additionalIncomes])
+  }, [property?.payments, property?.history])
   
   // 篩選財務記錄
   const filteredRecords = useMemo(() => {
@@ -444,47 +408,25 @@ export default function CostManagement({ property }: CostManagementProps) {
         let filteredElectricityIncome = 0
         let filteredAdditionalIncome = 0
         
-        // 過濾付款記錄
+        // 過濾付款記錄（只計算已繳費）
         const allPayments = [...(property?.payments || []), ...(property?.history || [])]
         const selectedYearMonth = selectedMonth.replace('-', '/') // 轉換為 YYYY/MM 格式
         
         allPayments.forEach((payment: any) => {
           if (payment.s === 'paid' && payment.m === selectedYearMonth) {
             // 租金收入
-            if (payment.paymentType === 'rent' || !payment.paymentType) {
-              filteredRentIncome += payment.r || 0
-            }
-            
+            filteredRentIncome += payment.r || 0
             // 電費收入
-            if (payment.paymentType === 'electricity' || payment.e) {
-              filteredElectricityIncome += payment.e || 0
-            }
-            
-            // 其他收入
-            if (payment.paymentType && 
-                payment.paymentType !== 'rent' && 
-                payment.paymentType !== 'electricity') {
-              filteredAdditionalIncome += payment.total || 0
-            }
+            filteredElectricityIncome += payment.e || 0
           }
         })
         
-        // 過濾補充收入記錄
-        if (property?.additionalIncomes) {
-          property.additionalIncomes.forEach((income: any) => {
-            if (income.amount && income.amount > 0 && income.period === selectedYearMonth) {
-              filteredAdditionalIncome += income.amount
-            }
-          })
-        }
-        
         // 如果過濾後有數據，使用過濾後的數據
-        if (filteredRentIncome > 0 || filteredElectricityIncome > 0 || filteredAdditionalIncome > 0) {
+        if (filteredRentIncome > 0 || filteredElectricityIncome > 0) {
           return {
             rentIncome: filteredRentIncome,
             electricityIncome: filteredElectricityIncome,
-            additionalIncome: filteredAdditionalIncome,
-            totalIncome: filteredRentIncome + filteredElectricityIncome + filteredAdditionalIncome
+            totalIncome: filteredRentIncome + filteredElectricityIncome
           }
         }
       }
@@ -527,10 +469,9 @@ export default function CostManagement({ property }: CostManagementProps) {
     const netIncomeWithOneTime = incomeData.totalIncome - totalExpense
     
     return {
-      // 收入
+      // 收入（只從租客繳費）
       rentIncome: incomeData.rentIncome,
       electricityIncome: incomeData.electricityIncome,
-      additionalIncome: incomeData.additionalIncome,
       totalIncome: incomeData.totalIncome,
       
       // 支出
@@ -614,20 +555,30 @@ export default function CostManagement({ property }: CostManagementProps) {
       property_id: property?.id
     }
     
-    // 保存到雲端（通過 AppContext）
+    // 保存到雲端（像 Payments.tsx 一樣）
     try {
       // 添加到本地狀態
       setFinancialRecords(prev => [recordToAdd, ...prev])
       
-      // 使用 AppContext 的 updateData 方法保存到雲端
-      // 這裡需要根據實際的數據結構調整
-      // 成本管理記錄應該保存到 property.expenses 或類似的結構中
-      
-      // 通知用戶資料已保存
-      showToast('記錄已保存', 'success')
-      
-      // 注意：這裡的 updateData 會自動觸發雲端同步
-      // 實際的雲端保存由 AppContext 處理
+      // 使用 updateData 保存到雲端（保存到 property.expenses）
+      if (updateData && property) {
+        // 更新整個數據結構
+        const updatedProperties = state.data.properties.map((p: any) => {
+          if (p.id === property.id) {
+            return {
+              ...p,
+              expenses: [...(p.expenses || []), recordToAdd]
+            }
+          }
+          return p
+        })
+        
+        updateData({ properties: updatedProperties })
+        showToast('記錄已保存到雲端', 'success')
+      } else {
+        // 如果沒有 updateData，只保存到本地
+        showToast('記錄已保存（本地）', 'info')
+      }
     } catch (error) {
       console.error('保存失敗:', error)
       showToast('保存失敗', 'error')
@@ -647,7 +598,31 @@ export default function CostManagement({ property }: CostManagementProps) {
   // 處理刪除記錄
   const handleDeleteRecord = (id: string) => {
     if (confirm('確定要刪除這筆記錄嗎？')) {
-      setFinancialRecords(prev => prev.filter(record => record.id !== id))
+      try {
+        // 更新本地狀態
+        setFinancialRecords(prev => prev.filter(record => record.id !== id))
+        
+        // 更新雲端數據（如果可能）
+        if (updateData && property) {
+          const updatedProperties = state.data.properties.map((p: any) => {
+            if (p.id === property.id) {
+              return {
+                ...p,
+                expenses: (p.expenses || []).filter((expense: any) => expense.id !== id)
+              }
+            }
+            return p
+          })
+          
+          updateData({ properties: updatedProperties })
+          showToast('記錄已從雲端刪除', 'success')
+        } else {
+          showToast('記錄已刪除（本地）', 'info')
+        }
+      } catch (error) {
+        console.error('刪除失敗:', error)
+        showToast('刪除失敗', 'error')
+      }
     }
   }
   
@@ -763,7 +738,7 @@ export default function CostManagement({ property }: CostManagementProps) {
       ['總收入', stats.totalIncome, '租金 + 電費 + 其他收入'],
       ['租金收入', stats.rentIncome, ''],
       ['電費收入', stats.electricityIncome, ''],
-      ['額外收入', stats.additionalIncome, '自助洗衣機、充電、其他等'],
+      // ['其他收入', 0, '來自成本管理記錄的收入類別'],
       ['總支出', stats.totalExpense, '經常性 + 一次性'],
       ['經常性支出', stats.recurringExpense, ''],
       ['一次性支出', stats.oneTimeExpense, '前期支出 + 押金'],
@@ -944,8 +919,7 @@ export default function CostManagement({ property }: CostManagementProps) {
               </p>
               <div className="text-xs text-gray-500 mt-1">
                 租金 {formatCurrency(stats.rentIncome)} + 
-                電費 {formatCurrency(stats.electricityIncome)} + 
-                其他 {formatCurrency(stats.additionalIncome)}
+                電費 {formatCurrency(stats.electricityIncome)}
               </div>
             </div>
             <TrendingUp className="h-8 w-8 text-green-600" />
