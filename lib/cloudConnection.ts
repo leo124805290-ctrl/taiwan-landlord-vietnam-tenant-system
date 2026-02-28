@@ -89,7 +89,7 @@ class CloudConnectionManager {
     this.checkConnection()
   }
   
-  // 檢查雲端連線
+  // 檢查雲端連線（返回布林值）
   async checkConnection(): Promise<boolean> {
     try {
       this.status.syncInProgress = true
@@ -138,6 +138,54 @@ class CloudConnectionManager {
     this.checkInterval = setInterval(() => {
       this.checkConnection()
     }, intervalMs)
+  }
+  
+  // 檢查連接狀態（返回詳細狀態對象）
+  async checkConnectionStatus(): Promise<{ connected: boolean; message: string; serverTime?: string }> {
+    try {
+      this.status.syncInProgress = true
+      this.notifyListeners()
+      
+      // 測試 API 連線 - 使用健康檢查端點
+      const response = await fetch(`${API_URL.replace('/api', '')}/health`)
+      const healthData = await response.json()
+      
+      if (response.ok && healthData.status === 'healthy') {
+        this.status.connected = true
+        this.status.lastError = null
+        this.status.serverTime = healthData.timestamp || new Date().toISOString()
+        
+        this.status.syncInProgress = false
+        this.notifyListeners()
+        
+        return {
+          connected: true,
+          message: '雲端連接正常',
+          serverTime: this.status.serverTime
+        }
+      } else {
+        this.status.connected = false
+        this.status.lastError = healthData.message || '健康檢查失敗'
+        
+        this.status.syncInProgress = false
+        this.notifyListeners()
+        
+        return {
+          connected: false,
+          message: healthData.message || '雲端連接失敗'
+        }
+      }
+    } catch (error: any) {
+      this.status.connected = false
+      this.status.lastError = error.message || '網絡錯誤'
+      this.status.syncInProgress = false
+      this.notifyListeners()
+      
+      return {
+        connected: false,
+        message: error.message || '無法連接到雲端服務器'
+      }
+    }
   }
   
   // 停止檢查

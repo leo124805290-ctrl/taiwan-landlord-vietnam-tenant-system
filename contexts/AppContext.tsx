@@ -56,7 +56,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         console.log('嘗試從雲端加載資料...')
         
         // 檢查雲端連接
-        const connectionStatus = await cloudConnection.checkConnection()
+        const connectionStatus = await cloudConnection.checkConnectionStatus()
         
         if (connectionStatus.connected) {
           try {
