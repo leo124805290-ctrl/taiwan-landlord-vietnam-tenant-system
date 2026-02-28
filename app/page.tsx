@@ -12,8 +12,6 @@ import BackfillHistory from '@/components/BackfillHistory'
 import DepositManagement from '@/components/DepositManagement'
 import Settings from '@/components/Settings'
 import Modal from '@/components/Modal'
-import CloudSyncPanel from '@/components/CloudSyncPanel'
-import MigrateToCloud from '@/components/MigrateToCloud'
 import CloudConnectionStatus from '@/components/CloudConnectionStatus'
 import { useApp } from '@/contexts/AppContext'
 
@@ -144,12 +142,6 @@ export default function HomePage() {
       
       {/* 雲端連線狀態 */}
       <CloudConnectionStatus />
-      
-      {/* 雲端同步面板 */}
-      <CloudSyncPanel />
-      
-      {/* 遷移到雲端按鈕 */}
-      <MigrateToCloud />
       
       {/* 版本標記 - 僅開發環境顯示 */}
       {process.env.NODE_ENV === 'development' && (
