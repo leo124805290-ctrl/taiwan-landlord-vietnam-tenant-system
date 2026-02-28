@@ -367,7 +367,7 @@ class CloudConnectionManager {
       console.log('從雲端獲取所有數據...')
       
       // 使用 sync/all 端點獲取所有數據
-      const response = await apiRequest('/sync/all', {
+      const response = await apiRequest<{ success: boolean; data: any; message: string }>('/sync/all', {
         method: 'GET'
       })
       
