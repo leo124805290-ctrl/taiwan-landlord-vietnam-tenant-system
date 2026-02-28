@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect } from 'react'
 import { Cloud, CloudOff, RefreshCw, AlertCircle, CheckCircle, Clock } from 'lucide-react'
-import { cloudConnection, CloudConnectionStatus } from '@/lib/cloudConnection'
+import { cloudConnection, CloudConnectionStatus as CloudStatusType } from '@/lib/cloudConnection'
 
 const CloudConnectionStatus: React.FC = () => {
-  const [status, setStatus] = useState<CloudConnectionStatus>(cloudConnection.getStatus())
+  const [status, setStatus] = useState<CloudStatusType>(cloudConnection.getStatus())
   const [isExpanded, setIsExpanded] = useState(false)
 
   useEffect(() => {
