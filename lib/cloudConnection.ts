@@ -310,6 +310,44 @@ class CloudConnectionManager {
     return [...this.operationQueue]
   }
   
+  // 從雲端獲取所有數據
+  async getAllData(): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+      this.status.syncInProgress = true
+      this.notifyListeners()
+      
+      console.log('從雲端獲取所有數據...')
+      
+      // 使用 sync/all 端點獲取所有數據
+      const response = await apiRequest('/sync/all', {
+        method: 'GET'
+      })
+      
+      this.status.syncInProgress = false
+      this.status.lastSync = new Date().toISOString()
+      this.status.lastError = null
+      this.notifyListeners()
+      
+      console.log('從雲端獲取數據成功')
+      
+      return {
+        success: true,
+        data: response.data || {}
+      }
+    } catch (error: any) {
+      console.error('從雲端獲取數據失敗:', error)
+      
+      this.status.syncInProgress = false
+      this.status.lastError = error.message || '獲取數據失敗'
+      this.notifyListeners()
+      
+      return {
+        success: false,
+        error: error.message || '無法從雲端獲取數據'
+      }
+    }
+  }
+  
   // 添加狀態監聽器
   addListener(listener: (status: CloudConnectionStatus) => void) {
     this.listeners.push(listener)

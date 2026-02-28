@@ -8,7 +8,11 @@ import { cloudConnection } from '@/lib/cloudConnection'
 interface AppContextType {
   state: AppState
   updateState: (updates: Partial<AppState>) => void
-  updateData: (updates: Partial<AppData>) => void
+  updateData: (updates: Partial<AppData>, options?: {
+    requireConfirmation?: boolean
+    confirmationMessage?: string
+    immediateSync?: boolean
+  }) => void
   openModal: (type: string, data?: any) => void
   closeModal: () => void
   getCurrentProperty: () => any
@@ -44,29 +48,82 @@ export function AppProvider({ children }: { children: ReactNode }) {
     tempElecMonth: '2026-02',
   })
 
-  // 載入本地儲存資料
+  // 載入資料（雲端優先策略）
   useEffect(() => {
-    const saved = localStorage.getItem('multiPropertyDataV2')
-    if (saved) {
+    const loadData = async () => {
       try {
-        const parsedData: AppData = JSON.parse(saved)
+        // 1. 先嘗試從雲端加載
+        console.log('嘗試從雲端加載資料...')
+        
+        // 檢查雲端連接
+        const connectionStatus = await cloudConnection.checkConnection()
+        
+        if (connectionStatus.connected) {
+          try {
+            // 從雲端獲取所有數據
+            const cloudData = await cloudConnection.getAllData()
+            
+            if (cloudData && cloudData.success) {
+              console.log('從雲端加載資料成功')
+              
+              // 使用雲端數據
+              setState(prev => ({
+                ...prev,
+                data: cloudData.data || initData(),
+                currentProperty: cloudData.data?.properties?.[0]?.id || null
+              }))
+              
+              // 保存到本地緩存
+              localStorage.setItem('multiPropertyDataV2', JSON.stringify(cloudData.data || initData()))
+              return
+            }
+          } catch (cloudError) {
+            console.warn('從雲端加載失敗，使用本地數據:', cloudError)
+          }
+        }
+        
+        // 2. 如果雲端失敗，使用本地數據
+        const saved = localStorage.getItem('multiPropertyDataV2')
+        if (saved) {
+          try {
+            const parsedData: AppData = JSON.parse(saved)
+            setState(prev => ({
+              ...prev,
+              data: parsedData,
+              currentProperty: parsedData.properties[0]?.id || null
+            }))
+          } catch (error) {
+            console.error('載入本地資料失敗:', error)
+            // 使用初始數據
+            const initialData = initData()
+            setState(prev => ({
+              ...prev,
+              data: initialData,
+              currentProperty: initialData.properties[0]?.id || null
+            }))
+          }
+        } else {
+          // 初始化資料
+          const initialData = initData()
+          setState(prev => ({
+            ...prev,
+            data: initialData,
+            currentProperty: initialData.properties[0]?.id || null
+          }))
+        }
+      } catch (error) {
+        console.error('載入資料過程出錯:', error)
+        // 確保有初始數據
+        const initialData = initData()
         setState(prev => ({
           ...prev,
-          data: parsedData,
-          currentProperty: parsedData.properties[0]?.id || null
+          data: initialData,
+          currentProperty: initialData.properties[0]?.id || null
         }))
-      } catch (error) {
-        console.error('載入資料失敗:', error)
       }
-    } else {
-      // 初始化資料
-      const initialData = initData()
-      setState(prev => ({
-        ...prev,
-        data: initialData,
-        currentProperty: initialData.properties[0]?.id || null
-      }))
     }
+    
+    loadData()
   }, [])
 
   // 初始化雲端連線
@@ -114,15 +171,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   // 更新資料的輔助函數（自動同步到雲端）
-  const updateData = (updates: Partial<AppData>) => {
-    // 1. 更新本地狀態
+  const updateData = (updates: Partial<AppData>, options?: {
+    requireConfirmation?: boolean
+    confirmationMessage?: string
+    immediateSync?: boolean
+  }) => {
+    const {
+      requireConfirmation = false,
+      confirmationMessage = '確定要保存變更到雲端嗎？此操作會同步到所有設備。',
+      immediateSync = true
+    } = options || {}
+    
+    // 1. 如果需要確認，顯示確認對話框
+    if (requireConfirmation) {
+      const confirmed = confirm(confirmationMessage)
+      if (!confirmed) {
+        console.log('用戶取消操作')
+        return
+      }
+    }
+    
+    // 2. 更新本地狀態（樂觀更新）
     setState(prev => ({
       ...prev,
       data: { ...prev.data, ...updates }
     }))
     
-    // 2. 自動同步到雲端
-    if (Object.keys(updates).length > 0) {
+    // 3. 自動同步到雲端
+    if (immediateSync && Object.keys(updates).length > 0) {
       // 根據更新內容決定操作類型
       let operationType = 'update_data'
       
@@ -137,10 +213,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       
       // 非同步同步到雲端（不阻塞UI）
-      cloudConnection.syncToCloud(updates, operationType).catch(error => {
-        console.error('雲端同步失敗:', error)
-        // 失敗的操作會自動進入重試隊列
-      })
+      cloudConnection.syncToCloud(updates, operationType)
+        .then(success => {
+          if (success) {
+            console.log('雲端同步成功')
+            // 顯示成功提示（如果用戶在頁面上）
+            if (typeof window !== 'undefined') {
+              // 簡單的 alert 或 console 提示
+              console.log('✅ 數據已同步到雲端')
+            }
+          } else {
+            console.warn('雲端同步失敗，已進入重試隊列')
+            // 顯示警告提示
+            if (typeof window !== 'undefined') {
+              console.warn('⚠️ 雲端同步失敗，數據已保存到本地')
+            }
+          }
+        })
+        .catch(error => {
+          console.error('雲端同步錯誤:', error)
+        })
     }
   }
 
