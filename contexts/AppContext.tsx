@@ -117,13 +117,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // 根據更新內容決定操作類型
       let operationType = 'update_data'
       
-      if (updates.properties) {
+      if ('properties' in updates && updates.properties !== undefined) {
         operationType = 'update_properties'
-      } else if (updates.payments) {
+      } else if ('payments' in updates && updates.payments !== undefined) {
         operationType = 'update_payments'
-      } else if (updates.history) {
+      } else if ('history' in updates && updates.history !== undefined) {
         operationType = 'update_history'
-      } else if (updates.maintenance) {
+      } else if ('maintenance' in updates && updates.maintenance !== undefined) {
         operationType = 'update_maintenance'
       }
       
