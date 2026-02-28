@@ -44,7 +44,87 @@ interface BackupExecution {
 }
 
 const BackupSchedules: React.FC = () => {
-  const { api, showToast } = useApp();
+  const { state, logout } = useApp();
+  
+  // API 調用函數
+  const api = {
+    get: async (endpoint: string) => {
+      try {
+        const response = await fetch(`/api${endpoint}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        return await response.json();
+      } catch (error) {
+        console.error('API GET error:', error);
+        return { success: false, error: 'Network error' };
+      }
+    },
+    
+    post: async (endpoint: string, data: any) => {
+      try {
+        const response = await fetch(`/api${endpoint}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        });
+        return await response.json();
+      } catch (error) {
+        console.error('API POST error:', error);
+        return { success: false, error: 'Network error' };
+      }
+    },
+    
+    put: async (endpoint: string, data: any) => {
+      try {
+        const response = await fetch(`/api${endpoint}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        });
+        return await response.json();
+      } catch (error) {
+        console.error('API PUT error:', error);
+        return { success: false, error: 'Network error' };
+      }
+    },
+    
+    delete: async (endpoint: string) => {
+      try {
+        const response = await fetch(`/api${endpoint}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        return await response.json();
+      } catch (error) {
+        console.error('API DELETE error:', error);
+        return { success: false, error: 'Network error' };
+      }
+    }
+  };
+  
+  // Toast 通知函數
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    // 簡單的 alert 實現，可以替換為更完整的 toast 系統
+    if (type === 'error') {
+      alert(`❌ ${message}`);
+    } else if (type === 'success') {
+      alert(`✅ ${message}`);
+    } else {
+      alert(`ℹ️ ${message}`);
+    }
+  };
   const [schedules, setSchedules] = useState<BackupSchedule[]>([]);
   const [history, setHistory] = useState<BackupExecution[]>([]);
   const [loading, setLoading] = useState(true);
