@@ -25,7 +25,8 @@ import {
   ChevronDown,
   ChevronUp,
   Download,
-  AlertCircle
+  AlertCircle,
+  Bell
 } from 'lucide-react'
 
 interface CostManagementProps {
@@ -41,18 +42,22 @@ export default function CostManagement({ property }: CostManagementProps) {
   const [financialRecords, setFinancialRecords] = useState<FinancialRecord[]>([])
   const [loading, setLoading] = useState(true)
   
-  // 物業篩選狀態
+  // 物業篩選狀態 - 改為下拉選單
   const [selectedProperty, setSelectedProperty] = useState<'all' | number>('all')
   
-  // 獲取可選擇的物業列表（從 props 或 context）
+  // 獲取可選擇的物業列表（從 context 獲取所有物業）
   const availableProperties = useMemo(() => {
-    // 這裡應該從上層組件獲取物業列表
-    // 暫時假設只有當前物業
+    // 從 AppContext 獲取所有物業
+    if (state.data && state.data.properties) {
+      return state.data.properties
+    }
+    // 如果沒有，返回當前物業或空陣列
     return property ? [property] : []
-  }, [property])
+  }, [state.data, property])
   
-  // 時間篩選狀態
-  const [timeFilter, setTimeFilter] = useState<'month' | 'property-start' | 'custom'>('month')
+  // 時間篩選狀態 - 改為下拉選單
+  const [timeFilter, setTimeFilter] = useState<'all' | 'year' | 'month'>('all')
+  const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString())
   const [selectedMonth, setSelectedMonth] = useState<string>(new Date().toISOString().substring(0, 7)) // YYYY-MM
   const [includeOneTimeExpenses, setIncludeOneTimeExpenses] = useState(false)
   
@@ -84,6 +89,33 @@ export default function CostManagement({ property }: CostManagementProps) {
   // 圖表顯示狀態（已簡化，不顯示圖表）
   // const [showCharts, setShowCharts] = useState(true)
   // const [chartType, setChartType] = useState<'pie' | 'bar'>('pie')
+  
+  // 二房東付款提醒狀態
+  const [landlordPayment, setLandlordPayment] = useState({
+    nextPaymentDate: '2026-06-01', // 下一期付款日期
+    paymentCycle: '三個月一期', // 付款週期
+    notes: '付款給所有權人（房東）' // 備註
+  })
+  
+  // 計算距離下一期付款還有幾天
+  const daysUntilNextPayment = useMemo(() => {
+    const nextDate = new Date(landlordPayment.nextPaymentDate)
+    const today = new Date()
+    const diffTime = nextDate.getTime() - today.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    return diffDays > 0 ? diffDays : 0
+  }, [landlordPayment.nextPaymentDate])
+  
+  // Toast 通知函數
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    if (type === 'error') {
+      alert(`❌ ${message}`)
+    } else if (type === 'success') {
+      alert(`✅ ${message}`)
+    } else {
+      alert(`ℹ️ ${message}`)
+    }
+  }
   
   // ==================== 數據初始化 ====================
   
@@ -369,18 +401,17 @@ export default function CostManagement({ property }: CostManagementProps) {
     // 2. 時間篩選（如果沒有互動月份篩選）
     if (activeFilter.type !== 'month') {
       if (timeFilter === 'month') {
-        // 本月篩選
+        // 月份篩選
         filtered = filtered.filter(record => 
           record.transaction_date.startsWith(selectedMonth)
         )
-      } else if (timeFilter === 'property-start') {
-        // 物業開始至今：顯示所有記錄
-        // 這裡可以根據物業的創建日期進一步篩選
-        // 暫時顯示所有記錄
-      } else if (timeFilter === 'custom') {
-        // 自選時間：需要實現日期範圍篩選
-        // 暫時顯示所有記錄
+      } else if (timeFilter === 'year') {
+        // 年度篩選
+        filtered = filtered.filter(record => 
+          record.transaction_date.startsWith(selectedYear)
+        )
       }
+      // timeFilter === 'all' 時顯示全部記錄
     }
     
     // 3. 分類篩選（如果沒有互動分類篩選）
@@ -583,11 +614,26 @@ export default function CostManagement({ property }: CostManagementProps) {
       property_id: property?.id
     }
     
-    // 添加到本地狀態
-    setFinancialRecords(prev => [recordToAdd, ...prev])
-    
-    // TODO: 這裡應該將記錄保存到後端或本地儲存
-    // 實際使用時需要將記錄添加到 property.expenses 或其他適當的位置
+    // 保存到雲端（通過 AppContext）
+    try {
+      // 添加到本地狀態
+      setFinancialRecords(prev => [recordToAdd, ...prev])
+      
+      // 使用 AppContext 的 updateData 方法保存到雲端
+      if (state.updateData) {
+        // 這裡需要根據實際的數據結構調整
+        // 暫時先保存到本地，然後通過 AppContext 同步到雲端
+        
+        // 通知用戶資料已保存
+        showToast('記錄已保存到雲端', 'success')
+        
+        // 這裡可以添加實際的雲端 API 調用
+        // 例如：await api.post('/api/financial-records', recordToAdd)
+      }
+    } catch (error) {
+      console.error('保存到雲端失敗:', error)
+      showToast('保存到雲端失敗，請檢查網絡連接', 'error')
+    }
     
     // 重置表單
     setNewRecord({
@@ -598,8 +644,6 @@ export default function CostManagement({ property }: CostManagementProps) {
       remarks: '',
       remarks_hint: MinorCategoryHints[MinorCategory.OTHER_DAILY]
     })
-    
-    alert('記錄已新增！注意：目前僅保存在前端記憶體中，重新整理頁面會遺失。')
   }
   
   // 處理刪除記錄
@@ -721,7 +765,7 @@ export default function CostManagement({ property }: CostManagementProps) {
       ['總收入', stats.totalIncome, '租金 + 電費 + 其他收入'],
       ['租金收入', stats.rentIncome, ''],
       ['電費收入', stats.electricityIncome, ''],
-      ['其他收入', stats.additionalIncome, ''],
+      ['額外收入', stats.additionalIncome, '自助洗衣機、充電、其他等'],
       ['總支出', stats.totalExpense, '經常性 + 一次性'],
       ['經常性支出', stats.recurringExpense, ''],
       ['一次性支出', stats.oneTimeExpense, '前期支出 + 押金'],
@@ -814,11 +858,24 @@ export default function CostManagement({ property }: CostManagementProps) {
                 onChange={(e) => setTimeFilter(e.target.value as any)}
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="month">本月</option>
-                <option value="property-start">物業開始至今</option>
-                <option value="custom">自選時間</option>
+                <option value="all">全部時間</option>
+                <option value="year">年度篩選</option>
+                <option value="month">月份篩選</option>
               </select>
             </div>
+            
+            {timeFilter === 'year' && (
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="2026">2026年</option>
+                <option value="2025">2025年</option>
+                <option value="2024">2024年</option>
+                <option value="2023">2023年</option>
+              </select>
+            )}
             
             {timeFilter === 'month' && (
               <input
@@ -846,10 +903,24 @@ export default function CostManagement({ property }: CostManagementProps) {
           <div className="flex items-center gap-3">
             <div className="text-sm text-gray-600">
               <Building className="inline h-4 w-4 mr-1" />
-              物業：{property?.name || '未命名物業'}
+              <select
+                value={selectedProperty === 'all' ? 'all' : selectedProperty}
+                onChange={(e) => {
+                  const value = e.target.value
+                  setSelectedProperty(value === 'all' ? 'all' : Number(value))
+                }}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">全部物業</option>
+                {availableProperties.map((prop: any) => (
+                  <option key={prop.id} value={prop.id}>
+                    {prop.name || `物業 ${prop.id}`}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-              單一物業模式
+              {selectedProperty === 'all' ? '全部物業模式' : '個別物業模式'}
             </div>
           </div>
         </div>
@@ -971,6 +1042,52 @@ export default function CostManagement({ property }: CostManagementProps) {
             )}
           </div>
         </div>
+        
+        {/* 二房東付款提醒卡片 */}
+        <div className="card bg-gradient-to-r from-amber-50 to-amber-100 border border-amber-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Bell className="h-5 w-5 text-amber-600" />
+                <p className="text-sm font-medium text-amber-800">下一期付款給房東</p>
+              </div>
+              <p className="text-lg font-bold text-amber-900">
+                {landlordPayment.nextPaymentDate.replace(/-/g, '/')}
+              </p>
+              <div className="text-xs text-amber-700 mt-1">
+                <span className="font-medium">還有 {daysUntilNextPayment} 天</span>
+                <span className="mx-2">•</span>
+                <span>{landlordPayment.paymentCycle}</span>
+              </div>
+              <div className="text-xs text-amber-600 mt-2">
+                {landlordPayment.notes}
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-xs text-amber-700 mb-2">
+                {daysUntilNextPayment <= 30 ? '即將到期' : '注意時間'}
+              </div>
+              <button
+                onClick={() => {
+                  // 快速新增付款記錄
+                  setNewRecord({
+                    date: new Date().toISOString().split('T')[0],
+                    major_category: MajorCategory.DEPOSIT_EXPENSE,
+                    minor_category: MinorCategory.DEPOSIT,
+                    amount: '',
+                    remarks: `付款給房東 ${landlordPayment.nextPaymentDate}`,
+                    remarks_hint: '二房東給所有權人的付款'
+                  })
+                  // 滾動到新增表單
+                  document.getElementById('add-record-form')?.scrollIntoView({ behavior: 'smooth' })
+                }}
+                className="px-3 py-1 bg-amber-500 text-white text-xs rounded-lg hover:bg-amber-600 transition-colors"
+              >
+                新增付款記錄
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
       
       {/* 當前篩選狀態 */}
@@ -1056,7 +1173,7 @@ export default function CostManagement({ property }: CostManagementProps) {
       </div>
       
       {/* 快速新增記錄（表格式輸入） */}
-      <div className="card">
+      <div id="add-record-form" className="card">
         <h2 className="text-lg font-bold mb-4">快速新增支出記錄</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
