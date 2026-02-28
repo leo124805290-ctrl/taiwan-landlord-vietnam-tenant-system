@@ -264,7 +264,15 @@ class CloudConnectionManager {
   // 保存操作隊列到本地存儲
   private saveOperationQueue() {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('cloud_operation_queue', JSON.stringify(this.operationQueue))
+      try {
+        localStorage.setItem('cloud_operation_queue', JSON.stringify(this.operationQueue))
+      } catch (e: any) {
+        if (e.name === 'QuotaExceededError') {
+          console.warn('localStorage 已滿，操作隊列無法保存')
+        } else {
+          console.error('localStorage 儲存失敗:', e)
+        }
+      }
     }
   }
   

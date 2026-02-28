@@ -71,7 +71,15 @@ export class CloudSyncService {
   // 保存同步狀態
   private saveSyncStatus(): void {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('cloud_sync_status', JSON.stringify(this.syncStatus));
+      try {
+        localStorage.setItem('cloud_sync_status', JSON.stringify(this.syncStatus));
+      } catch (e: any) {
+        if (e.name === 'QuotaExceededError') {
+          console.warn('localStorage 已滿，同步狀態無法保存')
+        } else {
+          console.error('localStorage 儲存失敗:', e)
+        }
+      }
     }
   }
 
@@ -181,9 +189,17 @@ export class CloudSyncService {
       // 5. 保存到雲端（這裡簡化，實際應該調用後端 API）
       // 暫時先保存到 localStorage 作為演示
       if (typeof window !== 'undefined') {
-        const backups = JSON.parse(localStorage.getItem('cloud_backups') || '[]');
-        backups.push(backupRecord);
-        localStorage.setItem('cloud_backups', JSON.stringify(backups.slice(-10))); // 保留最近10個備份
+        try {
+          const backups = JSON.parse(localStorage.getItem('cloud_backups') || '[]');
+          backups.push(backupRecord);
+          localStorage.setItem('cloud_backups', JSON.stringify(backups.slice(-10))); // 保留最近10個備份
+        } catch (e: any) {
+          if (e.name === 'QuotaExceededError') {
+            console.warn('localStorage 已滿，雲端備份無法保存')
+          } else {
+            console.error('localStorage 儲存失敗:', e)
+          }
+        }
       }
 
       // 6. 更新同步狀態
@@ -239,7 +255,15 @@ export class CloudSyncService {
       
       Object.keys(data).forEach((key) => {
         if (Array.isArray(data[key])) {
-          localStorage.setItem(key, JSON.stringify(data[key]));
+          try {
+            localStorage.setItem(key, JSON.stringify(data[key]));
+          } catch (e: any) {
+            if (e.name === 'QuotaExceededError') {
+              console.warn(`localStorage 已滿，無法恢復 ${key} 數據`)
+            } else {
+              console.error(`localStorage 儲存失敗 (${key}):`, e)
+            }
+          }
         }
       });
 

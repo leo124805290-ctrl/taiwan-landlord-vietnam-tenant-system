@@ -83,7 +83,15 @@ export class CloudDataService {
   // 保存本地緩存
   private saveLocalCache(): void {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('cloud_data_cache', JSON.stringify(this.localCache));
+      try {
+        localStorage.setItem('cloud_data_cache', JSON.stringify(this.localCache));
+      } catch (e: any) {
+        if (e.name === 'QuotaExceededError') {
+          console.warn('localStorage 已滿，雲端數據緩存無法保存')
+        } else {
+          console.error('localStorage 儲存失敗:', e)
+        }
+      }
     }
   }
 

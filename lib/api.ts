@@ -12,7 +12,15 @@ const getToken = (): string | null => {
 // 設置 Token 到 localStorage
 const setToken = (token: string): void => {
   if (typeof window !== 'undefined') {
-    localStorage.setItem('auth_token', token);
+    try {
+      localStorage.setItem('auth_token', token);
+    } catch (e: any) {
+      if (e.name === 'QuotaExceededError') {
+        console.warn('localStorage 已滿，無法保存認證 Token')
+      } else {
+        console.error('localStorage 儲存失敗:', e)
+      }
+    }
   }
 };
 

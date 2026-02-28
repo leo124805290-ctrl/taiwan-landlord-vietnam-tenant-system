@@ -96,7 +96,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // 儲存資料到本地儲存
   useEffect(() => {
-    localStorage.setItem('multiPropertyDataV2', JSON.stringify(state.data))
+    try {
+      localStorage.setItem('multiPropertyDataV2', JSON.stringify(state.data))
+    } catch (e: any) {
+      if (e.name === 'QuotaExceededError') {
+        console.warn('localStorage 已滿，資料僅存雲端')
+        // 可以考慮在這裡觸發雲端同步
+      } else {
+        console.error('localStorage 儲存失敗:', e)
+      }
+    }
   }, [state.data])
 
   // 更新狀態的輔助函數
