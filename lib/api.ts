@@ -177,6 +177,334 @@ export const propertyAPI = {
       method: 'DELETE',
     });
   },
+
+  // 獲取物業的所有房間
+  getRooms: async (propertyId: number, filters?: {
+    status?: string;
+    floor?: number;
+    available_only?: boolean;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (filters?.status) queryParams.append('status', filters.status);
+    if (filters?.floor) queryParams.append('floor', filters.floor.toString());
+    if (filters?.available_only) queryParams.append('available_only', 'true');
+    
+    const queryString = queryParams.toString();
+    const url = `/properties/${propertyId}/rooms${queryString ? `?${queryString}` : ''}`;
+    
+    return apiRequest<{
+      success: boolean;
+      data: { rooms: any[] };
+      message: string;
+    }>(url);
+  },
+};
+
+// 房間管理 API
+export const roomAPI = {
+  // 獲取所有房間
+  list: async (filters?: {
+    property_id?: number;
+    status?: string;
+    floor?: number;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (filters?.property_id) queryParams.append('property_id', filters.property_id.toString());
+    if (filters?.status) queryParams.append('status', filters.status);
+    if (filters?.floor) queryParams.append('floor', filters.floor.toString());
+    
+    const queryString = queryParams.toString();
+    const url = `/rooms${queryString ? `?${queryString}` : ''}`;
+    
+    return apiRequest<{
+      success: boolean;
+      data: { rooms: any[]; count: number };
+      message: string;
+    }>(url);
+  },
+
+  // 獲取單個房間
+  get: async (id: number) => {
+    return apiRequest<{
+      success: boolean;
+      data: { room: any };
+      message: string;
+    }>(`/rooms/${id}`);
+  },
+
+  // 創建房間
+  create: async (data: any) => {
+    return apiRequest<{
+      success: boolean;
+      data: { room: any };
+      message: string;
+    }>('/rooms', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // 更新房間
+  update: async (id: number, data: Partial<any>) => {
+    return apiRequest<{
+      success: boolean;
+      data: { room: any };
+      message: string;
+    }>(`/rooms/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // 刪除房間
+  delete: async (id: number) => {
+    return apiRequest<{
+      success: boolean;
+      data: { room: any };
+      message: string;
+    }>(`/rooms/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // 更新房間狀態（出租、退租等）
+  updateStatus: async (id: number, data: {
+    status: string;
+    tenant_name?: string;
+    check_in_date?: string;
+    check_out_date?: string;
+    rent?: number;
+    deposit?: number;
+  }) => {
+    return apiRequest<{
+      success: boolean;
+      data: { room: any };
+      message: string;
+    }>(`/rooms/${id}/status`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+};
+
+// 付款管理 API
+export const paymentAPI = {
+  // 獲取所有付款記錄
+  list: async (filters?: {
+    room_id?: number;
+    month?: string;
+    status?: string;
+    payment_type?: string;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (filters?.room_id) queryParams.append('room_id', filters.room_id.toString());
+    if (filters?.month) queryParams.append('month', filters.month);
+    if (filters?.status) queryParams.append('status', filters.status);
+    if (filters?.payment_type) queryParams.append('payment_type', filters.payment_type);
+    
+    const queryString = queryParams.toString();
+    const url = `/payments${queryString ? `?${queryString}` : ''}`;
+    
+    return apiRequest<{
+      success: boolean;
+      data: { payments: any[]; count: number; stats: any };
+      message: string;
+    }>(url);
+  },
+
+  // 獲取單個付款記錄
+  get: async (id: number) => {
+    return apiRequest<{
+      success: boolean;
+      data: { payment: any };
+      message: string;
+    }>(`/payments/${id}`);
+  },
+
+  // 創建付款記錄
+  create: async (data: any) => {
+    return apiRequest<{
+      success: boolean;
+      data: { payment: any };
+      message: string;
+    }>('/payments', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // 更新付款記錄
+  update: async (id: number, data: Partial<any>) => {
+    return apiRequest<{
+      success: boolean;
+      data: { payment: any };
+      message: string;
+    }>(`/payments/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // 刪除付款記錄
+  delete: async (id: number) => {
+    return apiRequest<{
+      success: boolean;
+      data: { payment: any };
+      message: string;
+    }>(`/payments/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // 標記付款為已支付
+  markAsPaid: async (id: number, data: {
+    payment_method?: string;
+    payment_date?: string;
+    notes?: string;
+  }) => {
+    return apiRequest<{
+      success: boolean;
+      data: { payment: any };
+      message: string;
+    }>(`/payments/${id}/pay`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+};
+
+// 租客管理 API
+export const tenantAPI = {
+  // 獲取所有租客
+  list: async (filters?: {
+    property_id?: number;
+    room_id?: number;
+    status?: string;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (filters?.property_id) queryParams.append('property_id', filters.property_id.toString());
+    if (filters?.room_id) queryParams.append('room_id', filters.room_id.toString());
+    if (filters?.status) queryParams.append('status', filters.status);
+    
+    const queryString = queryParams.toString();
+    const url = `/tenants${queryString ? `?${queryString}` : ''}`;
+    
+    return apiRequest<{
+      success: boolean;
+      data: { tenants: any[]; count: number };
+      message: string;
+    }>(url);
+  },
+
+  // 獲取單個租客
+  get: async (id: number) => {
+    return apiRequest<{
+      success: boolean;
+      data: { tenant: any };
+      message: string;
+    }>(`/tenants/${id}`);
+  },
+
+  // 創建租客
+  create: async (data: any) => {
+    return apiRequest<{
+      success: boolean;
+      data: { tenant: any };
+      message: string;
+    }>('/tenants', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // 更新租客
+  update: async (id: number, data: Partial<any>) => {
+    return apiRequest<{
+      success: boolean;
+      data: { tenant: any };
+      message: string;
+    }>(`/tenants/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // 刪除租客
+  delete: async (id: number) => {
+    return apiRequest<{
+      success: boolean;
+      data: { tenant: any };
+      message: string;
+    }>(`/tenants/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // 獲取租客的付款記錄
+  getPayments: async (id: number) => {
+    return apiRequest<{
+      success: boolean;
+      data: { tenant: any; payments: any[]; count: number };
+      message: string;
+    }>(`/tenants/${id}/payments`);
+  },
+};
+
+// 數據同步 API
+export const syncAPI = {
+  // 獲取所有數據
+  getAllData: async () => {
+    return apiRequest<{
+      success: boolean;
+      data: {
+        properties: any[];
+        rooms: any[];
+        payments: any[];
+        tenants: any[];
+        maintenance: any[];
+        history: any[];
+        sync_timestamp: string;
+      };
+      message: string;
+    }>('/sync/all');
+  },
+
+  // 批量同步操作
+  batchSync: async (operations: Array<{
+    type: string;
+    data: any;
+    id?: number;
+  }>) => {
+    return apiRequest<{
+      success: boolean;
+      data: {
+        results: any[];
+        errors: any[];
+        total: number;
+        successful: number;
+        failed: number;
+      };
+      message: string;
+    }>('/sync/batch', {
+      method: 'POST',
+      body: JSON.stringify({ operations }),
+    });
+  },
+
+  // 檢查同步狀態
+  getStatus: async () => {
+    return apiRequest<{
+      success: boolean;
+      data: {
+        rooms: any;
+        payments: any;
+        tenants: any;
+        last_sync: string;
+        server_time: string;
+      };
+      message: string;
+    }>('/sync/status');
+  },
 };
 
 // 數據遷移 API（將 localStorage 數據遷移到後端）
@@ -216,6 +544,10 @@ export const healthAPI = {
 export default {
   auth: authAPI,
   property: propertyAPI,
+  room: roomAPI,
+  payment: paymentAPI,
+  tenant: tenantAPI,
+  sync: syncAPI,
   migration: migrationAPI,
   health: healthAPI,
   getToken,
