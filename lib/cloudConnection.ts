@@ -1,7 +1,38 @@
 // 雲端連線檢查系統
 // 檢查是否與雲端資料庫保持連線並同步
 
-import api from './api'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://taiwan-landlord-test.zeabur.app/api'
+
+// 通用 API 請求函數
+const apiRequest = async <T>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<T> => {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  }
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
+  const url = `${API_URL}${endpoint}`
+  const response = await fetch(url, {
+    ...options,
+    headers,
+  })
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({
+      message: `HTTP error! status: ${response.status}`,
+    }))
+    throw new Error(error.message || 'API 請求失敗')
+  }
+
+  return response.json()
+}
 
 // 雲端連線狀態
 export interface CloudConnectionStatus {
@@ -64,13 +95,14 @@ class CloudConnectionManager {
       this.status.syncInProgress = true
       this.notifyListeners()
       
-      // 測試 API 連線
-      const response = await api.health.check()
+      // 測試 API 連線 - 使用健康檢查端點
+      const response = await fetch(`${API_URL.replace('/api', '')}/health`)
+      const healthData = await response.json()
       
-      if (response.success) {
+      if (response.ok && healthData.status === 'healthy') {
         this.status.connected = true
         this.status.lastError = null
-        this.status.serverTime = response.data?.serverTime || new Date().toISOString()
+        this.status.serverTime = healthData.timestamp || new Date().toISOString()
         
         // 連線成功，嘗試同步待處理操作
         if (this.operationQueue.length > 0) {
@@ -78,7 +110,7 @@ class CloudConnectionManager {
         }
       } else {
         this.status.connected = false
-        this.status.lastError = response.error || '雲端服務不可用'
+        this.status.lastError = healthData.error || '雲端服務不可用'
       }
       
       this.status.lastSync = new Date().toISOString()
@@ -142,28 +174,29 @@ class CloudConnectionManager {
   // 處理單個操作
   private async processOperation(operation: OperationRecord): Promise<boolean> {
     try {
-      // 根據操作類型調用不同的 API
+      // 根據後端實際可用的 API 進行同步
       let result
       
-      switch (operation.type) {
-        case 'update_room':
-          result = await api.rooms.update(operation.data)
-          break
-        case 'create_payment':
-          result = await api.payments.create(operation.data)
-          break
-        case 'update_payment':
-          result = await api.payments.update(operation.data)
-          break
-        case 'create_maintenance':
-          result = await api.maintenance.create(operation.data)
-          break
-        case 'update_tenant':
-          result = await api.tenants.update(operation.data)
-          break
-        default:
-          // 通用更新
-          result = await api.data.update(operation.data)
+      // 目前後端只有備份和版本管理 API
+      // 所以我們將所有數據更新視為「創建版本」操作
+      if (operation.type.startsWith('update_')) {
+        // 將數據更新轉換為版本創建
+        const versionData = {
+          name: `自動同步 - ${operation.type}`,
+          description: `自動同步操作: ${operation.type}`,
+          data: operation.data,
+          tags: ['auto-sync', operation.type]
+        }
+        
+        // 調用版本創建 API
+        result = await apiRequest('/versions', {
+          method: 'POST',
+          body: JSON.stringify(versionData)
+        })
+      } else {
+        // 其他操作暫時不支持
+        console.warn(`操作類型 ${operation.type} 目前不支援雲端同步`)
+        result = { success: false, error: '不支援的操作類型' }
       }
       
       if (result.success) {
