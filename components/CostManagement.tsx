@@ -207,7 +207,7 @@ export default function CostManagement({ property }: CostManagementProps) {
     const records = extractFinancialRecords()
     setFinancialRecords(records)
     setLoading(false)
-  }, [property?.id, property?.expenses, property?.maintenance, property?.utilityExpenses])
+  }, [property?.id, property?.expenses, property?.maintenance, property?.utilityExpenses, state.data])
   
   // ==================== 數據計算函數 ====================
   
