@@ -10,7 +10,8 @@ import {
   Menu,
   X,
   ChevronRight,
-  Home
+  Home,
+  History
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/contexts/AppContext';
@@ -64,6 +65,13 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title = '管理後�
       label: '備份排程',
       icon: <ChevronRight className="w-5 h-5" />,
       path: '/admin/backup-schedules',
+      roles: ['admin', 'super_admin']
+    },
+    {
+      id: 'versions',
+      label: '版本管理',
+      icon: <History className="w-5 h-5" />,
+      path: '/admin/versions',
       roles: ['admin', 'super_admin']
     },
     {
