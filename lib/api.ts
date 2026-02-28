@@ -537,6 +537,209 @@ export const migrationAPI = {
   },
 };
 
+// 備份管理 API
+export const backupAPI = {
+  // 獲取所有備份排程
+  getSchedules: async () => {
+    return apiRequest<{
+      success: boolean;
+      data: { schedules: any[] };
+      message: string;
+    }>('/backup/schedules');
+  },
+
+  // 獲取單個備份排程
+  getSchedule: async (id: number) => {
+    return apiRequest<{
+      success: boolean;
+      data: { schedule: any };
+      message: string;
+    }>(`/backup/schedules/${id}`);
+  },
+
+  // 創建備份排程
+  createSchedule: async (data: any) => {
+    return apiRequest<{
+      success: boolean;
+      data: { schedule: any };
+      message: string;
+    }>('/backup/schedules', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // 更新備份排程
+  updateSchedule: async (id: number, data: Partial<any>) => {
+    return apiRequest<{
+      success: boolean;
+      data: { schedule: any };
+      message: string;
+    }>(`/backup/schedules/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // 刪除備份排程
+  deleteSchedule: async (id: number) => {
+    return apiRequest<{
+      success: boolean;
+      message: string;
+    }>(`/backup/schedules/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // 獲取備份歷史
+  getBackupHistory: async (filters?: {
+    scheduleId?: number;
+    startDate?: string;
+    endDate?: string;
+    status?: string;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (filters?.scheduleId) queryParams.append('scheduleId', filters.scheduleId.toString());
+    if (filters?.startDate) queryParams.append('startDate', filters.startDate);
+    if (filters?.endDate) queryParams.append('endDate', filters.endDate);
+    if (filters?.status) queryParams.append('status', filters.status);
+    
+    const queryString = queryParams.toString();
+    const url = `/backup/history${queryString ? `?${queryString}` : ''}`;
+    
+    return apiRequest<{
+      success: boolean;
+      data: { history: any[]; count: number };
+      message: string;
+    }>(url);
+  },
+
+  // 手動觸發備份
+  triggerBackup: async (scheduleId?: number) => {
+    const url = scheduleId ? `/backup/trigger/${scheduleId}` : '/backup/trigger';
+    return apiRequest<{
+      success: boolean;
+      data: { backupId: number };
+      message: string;
+    }>(url, {
+      method: 'POST',
+    });
+  },
+
+  // 恢復備份
+  restoreBackup: async (backupId: number) => {
+    return apiRequest<{
+      success: boolean;
+      message: string;
+    }>(`/backup/restore/${backupId}`, {
+      method: 'POST',
+    });
+  },
+};
+
+// 版本管理 API
+export const versionAPI = {
+  // 獲取所有版本
+  getVersions: async (filters?: {
+    name?: string;
+    startDate?: string;
+    endDate?: string;
+    tags?: string[];
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (filters?.name) queryParams.append('name', filters.name);
+    if (filters?.startDate) queryParams.append('startDate', filters.startDate);
+    if (filters?.endDate) queryParams.append('endDate', filters.endDate);
+    if (filters?.tags) queryParams.append('tags', filters.tags.join(','));
+    
+    const queryString = queryParams.toString();
+    const url = `/versions${queryString ? `?${queryString}` : ''}`;
+    
+    return apiRequest<{
+      success: boolean;
+      data: { versions: any[]; count: number };
+      message: string;
+    }>(url);
+  },
+
+  // 獲取單個版本
+  getVersion: async (id: number) => {
+    return apiRequest<{
+      success: boolean;
+      data: { version: any };
+      message: string;
+    }>(`/versions/${id}`);
+  },
+
+  // 創建版本
+  createVersion: async (data: any) => {
+    return apiRequest<{
+      success: boolean;
+      data: { version: any };
+      message: string;
+    }>('/versions', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // 更新版本
+  updateVersion: async (id: number, data: Partial<any>) => {
+    return apiRequest<{
+      success: boolean;
+      data: { version: any };
+      message: string;
+    }>(`/versions/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // 刪除版本
+  deleteVersion: async (id: number) => {
+    return apiRequest<{
+      success: boolean;
+      message: string;
+    }>(`/versions/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // 恢復到版本
+  restoreVersion: async (id: number) => {
+    return apiRequest<{
+      success: boolean;
+      message: string;
+    }>(`/versions/${id}/restore`, {
+      method: 'POST',
+    });
+  },
+
+  // 比較版本
+  compareVersions: async (versionId1: number, versionId2: number) => {
+    return apiRequest<{
+      success: boolean;
+      data: { differences: any[] };
+      message: string;
+    }>(`/versions/compare/${versionId1}/${versionId2}`);
+  },
+
+  // 獲取版本統計
+  getVersionStats: async () => {
+    return apiRequest<{
+      success: boolean;
+      data: {
+        totalVersions: number;
+        byMonth: Record<string, number>;
+        byCreator: Record<string, number>;
+        averageSize: number;
+        totalSize: number;
+      };
+      message: string;
+    }>('/versions/stats');
+  },
+};
+
 // 健康檢查
 export const healthAPI = {
   check: async () => {
@@ -556,6 +759,8 @@ export default {
   payment: paymentAPI,
   tenant: tenantAPI,
   sync: syncAPI,
+  backup: backupAPI,
+  version: versionAPI,
   migration: migrationAPI,
   health: healthAPI,
   getToken,

@@ -480,3 +480,119 @@ export const MajorToMinorCategories: Record<MajorCategory, MinorCategory[]> = {
     MinorCategory.RENTAL_INCOME
   ]
 };
+
+// 租客類型
+export interface Tenant {
+  id: number;
+  name: string;
+  phone: string;
+  email?: string;
+  idNumber?: string; // 身分證/護照號碼
+  nationality: 'TW' | 'VN' | 'other'; // 國籍
+  emergencyContact?: string; // 緊急聯絡人
+  emergencyPhone?: string; // 緊急聯絡電話
+  notes?: string; // 備註
+  propertyId: number; // 所屬物業ID
+  roomId?: number; // 所屬房間ID
+  createdAt: string; // 建立時間
+  updatedAt: string; // 更新時間
+}
+
+// 備份排程類型
+export interface BackupSchedule {
+  id: number;
+  name: string;
+  description?: string;
+  scheduleType: 'daily' | 'weekly' | 'monthly' | 'custom';
+  scheduleConfig: {
+    // 每日備份
+    daily?: {
+      time: string; // HH:mm 格式
+    };
+    // 每週備份
+    weekly?: {
+      dayOfWeek: number; // 0-6 (0=星期日)
+      time: string; // HH:mm 格式
+    };
+    // 每月備份
+    monthly?: {
+      dayOfMonth: number; // 1-31
+      time: string; // HH:mm 格式
+    };
+    // 自定義間隔
+    custom?: {
+      intervalHours: number; // 小時間隔
+    };
+  };
+  retentionDays: number; // 保留天數
+  enabled: boolean; // 是否啟用
+  lastRun?: string; // 最後執行時間
+  nextRun?: string; // 下次執行時間
+  createdAt: string; // 建立時間
+  updatedAt: string; // 更新時間
+}
+
+// 版本類型
+export interface Version {
+  id: number;
+  name: string;
+  description?: string;
+  versionNumber: string; // 版本號，如 "1.0.0"
+  dataSnapshot: any; // 數據快照
+  createdAt: string; // 建立時間
+  createdBy: string; // 建立者
+  tags?: string[]; // 標籤
+  notes?: string; // 備註
+}
+
+// 備份記錄類型
+export interface BackupRecord {
+  id: number;
+  scheduleId: number; // 排程ID
+  backupType: 'automatic' | 'manual'; // 備份類型
+  status: 'pending' | 'running' | 'completed' | 'failed'; // 狀態
+  fileSize?: number; // 檔案大小（位元組）
+  filePath?: string; // 檔案路徑
+  startedAt: string; // 開始時間
+  completedAt?: string; // 完成時間
+  errorMessage?: string; // 錯誤訊息
+  createdAt: string; // 建立時間
+}
+
+// 同步操作類型
+export interface SyncOperation {
+  id: string; // UUID
+  type: 'create' | 'update' | 'delete'; // 操作類型
+  entityType: 'room' | 'payment' | 'tenant' | 'expense' | 'income'; // 實體類型
+  entityId: number | string; // 實體ID
+  data: any; // 操作數據
+  status: 'pending' | 'synced' | 'failed'; // 同步狀態
+  retryCount: number; // 重試次數
+  errorMessage?: string; // 錯誤訊息
+  createdAt: string; // 建立時間
+  updatedAt: string; // 更新時間
+}
+
+// API 回應類型
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+// 雲端同步狀態
+export interface CloudSyncStatus {
+  isConnected: boolean;
+  lastSyncTime?: string;
+  pendingOperations: number;
+  failedOperations: number;
+  syncMode: 'auto' | 'manual' | 'offline';
+  connectionQuality: 'excellent' | 'good' | 'fair' | 'poor';
+}
