@@ -112,18 +112,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // 臨時的登入函數（用於編譯）
   const login = async (username: string, password: string): Promise<boolean> => {
-    console.log('登入功能待實現:', username);
-    // 模擬登入成功
-    updateState({
-      user: {
-        id: 1,
-        username: username,
-        role: 'admin',
-        full_name: username,
-        status: 'active'
-      }
-    });
-    return true;
+    console.log('登入嘗試:', username);
+    
+    // 內置帳號密碼（自己用，避免忘記）
+    const builtInAccounts = [
+      { username: 'admin', password: 'admin123', role: 'admin' },
+      { username: 'landlord', password: 'landlord2026', role: 'admin' },
+      { username: 'user', password: 'user123', role: 'viewer' }
+    ];
+    
+    // 檢查帳號密碼
+    const account = builtInAccounts.find(acc => 
+      acc.username === username && acc.password === password
+    );
+    
+    if (account) {
+      // 登入成功
+      updateState({
+        user: {
+          id: 1,
+          username: username,
+          role: account.role as any,
+          full_name: username,
+          status: 'active'
+        }
+      });
+      console.log('✅ 登入成功:', username);
+      return true;
+    } else {
+      // 登入失敗
+      console.log('❌ 登入失敗: 帳號或密碼錯誤');
+      return false;
+    }
   };
 
   // 臨時的登出函數

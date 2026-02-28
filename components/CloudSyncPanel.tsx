@@ -99,6 +99,18 @@ const CloudSyncPanel: React.FC = () => {
   };
 
   const handleLogin = async () => {
+    // 顯示內置帳號密碼提示
+    const loginMessage = `請輸入用戶名和密碼：
+    
+內置帳號（避免忘記）：
+1. admin / admin123 (管理員)
+2. landlord / landlord2026 (房東管理員)
+3. user / user123 (檢視者)
+
+請選擇一個帳號登入：`;
+    
+    alert(loginMessage);
+    
     const username = prompt('請輸入用戶名:');
     if (!username) return;
     
@@ -109,13 +121,13 @@ const CloudSyncPanel: React.FC = () => {
       const result = await api.auth.login({ username, password });
       if (result.success && result.data?.user) {
         setUserInfo(result.data.user);
-        alert('登入成功！');
+        alert('✅ 登入成功！');
         loadInitialData();
       } else {
-        alert(`登入失敗: ${result.error || result.message}`);
+        alert(`❌ 登入失敗: ${result.error || result.message}`);
       }
     } catch (error) {
-      alert(`登入錯誤: ${error.message}`);
+      alert(`❌ 登入錯誤: ${error.message}`);
     }
   };
 

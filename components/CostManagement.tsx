@@ -125,10 +125,22 @@ export default function CostManagement({ property }: CostManagementProps) {
       const records: FinancialRecord[] = []
       
       // 1. 從物業的 expenses 提取支出記錄
-      if (property?.expenses) {
+      if (property?.expenses && Array.isArray(property.expenses)) {
         property.expenses.forEach((expense: any) => {
-          // 這裡需要根據 expense 的結構轉換為 FinancialRecord
-          // 暫時使用模擬數據，實際使用時需要根據 expense 結構調整
+          // 直接使用 expense 數據
+          records.push({
+            id: expense.id || `expense-${Date.now()}`,
+            major_category: expense.major_category || MajorCategory.DAILY_EXPENSE,
+            minor_category: expense.minor_category || MinorCategory.OTHER_DAILY,
+            amount: expense.amount || 0,
+            currency: expense.currency || 'NTD',
+            transaction_date: expense.transaction_date || new Date().toISOString().split('T')[0],
+            remarks: expense.remarks || '',
+            remarks_hint: expense.remarks_hint || '',
+            created_at: expense.created_at || new Date().toISOString().replace('T', ' ').substring(0, 19),
+            updated_at: expense.updated_at || new Date().toISOString().replace('T', ' ').substring(0, 19),
+            property_id: expense.property_id || property?.id
+          })
         })
       }
       
@@ -285,9 +297,14 @@ export default function CostManagement({ property }: CostManagementProps) {
     let rentIncome = 0
     let electricityIncome = 0
     
+    console.log('📊 成本管理 - 開始計算收入數據')
+    console.log('property.payments:', property?.payments)
+    console.log('property.history:', property?.history)
+    
     // 1. 從付款記錄中提取收入（只計算已繳費）
     if (property?.payments) {
       property.payments.forEach((payment: any) => {
+        console.log('payment:', payment)
         if (payment.s === 'paid') { // 只計算已繳費
           // 租金收入
           rentIncome += payment.r || 0
@@ -309,10 +326,13 @@ export default function CostManagement({ property }: CostManagementProps) {
       })
     }
     
+    console.log('📊 計算結果:', { rentIncome, electricityIncome })
+    
     // 3. 如果沒有真實數據，使用模擬數據
     if (rentIncome === 0 && electricityIncome === 0) {
       rentIncome = 120000
       electricityIncome = 45000
+      console.log('📊 使用模擬數據')
     }
     
     const totalIncome = rentIncome + electricityIncome
