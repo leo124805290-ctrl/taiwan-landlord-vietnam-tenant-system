@@ -4,7 +4,6 @@ import { Room, RoomStatus, Payment } from '@/lib/types'
 import { t } from '@/lib/translations'
 import { formatCurrency, formatDate, getMonthEndDate, getNextMonthEndDate } from '@/lib/utils'
 import { useApp } from '@/contexts/AppContext'
-import { validateOperation } from '@/lib/networkCheck'
 import { useEffect, useRef } from 'react'
 
 export default function Modal() {
@@ -4149,9 +4148,6 @@ export default function Modal() {
 
   // 儲存入住房間（三種付款方式）
   const saveCheckIn = (roomId: number) => {
-    // 網絡檢查
-    if (!validateOperation('save_checkin')) return
-    
     const property = getCurrentProperty()
     if (!property) return
 
@@ -4995,9 +4991,6 @@ export default function Modal() {
   // 處理單筆收款
   // 處理補繳操作
   const processCompletePayment = (roomId: number) => {
-    // 網絡檢查
-    if (!validateOperation('complete_payment')) return
-    
     const property = getCurrentProperty()
     if (!property) {
       alert('無法處理補繳：找不到當前物業')

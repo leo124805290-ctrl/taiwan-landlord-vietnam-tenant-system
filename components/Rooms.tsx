@@ -5,7 +5,6 @@ import { formatCurrency, formatDate } from '@/lib/utils'
 import { useApp } from '@/contexts/AppContext'
 import { useState, useMemo, useEffect } from 'react'
 import { Room, RoomStatus, CheckInPaymentType, CheckOutType } from '@/lib/types'
-import { validateOperation } from '@/lib/networkCheck'
 
 interface RoomsProps {
   property: any
@@ -208,19 +207,16 @@ export default function Rooms({ property }: RoomsProps) {
 
   // 處理入住操作
   const handleCheckIn = (roomId: number) => {
-    if (!validateOperation('check_in')) return
     openModal('checkIn', roomId)
   }
 
   // 處理退房操作
   const handleCheckOut = (roomId: number) => {
-    if (!validateOperation('check_out')) return
     openModal('checkOut', roomId)
   }
 
   // 處理續租
   const handleRenewLease = (roomId: number) => {
-    if (!validateOperation('renew_lease')) return
     openModal('renewLease', roomId)
   }
 
@@ -231,13 +227,11 @@ export default function Rooms({ property }: RoomsProps) {
 
   // 處理補繳操作
   const handleCompletePayment = (roomId: number) => {
-    if (!validateOperation('complete_payment')) return
     openModal('completePayment', roomId)
   }
 
   // 處理取消預訂
   const handleCancelReservation = (roomId: number) => {
-    if (!validateOperation('cancel_reservation')) return
     if (!confirm(t('confirmCancelReservation', state.lang))) return
     
     const updatedProperties = state.data.properties.map(p => 
@@ -258,8 +252,6 @@ export default function Rooms({ property }: RoomsProps) {
 
   // 處理房間狀態變更
   const handleChangeRoomStatus = (roomId: number, newStatus: RoomStatus) => {
-    if (!validateOperation('change_room_status')) return
-    
     const room = property.rooms.find((r: Room) => r.id === roomId)
     if (!room) return
     

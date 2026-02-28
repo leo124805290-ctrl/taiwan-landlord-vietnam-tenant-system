@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { AppState, AppData } from '@/lib/types'
 import { initData, calcAllPayments } from '@/lib/utils'
+import { cloudConnection } from '@/lib/cloudConnection'
 
 interface AppContextType {
   state: AppState
@@ -68,6 +69,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  // 初始化雲端連線
+  useEffect(() => {
+    cloudConnection.initialize()
+    
+    // 監聽雲端連線狀態變化
+    const removeListener = cloudConnection.addListener((status) => {
+      // 可以在這裡更新UI狀態或顯示通知
+      console.log('雲端連線狀態:', status)
+    })
+    
+    return () => {
+      removeListener()
+      cloudConnection.stopConnectionCheck()
+    }
+  }, [])
+
   // 計算付款（只在初始化時計算一次）
   useEffect(() => {
     // 只在數據為初始數據時計算付款
@@ -87,12 +104,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setState(prev => ({ ...prev, ...updates }))
   }
 
-  // 更新資料的輔助函數
+  // 更新資料的輔助函數（自動同步到雲端）
   const updateData = (updates: Partial<AppData>) => {
+    // 1. 更新本地狀態
     setState(prev => ({
       ...prev,
       data: { ...prev.data, ...updates }
     }))
+    
+    // 2. 自動同步到雲端
+    if (Object.keys(updates).length > 0) {
+      // 根據更新內容決定操作類型
+      let operationType = 'update_data'
+      
+      if (updates.properties) {
+        operationType = 'update_properties'
+      } else if (updates.payments) {
+        operationType = 'update_payments'
+      } else if (updates.history) {
+        operationType = 'update_history'
+      } else if (updates.maintenance) {
+        operationType = 'update_maintenance'
+      }
+      
+      // 非同步同步到雲端（不阻塞UI）
+      cloudConnection.syncToCloud(updates, operationType).catch(error => {
+        console.error('雲端同步失敗:', error)
+        // 失敗的操作會自動進入重試隊列
+      })
+    }
   }
 
   // 開啟模態框
