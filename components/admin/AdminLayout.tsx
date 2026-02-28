@@ -60,6 +60,13 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title = '管理後�
       roles: ['admin', 'super_admin']
     },
     {
+      id: 'backup-schedules',
+      label: '備份排程',
+      icon: <ChevronRight className="w-5 h-5" />,
+      path: '/admin/backup-schedules',
+      roles: ['admin', 'super_admin']
+    },
+    {
       id: 'settings',
       label: '系統設置',
       icon: <Settings className="w-5 h-5" />,
