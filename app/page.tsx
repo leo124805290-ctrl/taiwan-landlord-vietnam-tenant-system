@@ -14,6 +14,7 @@ import Settings from '@/components/Settings'
 import Modal from '@/components/Modal'
 import CloudSyncPanel from '@/components/CloudSyncPanel'
 import MigrateToCloud from '@/components/MigrateToCloud'
+import NetworkStatus from '@/components/NetworkStatus'
 import { useApp } from '@/contexts/AppContext'
 
 export default function HomePage() {
@@ -140,6 +141,9 @@ export default function HomePage() {
       {state.modal && (
         <Modal />
       )}
+      
+      {/* 網絡狀態監控 */}
+      <NetworkStatus />
       
       {/* 雲端同步面板 */}
       <CloudSyncPanel />
