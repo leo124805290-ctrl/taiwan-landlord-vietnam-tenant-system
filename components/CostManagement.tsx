@@ -198,89 +198,8 @@ export default function CostManagement({ property }: CostManagementProps) {
         })
       }
       
-      // 4. 如果沒有真實數據，使用模擬數據
-      if (records.length === 0) {
-        records.push(
-          {
-            id: '1',
-            major_category: MajorCategory.PRE_INVESTMENT,
-            minor_category: MinorCategory.FURNITURE,
-            amount: 45000,
-            currency: 'NTD',
-            transaction_date: '2026-01-15',
-            remarks: '購買家具：沙發、床、桌椅',
-            remarks_hint: MinorCategoryHints[MinorCategory.FURNITURE],
-            created_at: '2026-01-15 10:30:00',
-            updated_at: '2026-01-15 10:30:00',
-            property_id: property?.id
-          },
-          {
-            id: '2',
-            major_category: MajorCategory.PRE_INVESTMENT,
-            minor_category: MinorCategory.AIR_CONDITIONER,
-            amount: 80000,
-            currency: 'NTD',
-            transaction_date: '2026-01-20',
-            remarks: '安裝3台分離式冷氣',
-            remarks_hint: MinorCategoryHints[MinorCategory.AIR_CONDITIONER],
-            created_at: '2026-01-20 14:15:00',
-            updated_at: '2026-01-20 14:15:00',
-            property_id: property?.id
-          },
-          {
-            id: '3',
-            major_category: MajorCategory.DEPOSIT_EXPENSE,
-            minor_category: MinorCategory.DEPOSIT,
-            amount: 60000,
-            currency: 'NTD',
-            transaction_date: '2026-01-01',
-            remarks: '給房東的押金',
-            remarks_hint: MinorCategoryHints[MinorCategory.DEPOSIT],
-            created_at: '2026-01-01 09:00:00',
-            updated_at: '2026-01-01 09:00:00',
-            property_id: property?.id
-          },
-          {
-            id: '4',
-            major_category: MajorCategory.MAINTENANCE_EXPENSE,
-            minor_category: MinorCategory.AC_MAINTENANCE,
-            amount: 3000,
-            currency: 'NTD',
-            transaction_date: '2026-02-10',
-            remarks: '301房冷氣清洗',
-            remarks_hint: MinorCategoryHints[MinorCategory.AC_MAINTENANCE],
-            created_at: '2026-02-10 11:45:00',
-            updated_at: '2026-02-10 11:45:00',
-            property_id: property?.id
-          },
-          {
-            id: '5',
-            major_category: MajorCategory.DAILY_EXPENSE,
-            minor_category: MinorCategory.ELECTRIC_BILL,
-            amount: 12500,
-            currency: 'NTD',
-            transaction_date: '2026-02-20',
-            remarks: '2月份公共區域電費',
-            remarks_hint: MinorCategoryHints[MinorCategory.ELECTRIC_BILL],
-            created_at: '2026-02-20 14:15:00',
-            updated_at: '2026-02-20 14:15:00',
-            property_id: property?.id
-          },
-          {
-            id: '6',
-            major_category: MajorCategory.DAILY_EXPENSE,
-            minor_category: MinorCategory.WATER_BILL,
-            amount: 3500,
-            currency: 'NTD',
-            transaction_date: '2026-02-22',
-            remarks: '2月份水費',
-            remarks_hint: MinorCategoryHints[MinorCategory.WATER_BILL],
-            created_at: '2026-02-22 10:30:00',
-            updated_at: '2026-02-22 10:30:00',
-            property_id: property?.id
-          }
-        )
-      }
+      // 4. 如果沒有真實數據，保持空陣列（不顯示假資料）
+      // 空狀態會在UI中顯示引導提示
       
       return records
     }
@@ -328,12 +247,8 @@ export default function CostManagement({ property }: CostManagementProps) {
     
     console.log('📊 計算結果:', { rentIncome, electricityIncome })
     
-    // 3. 如果沒有真實數據，使用模擬數據
-    if (rentIncome === 0 && electricityIncome === 0) {
-      rentIncome = 120000
-      electricityIncome = 45000
-      console.log('📊 使用模擬數據')
-    }
+    // 3. 如果沒有真實數據，顯示0（不顯示假資料）
+    // 這樣可以真實反映數據狀態
     
     const totalIncome = rentIncome + electricityIncome
     
@@ -1315,9 +1230,33 @@ export default function CostManagement({ property }: CostManagementProps) {
       <div className="card">
         <h2 className="text-lg font-bold mb-4">支出記錄明細</h2>
         
-        {filteredRecords.length === 0 ? (
+        {financialRecords.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="mb-4">
+              <svg className="w-16 h-16 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">還沒有支出記錄</h3>
+            <p className="text-gray-600 mb-4">開始記錄您的物業支出，管理成本更輕鬆</p>
+            <button
+              onClick={() => {
+                // 滾動到表單區域
+                document.getElementById('add-record-form')?.scrollIntoView({ behavior: 'smooth' })
+                // 聚焦到金額輸入框
+                setTimeout(() => {
+                  const amountInput = document.querySelector('input[name="amount"]') as HTMLInputElement
+                  amountInput?.focus()
+                }, 500)
+              }}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              添加第一筆支出記錄
+            </button>
+          </div>
+        ) : filteredRecords.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            沒有找到符合條件的記錄
+            沒有找到符合篩選條件的記錄
           </div>
         ) : (
           <div className="overflow-x-auto">
