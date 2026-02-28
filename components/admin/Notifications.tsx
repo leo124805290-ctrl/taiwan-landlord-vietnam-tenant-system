@@ -830,7 +830,7 @@ const Notifications: React.FC = () => {
               清除篩選
             </button>
             <button
-              onClick={fetchNotifications}
+              onClick={() => fetchNotifications()}
               className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               <RefreshCw className="w-4 h-4 mr-2" />
@@ -865,7 +865,7 @@ const Notifications: React.FC = () => {
             </button>
             
             <button
-              onClick={fetchNotifications}
+              onClick={() => fetchNotifications()}
               className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
             >
               <RefreshCw className="w-4 h-4 mr-2" />
