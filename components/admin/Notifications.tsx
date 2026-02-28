@@ -1274,4 +1274,287 @@ const Notifications: React.FC = () => {
                 <span className="font-medium">{stats.last_24h} 條</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm">
+                <span className="text-sm">最近7天</span>
+                <span className="font-medium">{stats.last_7d} 條</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm">最近30天</span>
+                <span className="font-medium">{stats.last_30d} 條</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm">平均每天</span>
+                <span className="font-medium">
+                  {stats.last_30d > 0 ? Math.round(stats.last_30d / 30) : 0} 條
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* 趨勢圖表 */}
+        {trend.length > 0 && (
+          <div className="mt-6">
+            <p className="text-sm text-gray-600 mb-3">最近7天通知趨勢</p>
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                    <span className="text-xs text-gray-600">總通知數</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                    <span className="text-xs text-gray-600">未讀通知</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 bg-orange-500 rounded-full mr-2"></div>
+                    <span className="text-xs text-gray-600">緊急通知</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex items-end h-32 space-x-2">
+                {trend.map((day, index) => {
+                  const maxCount = Math.max(...trend.map(d => d.count));
+                  const heightPercent = maxCount > 0 ? (day.count / maxCount) * 100 : 0;
+                  const unreadPercent = maxCount > 0 ? (day.unread_count / maxCount) * 100 : 0;
+                  const urgentPercent = maxCount > 0 ? (day.urgent_count / maxCount) * 100 : 0;
+                  
+                  return (
+                    <div key={index} className="flex-1 flex flex-col items-center">
+                      <div className="relative w-full h-24">
+                        {/* 緊急通知 */}
+                        <div 
+                          className="absolute bottom-0 left-1/4 w-1/2 bg-orange-500 rounded-t"
+                          style={{ height: `${urgentPercent}%` }}
+                        ></div>
+                        {/* 未讀通知 */}
+                        <div 
+                          className="absolute bottom-0 left-1/4 w-1/2 bg-red-500 rounded-t"
+                          style={{ height: `${unreadPercent}%` }}
+                        ></div>
+                        {/* 總通知數 */}
+                        <div 
+                          className="absolute bottom-0 left-1/4 w-1/2 bg-blue-500 rounded-t"
+                          style={{ height: `${heightPercent}%` }}
+                        ></div>
+                      </div>
+                      <div className="text-xs text-gray-500 mt-2">
+                        {new Date(day.date).getDate()}日
+                      </div>
+                      <div className="text-xs font-medium mt-1">{day.count}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {/* 創建通知模態框 */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <h2 className="text-xl font-bold text-gray-800 mb-4">創建新通知</h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    通知標題 *
+                  </label>
+                  <input
+                    type="text"
+                    value={newNotification.title}
+                    onChange={(e) => setNewNotification(prev => ({ ...prev, title: e.target.value }))}
+                    placeholder="例如：系統維護通知"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    通知內容 *
+                  </label>
+                  <textarea
+                    value={newNotification.message}
+                    onChange={(e) => setNewNotification(prev => ({ ...prev, message: e.target.value }))}
+                    placeholder="詳細描述通知內容..."
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      通知類型
+                    </label>
+                    <select
+                      value={newNotification.notification_type}
+                      onChange={(e) => setNewNotification(prev => ({ ...prev, notification_type: e.target.value as any }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="system">系統通知</option>
+                      <option value="user">用戶通知</option>
+                      <option value="alert">安全警報</option>
+                      <option value="reminder">提醒通知</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      優先級
+                    </label>
+                    <select
+                      value={newNotification.priority}
+                      onChange={(e) => setNewNotification(prev => ({ ...prev, priority: e.target.value as any }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="low">低</option>
+                      <option value="medium">中</option>
+                      <option value="high">高</option>
+                      <option value="urgent">緊急</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      目標用戶ID（可選）
+                    </label>
+                    <input
+                      type="number"
+                      value={newNotification.user_id}
+                      onChange={(e) => setNewNotification(prev => ({ ...prev, user_id: e.target.value }))}
+                      placeholder="留空表示發送給所有用戶"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      過期時間（可選）
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={newNotification.expires_at}
+                      onChange={(e) => setNewNotification(prev => ({ ...prev, expires_at: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      操作鏈接（可選）
+                    </label>
+                    <input
+                      type="url"
+                      value={newNotification.action_url}
+                      onChange={(e) => setNewNotification(prev => ({ ...prev, action_url: e.target.value }))}
+                      placeholder="https://example.com/action"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      操作標籤（可選）
+                    </label>
+                    <input
+                      type="text"
+                      value={newNotification.action_label}
+                      onChange={(e) => setNewNotification(prev => ({ ...prev, action_label: e.target.value }))}
+                      placeholder="例如：查看詳情"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+                
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-start">
+                    <Bell className="w-5 h-5 text-blue-600 mr-3 mt-0.5" />
+                    <div>
+                      <p className="text-blue-800 font-medium">通知提示</p>
+                      <ul className="text-blue-700 text-sm mt-1 list-disc list-inside space-y-1">
+                        <li>系統通知會顯示給所有用戶</li>
+                        <li>警報和緊急通知會有特殊標記</li>
+                        <li>設置過期時間後，通知會在指定時間後自動隱藏</li>
+                        <li>操作鏈接可以引導用戶到相關頁面</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    setNewNotification({
+                      title: '',
+                      message: '',
+                      notification_type: 'system',
+                      priority: 'medium',
+                      user_id: '',
+                      action_url: '',
+                      action_label: '',
+                      expires_at: ''
+                    });
+                  }}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={createNotification}
+                  disabled={creating || !newNotification.title.trim() || !newNotification.message.trim()}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {creating ? (
+                    <>
+                      <Loader className="w-4 h-4 inline mr-2 animate-spin" />
+                      創建中...
+                    </>
+                  ) : (
+                    '創建通知'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* 安全提示 */}
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <div className="flex items-start">
+          <Shield className="w-5 h-5 text-yellow-600 mr-3 mt-0.5" />
+          <div>
+            <p className="text-yellow-800 font-medium">通知使用提示</p>
+            <ul className="text-yellow-700 text-sm mt-1 list-disc list-inside space-y-1">
+              <li>謹慎使用緊急優先級，僅用於真正重要的事件</li>
+              <li>定期清理過期通知以保持列表整潔</li>
+              <li>重要通知建議設置過期時間，避免長期顯示</li>
+              <li>使用操作鏈接可以提升用戶體驗和操作效率</li>
+              <li>測試通知功能時，請使用「發送測試」按鈕</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// 添加缺失的 Archive 圖標組件
+const Archive: React.FC<{ className?: string }> = ({ className }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+  </svg>
+);
+
+export default Notifications;
