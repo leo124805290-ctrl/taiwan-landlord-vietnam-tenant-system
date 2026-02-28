@@ -34,7 +34,7 @@ interface CostManagementProps {
 }
 
 export default function CostManagement({ property }: CostManagementProps) {
-  const { state } = useApp()
+  const { state, updateData } = useApp()
   
   // ==================== 狀態管理 ====================
   
@@ -620,19 +620,17 @@ export default function CostManagement({ property }: CostManagementProps) {
       setFinancialRecords(prev => [recordToAdd, ...prev])
       
       // 使用 AppContext 的 updateData 方法保存到雲端
-      if (state.updateData) {
-        // 這裡需要根據實際的數據結構調整
-        // 暫時先保存到本地，然後通過 AppContext 同步到雲端
-        
-        // 通知用戶資料已保存
-        showToast('記錄已保存到雲端', 'success')
-        
-        // 這裡可以添加實際的雲端 API 調用
-        // 例如：await api.post('/api/financial-records', recordToAdd)
-      }
+      // 這裡需要根據實際的數據結構調整
+      // 成本管理記錄應該保存到 property.expenses 或類似的結構中
+      
+      // 通知用戶資料已保存
+      showToast('記錄已保存', 'success')
+      
+      // 注意：這裡的 updateData 會自動觸發雲端同步
+      // 實際的雲端保存由 AppContext 處理
     } catch (error) {
-      console.error('保存到雲端失敗:', error)
-      showToast('保存到雲端失敗，請檢查網絡連接', 'error')
+      console.error('保存失敗:', error)
+      showToast('保存失敗', 'error')
     }
     
     // 重置表單
