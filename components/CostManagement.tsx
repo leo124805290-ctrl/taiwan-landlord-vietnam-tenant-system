@@ -81,9 +81,9 @@ export default function CostManagement({ property }: CostManagementProps) {
     label: null
   })
   
-  // 圖表顯示狀態
-  const [showCharts, setShowCharts] = useState(true)
-  const [chartType, setChartType] = useState<'pie' | 'bar'>('pie')
+  // 圖表顯示狀態（已簡化，不顯示圖表）
+  // const [showCharts, setShowCharts] = useState(true)
+  // const [chartType, setChartType] = useState<'pie' | 'bar'>('pie')
   
   // ==================== 數據初始化 ====================
   
@@ -517,45 +517,45 @@ export default function CostManagement({ property }: CostManagementProps) {
     }
   }, [filteredRecords, getIncomeData, timeFilter, selectedMonth, property])
   
-  // 計算圖表數據
-  const chartData = useMemo(() => {
-    const data: Array<{ category: string; value: number; color: string }> = []
-    
-    // 按大項分類統計
-    Object.entries(stats.expenseByCategory).forEach(([category, value]) => {
-      if (value > 0) {
-        let color = '#3b82f6' // 預設藍色
-        
-        // 根據分類設置顏色
-        switch (category) {
-          case MajorCategory.PRE_INVESTMENT:
-            color = '#ef4444' // 紅色
-            break
-          case MajorCategory.DEPOSIT_EXPENSE:
-            color = '#f59e0b' // 黃色
-            break
-          case MajorCategory.MAINTENANCE_EXPENSE:
-            color = '#10b981' // 綠色
-            break
-          case MajorCategory.DAILY_EXPENSE:
-            color = '#8b5cf6' // 紫色
-            break
-          case MajorCategory.OPERATIONAL_INCOME:
-            color = '#06b6d4' // 青色
-            break
-        }
-        
-        data.push({
-          category,
-          value,
-          color
-        })
-      }
-    })
-    
-    // 按值排序（從大到小）
-    return data.sort((a, b) => b.value - a.value)
-  }, [stats.expenseByCategory])
+  // 圖表數據計算（已簡化，不顯示圖表）
+  // const chartData = useMemo(() => {
+  //   const data: Array<{ category: string; value: number; color: string }> = []
+  //   
+  //   // 按大項分類統計
+  //   Object.entries(stats.expenseByCategory).forEach(([category, value]) => {
+  //     if (value > 0) {
+  //       let color = '#3b82f6' // 預設藍色
+  //       
+  //       // 根據分類設置顏色
+  //       switch (category) {
+  //         case MajorCategory.PRE_INVESTMENT:
+  //           color = '#ef4444' // 紅色
+  //           break
+  //         case MajorCategory.DEPOSIT_EXPENSE:
+  //           color = '#f59e0b' // 黃色
+  //           break
+  //         case MajorCategory.MAINTENANCE_EXPENSE:
+  //           color = '#10b981' // 綠色
+  //           break
+  //         case MajorCategory.DAILY_EXPENSE:
+  //           color = '#8b5cf6' // 紫色
+  //           break
+  //         case MajorCategory.OPERATIONAL_INCOME:
+  //           color = '#06b6d4' // 青色
+  //           break
+  //       }
+  //       
+  //       data.push({
+  //         category,
+  //         value,
+  //         color
+  //       })
+  //     }
+  //   })
+  //   
+  //   // 按值排序（從大到小）
+  //   return data.sort((a, b) => b.value - a.value)
+  // }, [stats.expenseByCategory])
   
   // ==================== 處理函數 ====================
   
