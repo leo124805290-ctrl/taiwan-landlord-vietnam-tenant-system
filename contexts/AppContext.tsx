@@ -11,6 +11,10 @@ interface AppContextType {
   openModal: (type: string, data?: any) => void
   closeModal: () => void
   getCurrentProperty: () => any
+  // 雲端用戶相關
+  login: (username: string, password: string) => Promise<boolean>
+  logout: () => void
+  isLoading: boolean
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
@@ -106,6 +110,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return state.data.properties.find(p => p.id === state.currentProperty)
   }
 
+  // 臨時的登入函數（用於編譯）
+  const login = async (username: string, password: string): Promise<boolean> => {
+    console.log('登入功能待實現:', username);
+    // 模擬登入成功
+    updateState({
+      user: {
+        id: 1,
+        username: username,
+        role: 'admin',
+        full_name: username,
+        status: 'active'
+      }
+    });
+    return true;
+  };
+
+  // 臨時的登出函數
+  const logout = () => {
+    updateState({ user: undefined });
+  };
+
   const value = {
     state,
     updateState,
@@ -113,6 +138,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     openModal,
     closeModal,
     getCurrentProperty,
+    login,
+    logout,
+    isLoading: false
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

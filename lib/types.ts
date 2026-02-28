@@ -278,6 +278,17 @@ export interface AppState {
   tempElecTimeScope: TimeScope;
   tempElecYear: number;
   tempElecMonth: string;
+  // 雲端用戶狀態
+  user?: {
+    id: number;
+    username: string;
+    role: 'super_admin' | 'admin' | 'viewer';
+    full_name?: string;
+    email?: string;
+    phone?: string;
+    status: 'active' | 'inactive' | 'suspended';
+  };
+  isLoading?: boolean;
 }
 
 // 統計資料

@@ -13,7 +13,7 @@ import {
   Activity
 } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
-import { api } from '@/lib/api';
+// import api from '@/lib/api'; // 暫時註釋，使用模擬數據
 
 interface SystemStats {
   totalUsers: number;
