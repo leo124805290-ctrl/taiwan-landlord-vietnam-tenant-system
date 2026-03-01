@@ -112,3 +112,63 @@ export function importData(jsonString: string): AppData {
     throw new Error('匯入失敗：JSON 格式錯誤');
   }
 }
+
+// 計算所有付款
+export function calcAllPayments(data: AppData): void {
+  data.properties.forEach(prop => {
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth() + 1;
+    const currentMonthStr = `${currentYear}/${currentMonth.toString().padStart(2, '0')}`;
+    
+    // 計算下個月的5號作為到期日
+    const nextMonth = new Date(today);
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    const dueDate = `${nextMonth.getFullYear()}-${(nextMonth.getMonth() + 1).toString().padStart(2, '0')}-05`;
+    
+    // 獲取現有的待付款記錄
+    const existingPendingPayments = prop.payments.filter(p => p.s === 'pending');
+    
+    // 為每個已出租的房間生成當月付款記錄
+    prop.rooms.filter(room => room.s === 'occupied').forEach(room => {
+      // 檢查是否已經有當月的付款記錄
+      const hasPayment = existingPendingPayments.some(p => 
+        p.rid === room.id && p.m === currentMonthStr
+      );
+      
+      if (!hasPayment) {
+        // 計算電費使用量
+        const electricityUsage = (room.cm || 0) - (room.pm || 0);
+        const electricityFee = electricityUsage * data.electricityRate;
+        
+        // 生成新的付款ID
+        const maxPaymentId = Math.max(
+          ...prop.payments.map(p => p.id),
+          ...(prop.history || []).map(h => h.id),
+          0
+        );
+        
+        // 創建新的付款記錄
+        prop.payments.push({
+          id: maxPaymentId + 1,
+          rid: room.id,
+          n: room.n,
+          t: room.t || '',
+          m: currentMonthStr,
+          r: room.r,
+          u: electricityUsage,
+          e: electricityFee,
+          total: room.r + electricityFee,
+          due: dueDate,
+          s: 'pending'
+        });
+      }
+    });
+    
+    // 過濾掉不存在的房間的付款記錄
+    prop.payments = prop.payments.filter(payment => {
+      const room = prop.rooms.find(r => r.id === payment.rid);
+      return room && room.s === 'occupied';
+    });
+  });
+}
