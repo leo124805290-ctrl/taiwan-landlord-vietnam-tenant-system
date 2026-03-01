@@ -22,14 +22,14 @@ export default function AllPropertiesPayments() {
   
   // 調試：檢查物業數據
   console.log('=== AllPropertiesPayments 調試 ===')
-  console.log('物業數量:', allProperties.length)
-  console.log('物業列表:', allProperties.map(p => ({ id: p.id, name: p.name, payments: p.payments?.length || 0, history: p.history?.length || 0 })))
+  console.log('物業數量:', (allProperties || []).length)
+  console.log('物業列表:', (allProperties || []).map(p => ({ id: p.id, name: p.name, payments: p.payments?.length || 0, history: p.history?.length || 0 })))
   
   // 獲取所有物業的所有付款記錄
   const getAllPayments = () => {
     const allPayments: any[] = []
     
-    allProperties.forEach(property => {
+    (allProperties || []).forEach(property => {
       const propertyPayments = [...(property.payments || []), ...(property.history || [])]
         .map((payment: any) => ({
           ...payment,
@@ -41,7 +41,7 @@ export default function AllPropertiesPayments() {
       allPayments.push(...propertyPayments)
     })
     
-    console.log('總付款記錄數量:', allPayments.length)
+    console.log('總付款記錄數量:', (allPayments || []).length)
     
     return allPayments.sort((a, b) => (b.paid || b.due || '').localeCompare(a.paid || a.due || ''))
   }
@@ -49,12 +49,12 @@ export default function AllPropertiesPayments() {
   const allPayments = getAllPayments()
   
   // 獲取待收款項（未歸檔的 pending 狀態）
-  const pendingPayments = allPayments.filter(p => 
+  const pendingPayments = (allPayments || []).filter(p => 
     p.s === 'pending' && !p.archived
   )
   
   // 獲取已收款項（已歸檔的 paid 狀態）
-  const collectedPayments = allPayments.filter(p => 
+  const collectedPayments = (allPayments || []).filter(p => 
     p.s === 'paid' && p.archived
   )
   
@@ -108,7 +108,7 @@ export default function AllPropertiesPayments() {
   }
   
   // 篩選付款記錄
-  const filteredPayments = allPayments.filter(payment => {
+  const filteredPayments = (allPayments || []).filter(payment => {
     // 分類篩選
     if (!filterByCategory(payment)) return false
     
@@ -180,10 +180,10 @@ export default function AllPropertiesPayments() {
   // 調試函數：檢查所有物業的付款記錄
   const debugAllPropertiesPayments = () => {
     console.log('=== 全部物業付款記錄調試 ===')
-    console.log('總物業數量:', allProperties.length)
+    console.log('總物業數量:', (allProperties || []).length)
     
     // 檢查每個物業的付款記錄
-    allProperties.forEach(property => {
+    (allProperties || []).forEach(property => {
       console.log(`\n物業: ${property.name} (ID: ${property.id})`)
       console.log('待付款記錄:', property.payments?.length || 0)
       console.log('歷史記錄:', property.history?.length || 0)
@@ -191,7 +191,7 @@ export default function AllPropertiesPayments() {
       // 檢查逾期記錄
       const allPropertyPayments = [...(property.payments || []), ...(property.history || [])]
       const today = new Date()
-      const overduePayments = allPropertyPayments.filter(p => {
+      const overduePayments = (allPropertyPayments || []).filter(p => {
         if (p.s !== 'pending' || p.archived) return false
         if (!p.due) return false
         
@@ -199,8 +199,8 @@ export default function AllPropertiesPayments() {
         return dueDate < today
       })
       
-      console.log('逾期記錄:', overduePayments.length)
-      if (overduePayments.length > 0) {
+      console.log('逾期記錄:', (overduePayments || []).length)
+      if ((overduePayments || []).length > 0) {
         console.log('逾期詳情:', overduePayments.map(p => ({
           房間: p.n,
           租客: p.t,
@@ -213,11 +213,11 @@ export default function AllPropertiesPayments() {
     
     // 檢查全部物業的合併數據
     console.log('\n=== 全部物業合併數據 ===')
-    console.log('總付款記錄:', allPayments.length)
-    console.log('待收款項:', pendingPayments.length)
-    console.log('已收款項:', collectedPayments.length)
+    console.log('總付款記錄:', (allPayments || []).length)
+    console.log('待收款項:', (pendingPayments || []).length)
+    console.log('已收款項:', (collectedPayments || []).length)
     
-    alert(`全部物業調試信息已輸出到控制台\n總物業: ${allProperties.length}\n總付款記錄: ${allPayments.length}`)
+    alert(`全部物業調試信息已輸出到控制台\n總物業: ${(allProperties || []).length}\n總付款記錄: ${(allPayments || []).length}`)
   }
   
   // 計算所有物業的統計數據
@@ -230,9 +230,9 @@ export default function AllPropertiesPayments() {
     let totalCollectedDeposit = 0
     let totalElectricity = 0
     
-    allProperties.forEach(property => {
+    (allProperties || []).forEach(property => {
       const rooms = property.rooms || []
-      const activeRooms = rooms.filter((room: any) => !room.archived)
+      const activeRooms = (rooms || []).filter((room: any) => !room.archived)
       
       // 前期欠收
       const overduePayments = [...(property.payments || [])].filter(p => 
@@ -254,7 +254,7 @@ export default function AllPropertiesPayments() {
       )
       
       // 新租客應收押金
-      const newTenantRooms = activeRooms.filter((room: any) => 
+      const newTenantRooms = (activeRooms || []).filter((room: any) => 
         room.s === 'pending_checkin_unpaid' || room.s === 'reserved'
       )
       
@@ -286,7 +286,7 @@ export default function AllPropertiesPayments() {
       previousOverdue: {
         rent: totalPreviousOverdueRent,
         electricity: totalPreviousOverdueElectricity,
-        count: pendingPayments.filter(p => 
+        count: (pendingPayments || []).filter(p => 
           p.due && new Date(p.due) < new Date()
         ).length
       },
@@ -296,7 +296,7 @@ export default function AllPropertiesPayments() {
         expectedDeposit: totalExpectedDeposit,
         collectedDeposit: totalCollectedDeposit,
         electricity: totalElectricity,
-        count: pendingPayments.filter(p => {
+        count: (pendingPayments || []).filter(p => {
           const today = new Date()
           const currentMonth = today.toISOString().slice(0, 7).replace('-', '/')
           return p.m === currentMonth
@@ -325,7 +325,7 @@ export default function AllPropertiesPayments() {
             全部物業繳費管理
           </h1>
           <div className="text-sm text-gray-500 mt-1">
-            共 {allProperties.length} 個物業 • {pendingPayments.length} 筆待收款項
+            共 {(allProperties || []).length} 個物業 • {(pendingPayments || []).length} 筆待收款項
           </div>
         </div>
         
@@ -533,7 +533,7 @@ export default function AllPropertiesPayments() {
         >
           🏢 全部物業
         </button>
-        {allProperties.map(property => (
+        {(allProperties || []).map(property => (
           <button
             key={property.id}
             onClick={() => setPropertyFilter(property.id.toString())}
@@ -551,13 +551,13 @@ export default function AllPropertiesPayments() {
           onClick={() => setCategoryFilter('all')}
           className={`px-3 py-2 rounded-lg ${categoryFilter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
         >
-          📋 全部待收 ({pendingPayments.length})
+          📋 全部待收 ({(pendingPayments || []).length})
         </button>
         <button
           onClick={() => setCategoryFilter('new_tenant')}
           className={`px-3 py-2 rounded-lg ${categoryFilter === 'new_tenant' ? 'bg-purple-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
         >
-          🆕 新租客款項 ({pendingPayments.filter(p => 
+          🆕 新租客款項 ({(pendingPayments || []).filter(p => 
             p.paymentType === 'deposit' || 
             (p.tenantType === 'new' && p.paymentType === 'rent')
           ).length})
@@ -566,7 +566,7 @@ export default function AllPropertiesPayments() {
           onClick={() => setCategoryFilter('current_month')}
           className={`px-3 py-2 rounded-lg ${categoryFilter === 'current_month' ? 'bg-green-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
         >
-          👥 舊租客當月 ({pendingPayments.filter(p => {
+          👥 舊租客當月 ({(pendingPayments || []).filter(p => {
             const today = new Date()
             const currentMonth = today.toISOString().slice(0, 7).replace('-', '/')
             const dueDate = p.due ? new Date(p.due) : null
@@ -579,7 +579,7 @@ export default function AllPropertiesPayments() {
           onClick={() => setCategoryFilter('overdue')}
           className={`px-3 py-2 rounded-lg ${categoryFilter === 'overdue' ? 'bg-red-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
         >
-          ⚠️ 逾期款項 ({pendingPayments.filter(p => 
+          ⚠️ 逾期款項 ({(pendingPayments || []).filter(p => 
             p.due && 
             new Date(p.due) < new Date()
           ).length})
@@ -588,13 +588,13 @@ export default function AllPropertiesPayments() {
           onClick={() => setCategoryFilter('collected')}
           className={`px-3 py-2 rounded-lg ${categoryFilter === 'collected' ? 'bg-gray-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
         >
-          📜 繳費歷史 ({collectedPayments.length})
+          📜 繳費歷史 ({(collectedPayments || []).length})
         </button>
       </div>
 
       {/* 付款記錄視圖 */}
       <div className="mt-4">
-        {sortedPayments.length === 0 ? (
+        {(sortedPayments || []).length === 0 ? (
           <div className="card text-center py-8">
             <div className="text-4xl mb-3">📭</div>
             <div className="text-lg font-bold text-gray-600">
