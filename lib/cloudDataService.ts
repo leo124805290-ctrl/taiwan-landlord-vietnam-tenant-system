@@ -132,9 +132,9 @@ export class CloudDataService {
       this.saveLocalCache();
 
       const stats = {
-        properties: this.localCache.properties.length,
-        rooms: this.localCache.rooms.length,
-        payments: this.localCache.payments.length,
+        properties: (this.localCache.properties || []).length,
+        rooms: (this.localCache.rooms || []).length,
+        payments: (this.localCache.payments || []).length,
       };
 
       return {
@@ -227,7 +227,7 @@ export class CloudDataService {
   // 獲取房間列表（根據物業）
   getRooms(propertyId?: number): CloudRoom[] {
     if (propertyId) {
-      return this.localCache.rooms.filter(room => room.property_id === propertyId);
+      return (this.localCache.rooms || []).filter(room => room.property_id === propertyId);
     }
     return [...this.localCache.rooms];
   }
@@ -235,7 +235,7 @@ export class CloudDataService {
   // 獲取付款記錄
   getPayments(roomId?: number): CloudPayment[] {
     if (roomId) {
-      return this.localCache.payments.filter(payment => payment.room_id === roomId);
+      return (this.localCache.payments || []).filter(payment => payment.room_id === roomId);
     }
     return [...this.localCache.payments];
   }
@@ -288,9 +288,9 @@ export class CloudDataService {
     return {
       lastSync: this.localCache.lastSync,
       stats: {
-        properties: this.localCache.properties.length,
-        rooms: this.localCache.rooms.length,
-        payments: this.localCache.payments.length,
+        properties: (this.localCache.properties || []).length,
+        rooms: (this.localCache.rooms || []).length,
+        payments: (this.localCache.payments || []).length,
       },
       authenticated: this.isAuthenticated(),
     };
