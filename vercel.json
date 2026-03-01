@@ -7,5 +7,24 @@
   "regions": ["hkg1"],
   "env": {
     "NODE_ENV": "production"
-  }
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        },
+        {
+          "key": "CDN-Cache-Control",
+          "value": "max-age=60"
+        },
+        {
+          "key": "Vercel-CDN-Cache-Control",
+          "value": "max-age=60"
+        }
+      ]
+    }
+  ]
 }
