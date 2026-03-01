@@ -248,6 +248,11 @@ export interface Expense {
 // 應用資料
 export interface AppData {
   properties: Property[];
+  rooms: Room[];
+  payments: Payment[];
+  tenants: Tenant[];
+  history: any[];
+  maintenance: any[];
   electricityRate: number;
   actualElectricityRate: number;
   utilityExpenses: UtilityExpense[]; // 水電支出記錄
