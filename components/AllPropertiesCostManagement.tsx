@@ -29,7 +29,7 @@ export default function AllPropertiesCostManagement({ properties }: AllPropertie
     let totalNetIncome = 0
     
     // 匯總所有物業的統計
-    properties.forEach(property => {
+    (properties || []).forEach(property => {
       // 這裡需要從每個物業的數據中提取財務統計
       // 暫時使用模擬計算
       const propertyIncome = property?.totalIncome || 0
@@ -45,14 +45,14 @@ export default function AllPropertiesCostManagement({ properties }: AllPropertie
       totalIncome,
       totalExpense,
       totalNetIncome,
-      propertyCount: properties.length
+      propertyCount: (properties || []).length
     }
   }, [properties])
   
   // 導出所有物業的統計數據
   const exportAllStatsToCSV = () => {
     const headers = ['物業名稱', '總收入(NTD)', '總支出(NTD)', '淨收支(NTD)', '物業狀態']
-    const rows = properties.map(property => {
+    const rows = (properties || []).map(property => {
       const income = property?.totalIncome || 0
       const expense = property?.totalExpense || 0
       const netIncome = income - expense
@@ -90,7 +90,7 @@ export default function AllPropertiesCostManagement({ properties }: AllPropertie
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
     
-    alert(`已導出 ${properties.length} 個物業的統計數據`)
+    alert(`已導出 ${(properties || []).length} 個物業的統計數據`)
   }
   
   return (
@@ -100,7 +100,7 @@ export default function AllPropertiesCostManagement({ properties }: AllPropertie
         <div>
           <h1 className="text-2xl font-bold">成本管理 - 全部物業</h1>
           <p className="text-gray-600">
-            查看所有 {properties.length} 個物業的成本支出統計
+            查看所有 {(properties || []).length} 個物業的成本支出統計
           </p>
         </div>
         
@@ -124,7 +124,7 @@ export default function AllPropertiesCostManagement({ properties }: AllPropertie
                 {formatCurrency(allStats.totalIncome)}
               </div>
               <div className="text-xs text-gray-500 mt-1">
-                {properties.length} 個物業
+                {(properties || []).length} 個物業
               </div>
             </div>
             <div className="p-2 bg-green-100 rounded-lg">
@@ -142,7 +142,7 @@ export default function AllPropertiesCostManagement({ properties }: AllPropertie
                 {formatCurrency(allStats.totalExpense)}
               </div>
               <div className="text-xs text-gray-500 mt-1">
-                {properties.length} 個物業
+                {(properties || []).length} 個物業
               </div>
             </div>
             <div className="p-2 bg-red-100 rounded-lg">
@@ -189,7 +189,7 @@ export default function AllPropertiesCostManagement({ properties }: AllPropertie
           
           <div className="text-sm text-gray-600">
             <Building className="inline h-4 w-4 mr-1" />
-            共 {properties.length} 個物業
+            共 {(properties || []).length} 個物業
           </div>
         </div>
         
@@ -207,7 +207,7 @@ export default function AllPropertiesCostManagement({ properties }: AllPropertie
               </tr>
             </thead>
             <tbody>
-              {properties.map((property) => {
+              {(properties || []).map((property) => {
                 const income = property?.totalIncome || 0
                 const expense = property?.totalExpense || 0
                 const netIncome = income - expense
