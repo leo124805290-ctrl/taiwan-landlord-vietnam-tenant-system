@@ -233,4 +233,4 @@ MIT License - 詳見 LICENSE 檔案
 
 **最後更新**：2026-02-20  
 **版本**：1.0.0  
-**狀態**：開發中
+**狀態**：開發中// Trigger Vercel deployment
