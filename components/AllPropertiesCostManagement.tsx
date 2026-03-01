@@ -35,7 +35,7 @@ export default function AllPropertiesCostManagement({ properties }: AllPropertie
       const propertyIncome = property?.localTotalIncome || 0
       const propertyExpense = property?.localTotalExpense || 0
       
-      localTotalIncome += propertyIncome
+      totalIncome += propertyIncome
       localTotalExpense += propertyExpense
     })
     
