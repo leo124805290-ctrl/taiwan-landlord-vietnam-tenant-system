@@ -27,7 +27,7 @@ export default function AllPropertiesPayments() {
   
   // 獲取所有物業的所有付款記錄
   const getAllPayments = () => {
-    const allPayments: any[] = []
+    const allPaymentsList: any[] = []
     
     (allProperties || []).forEach(property => {
       const propertyPayments = [...(property.payments || []), ...(property.history || [])]
@@ -473,7 +473,7 @@ export default function AllPropertiesPayments() {
             
             <div className="pt-2">
               <div className="flex justify-between text-sm text-gray-600 mb-1">
-                <span>收款率</span>
+                <span>收���率</span>
                 <span>{stats.collectionRate}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2.5">
