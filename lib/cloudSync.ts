@@ -81,7 +81,7 @@ export class CloudSyncService {
     }
       } catch (e: any) {
         if (e.name === 'QuotaExceededError') {
-          console.warn('localStorage 已滿，同步狀態無法保存')
+          console.warn('localStorage 已滿，��步狀態無法保存')
         } else {
           console.error('localStorage 儲存失敗:', e)
         }
@@ -133,7 +133,7 @@ export class CloudSyncService {
       const health = await api.health.check();
       return {
         connected: health.status === 'healthy',
-        message: health.status === 'healthy' ? '雲端連接正常' : `雲端狀態: ${health.status}`,
+        message: health.status === 'healthy' ? '雲端連接正常' : `���端狀態: ${health.status}`,
       };
     } catch (error) {
       return {
@@ -173,13 +173,13 @@ export class CloudSyncService {
       
       // 統計數據
       const stats = {
-        properties: localData.properties.length,
-        rooms: localData.rooms.length,
-        payments: localData.payments.length,
+        properties: (localData.properties || []).length,
+        rooms: (localData.rooms || []).length,
+        payments: (localData.payments || []).length,
         total: Object.keys(localData).reduce((sum: number, key: string) => {
           const value = localData[key];
           if (Array.isArray(value)) {
-            return sum + value.length;
+            return sum + (value || []).length;
           }
           return sum;
         }, 0),
@@ -253,7 +253,7 @@ export class CloudSyncService {
       }
 
       const backups = JSON.parse(localStorage.getItem('cloud_backups') || '[]');
-      if (backups.length === 0) {
+      if ((backups || []).length === 0) {
         throw new Error('沒有找到雲端備份');
       }
 
@@ -294,7 +294,7 @@ export class CloudSyncService {
         total: Object.keys(data).reduce((sum: number, key: string) => {
           const value = data[key];
           if (Array.isArray(value)) {
-            return sum + value.length;
+            return sum + (value || []).length;
           }
           return sum;
         }, 0),
@@ -322,7 +322,7 @@ export class CloudSyncService {
 
     try {
       const backups = JSON.parse(localStorage.getItem('cloud_backups') || '[]');
-      return backups.map((backup: any) => ({
+      return (backups || []).map((backup: any) => ({
         timestamp: backup.timestamp,
         stats: backup.stats,
       }));
