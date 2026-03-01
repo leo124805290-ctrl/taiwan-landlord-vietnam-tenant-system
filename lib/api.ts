@@ -13,7 +13,13 @@ const getToken = (): string | null => {
 const setToken = (token: string): void => {
   if (typeof window !== 'undefined') {
     try {
+      try {
       localStorage.setItem('auth_token', token);
+    } catch (e: any) {
+      if (e.name === 'QuotaExceededError') {
+        console.warn('localStorage 已滿，無法保存 token');
+      }
+    }
     } catch (e: any) {
       if (e.name === 'QuotaExceededError') {
         console.warn('localStorage 已滿，無法保存認證 Token')

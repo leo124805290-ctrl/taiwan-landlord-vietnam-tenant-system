@@ -72,7 +72,13 @@ export class CloudSyncService {
   private saveSyncStatus(): void {
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem('cloud_sync_status', JSON.stringify(this.syncStatus));
+        try {
+      localStorage.setItem('cloud_sync_status', JSON.stringify(this.syncStatus));
+    } catch (e: any) {
+      if (e.name === 'QuotaExceededError') {
+        console.warn('localStorage 已滿，同步狀態僅存內存');
+      }
+    }
       } catch (e: any) {
         if (e.name === 'QuotaExceededError') {
           console.warn('localStorage 已滿，同步狀態無法保存')
@@ -192,7 +198,13 @@ export class CloudSyncService {
         try {
           const backups = JSON.parse(localStorage.getItem('cloud_backups') || '[]');
           backups.push(backupRecord);
-          localStorage.setItem('cloud_backups', JSON.stringify(backups.slice(-10))); // 保留最近10個備份
+          try {
+      localStorage.setItem('cloud_backups', JSON.stringify(backups.slice(-10)));
+    } catch (e: any) {
+      if (e.name === 'QuotaExceededError') {
+        console.warn('localStorage 已滿，備份僅存雲端');
+      }
+    } // 保留最近10個備份
         } catch (e: any) {
           if (e.name === 'QuotaExceededError') {
             console.warn('localStorage 已滿，雲端備份無法保存')
@@ -256,7 +268,13 @@ export class CloudSyncService {
       Object.keys(data).forEach((key) => {
         if (Array.isArray(data[key])) {
           try {
-            localStorage.setItem(key, JSON.stringify(data[key]));
+            try {
+          localStorage.setItem(key, JSON.stringify(data[key]));
+        } catch (e: any) {
+          if (e.name === 'QuotaExceededError') {
+            console.warn(`localStorage 已滿，跳過 ${key} 緩存`);
+          }
+        }
           } catch (e: any) {
             if (e.name === 'QuotaExceededError') {
               console.warn(`localStorage 已滿，無法恢復 ${key} 數據`)

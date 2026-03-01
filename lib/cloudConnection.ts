@@ -313,7 +313,13 @@ class CloudConnectionManager {
   private saveOperationQueue() {
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem('cloud_operation_queue', JSON.stringify(this.operationQueue))
+        try {
+      localStorage.setItem('cloud_operation_queue', JSON.stringify(this.operationQueue));
+    } catch (e: any) {
+      if (e.name === 'QuotaExceededError') {
+        console.warn('localStorage 已滿，操作隊列僅存內存');
+      }
+    }
       } catch (e: any) {
         if (e.name === 'QuotaExceededError') {
           console.warn('localStorage 已滿，操作隊列無法保存')
