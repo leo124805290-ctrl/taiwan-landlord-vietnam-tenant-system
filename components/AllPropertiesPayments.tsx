@@ -1,11 +1,50 @@
 'use client'
 
+// 類型定義
+interface Payment {
+  id: number;
+  room_id: number;
+  month: string;
+  total_amount: number;
+  status: 'pending' | 'paid';
+  due_date?: string;
+  created_at: string;
+}
+
+interface Room {
+  id: number;
+  property_id: number;
+  name: string;
+  archived: boolean;
+}
+
+interface Property {
+  id: number;
+  name: string;
+  color?: string;
+  payments?: Payment[];
+  history?: Payment[];
+  rooms?: Room[];
+}
+
+interface Tenant {
+  id: number;
+  room_id: number;
+  check_in_date?: string;
+}
+
+
+
 import { useState } from 'react'
 import { useApp } from '@/contexts/AppContext'
 import PaymentStatsPanel from './PaymentStatsPanel'
 import PaymentViews from './PaymentViews'
 
-export default function AllPropertiesPayments() {
+interface AllPropertiesPaymentsProps {
+  // 可以添加 props 類型
+}
+
+export default function AllPropertiesPayments(props: AllPropertiesPaymentsProps) {
   const { state, updateState, updateData } = useApp()
   
   // 視圖模式狀態
@@ -27,11 +66,11 @@ export default function AllPropertiesPayments() {
   
   // 獲取所有物業的所有付款記錄
   const getAllPayments = () => {
-    const allPaymentsList: any[] = []
+    const allPaymentsList: Payment[] = []
     
     (allProperties || []).forEach(property => {
       const propertyPayments = [...(property.payments || []), ...(property.history || [])]
-        .map((payment: any) => ({
+        .map((payment: Payment) => ({
           ...payment,
           propertyId: property.id,
           propertyName: property.name,
@@ -59,6 +98,7 @@ export default function AllPropertiesPayments() {
   )
   
   // 分類篩選邏輯
+// @ts-ignore
   const filterByCategory = (payment: any) => {
     if (categoryFilter === 'all') {
       // 全部待收：只顯示未歸檔的待收款項
@@ -102,6 +142,7 @@ export default function AllPropertiesPayments() {
   }
   
   // 物業篩選邏輯
+// @ts-ignore
   const filterByProperty = (payment: any) => {
     if (propertyFilter === 'all') return true
     return payment.propertyId === parseInt(propertyFilter)
@@ -129,6 +170,7 @@ export default function AllPropertiesPayments() {
   })
   
   // 收款函數
+// @ts-ignore
   const collectPayment = (payment: any) => {
     // 設置當前要收款的記錄
     updateState({ 
@@ -154,6 +196,7 @@ export default function AllPropertiesPayments() {
     const property = allProperties.find(p => p.id === propertyId)
     if (!property) return 0
     
+// @ts-ignore
     const room = property.rooms.find((r: any) => r.id === roomId)
     if (!room) return 0
     
@@ -179,7 +222,7 @@ export default function AllPropertiesPayments() {
 
   // 調試函數：檢查所有物業的付款記錄
   const debugAllPropertiesPayments = () => {
-    console.log('=== 全部物業付款記錄調試 ===')
+    console.log('=== 全部物業付���記錄調試 ===')
     console.log('總物業數量:', (allProperties || []).length)
     
     // 檢查每個物業的付款記錄
@@ -232,7 +275,7 @@ export default function AllPropertiesPayments() {
     
     (allProperties || []).forEach(property => {
       const rooms = property.rooms || []
-      const activeRooms = (rooms || []).filter((room: any) => !room.archived)
+      const activeRooms = (rooms || []).filter((room: Room) => !room.archived)
       
       // 前期欠收
       const overduePayments = [...(property.payments || [])].filter(p => 
@@ -254,7 +297,7 @@ export default function AllPropertiesPayments() {
       )
       
       // 新租客應收押金
-      const newTenantRooms = (activeRooms || []).filter((room: any) => 
+      const newTenantRooms = (activeRooms || []).filter((room: Room) => 
         room.s === 'pending_checkin_unpaid' || room.s === 'reserved'
       )
       
@@ -473,7 +516,7 @@ export default function AllPropertiesPayments() {
             
             <div className="pt-2">
               <div className="flex justify-between text-sm text-gray-600 mb-1">
-                <span>收���率</span>
+                <span>������率</span>
                 <span>{stats.collectionRate}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2.5">
