@@ -32,8 +32,8 @@ export default function AllPropertiesCostManagement({ properties }: AllPropertie
     (properties || []).forEach(property => {
       // 這裡需要從每個物業的數據中提取財務統計
       // 暫時使用模擬計算
-      const propertyIncome = property?.localTotalIncome || 0
-      const propertyExpense = property?.localTotalExpense || 0
+      const propertyIncome = property?.totalIncome || 0
+      const propertyExpense = property?.totalExpense || 0
       
       totalIncome += propertyIncome
       totalExpense += propertyExpense
