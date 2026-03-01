@@ -36,7 +36,7 @@ export default function AllPropertiesCostManagement({ properties }: AllPropertie
       const propertyExpense = property?.localTotalExpense || 0
       
       totalIncome += propertyIncome
-      localTotalExpense += propertyExpense
+      totalExpense += propertyExpense
     })
     
     totalNetIncome = totalIncome - totalExpense
@@ -263,7 +263,7 @@ export default function AllPropertiesCostManagement({ properties }: AllPropertie
             <div className="text-sm">
               <p className="font-medium text-blue-700">全部物業模式說明</p>
               <p className="text-gray-600 mt-1">
-                在「全部物業��模式下，您可以查看所有物業的匯總統計數據。
+                ��「全部物業��模式下，您可以查看所有物業的匯總統計數據。
                 點擊「查看詳細」按鈕可以切換到特定物業，查看詳細的成本記錄和管理功能。
               </p>
             </div>
