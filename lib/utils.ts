@@ -172,3 +172,39 @@ export function calcAllPayments(data: AppData): void {
     });
   });
 }
+
+// 資料正規化：確保所有欄位都有正確的型別，防止 runtime 崩潰
+export function normalizeAppData(data: any): AppData {
+  const base = initData()
+  
+  if (!data || typeof data !== 'object') return base
+  
+  const properties = Array.isArray(data.properties) ? data.properties : []
+  
+  return {
+    ...base,
+    ...data,
+    properties: properties.map((p: any) => ({
+      ...p,
+      rooms: Array.isArray(p.rooms) ? p.rooms.map((r: any) => ({
+        ...r,
+        id: r.id ?? 0,
+        payments: Array.isArray(r.payments) ? r.payments : [],
+      })) : [],
+      payments: Array.isArray(p.payments) ? p.payments : [],
+      history: Array.isArray(p.history) ? p.history : [],
+      maintenance: Array.isArray(p.maintenance) ? p.maintenance : [],
+      utilityExpenses: Array.isArray(p.utilityExpenses) ? p.utilityExpenses : [],
+      additionalIncomes: Array.isArray(p.additionalIncomes) ? p.additionalIncomes : [],
+    })),
+    rooms: Array.isArray(data.rooms) ? data.rooms : [],
+    payments: Array.isArray(data.payments) ? data.payments : [],
+    tenants: Array.isArray(data.tenants) ? data.tenants : [],
+    history: Array.isArray(data.history) ? data.history : [],
+    maintenance: Array.isArray(data.maintenance) ? data.maintenance : [],
+    utilityExpenses: Array.isArray(data.utilityExpenses) ? data.utilityExpenses : [],
+    additionalIncomes: Array.isArray(data.additionalIncomes) ? data.additionalIncomes : [],
+    electricityRate: typeof data.electricityRate === 'number' ? data.electricityRate : 6,
+    actualElectricityRate: typeof data.actualElectricityRate === 'number' ? data.actualElectricityRate : 4.5,
+  }
+}

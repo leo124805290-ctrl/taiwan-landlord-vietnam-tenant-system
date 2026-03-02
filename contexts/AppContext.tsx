@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { AppState, AppData } from '@/lib/types'
-import { initData, calcAllPayments } from '@/lib/utils'
+import { initData, normalizeAppData, calcAllPayments } from '@/lib/utils'
 import { cloudConnection } from '@/lib/cloudConnection'
 
 interface AppContextType {
@@ -108,7 +108,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               
               setState(prev => ({
                 ...prev,
-                data: finalData,
+                data: normalizeAppData(finalData),
                 currentProperty: finalData.properties[0]?.id || null
               }))
               
@@ -152,7 +152,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             
             setState(prev => ({
               ...prev,
-              data: finalData,
+              data: normalizeAppData(finalData),
               currentProperty: finalData.properties[0]?.id || null
             }))
           } catch (error) {
@@ -161,7 +161,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const initialData = initData()
             setState(prev => ({
               ...prev,
-              data: initialData,
+              data: normalizeAppData(initialData),
               currentProperty: initialData.properties[0]?.id || null
             }))
           }
@@ -170,7 +170,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const initialData = initData()
           setState(prev => ({
             ...prev,
-            data: initialData,
+            data: normalizeAppData(initialData),
             currentProperty: initialData.properties[0]?.id || null
           }))
         }
@@ -180,7 +180,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const initialData = initData()
         setState(prev => ({
           ...prev,
-          data: initialData,
+          data: normalizeAppData(initialData),
           currentProperty: initialData.properties[0]?.id || null
         }))
       }
