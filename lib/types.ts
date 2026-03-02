@@ -600,4 +600,5 @@ export interface CloudSyncStatus {
   failedOperations: number;
   syncMode: 'auto' | 'manual' | 'offline';
   connectionQuality: 'excellent' | 'good' | 'fair' | 'poor';
+
 }

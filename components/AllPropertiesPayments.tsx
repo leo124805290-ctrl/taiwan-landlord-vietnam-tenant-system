@@ -1,22 +1,8 @@
 'use client'
+import { Payment, Room, Tenant } from '@/lib/types'
 
 // 類型定義
-interface Payment {
-  id: number;
-  room_id: number;
-  month: string;
-  total_amount: number;
-  status: 'pending' | 'paid';
-  due_date?: string;
-  created_at: string;
-}
 
-interface Room {
-  id: number;
-  property_id: number;
-  name: string;
-  archived: boolean;
-}
 
 interface Property {
   id: number;
@@ -27,11 +13,6 @@ interface Property {
   rooms?: Room[];
 }
 
-interface Tenant {
-  id: number;
-  room_id: number;
-  check_in_date?: string;
-}
 
 
 
@@ -66,7 +47,7 @@ export default function AllPropertiesPayments(props: AllPropertiesPaymentsProps)
   
   // 獲取所有物業的所有付款記錄
   const getAllPayments = () => {
-    const allPaymentsList: Payment[] = []
+    const allPaymentsList: Payment[] = [] as Payment[]
     
     (allProperties || []).forEach(property => {
       const propertyPayments = [...(property.payments || []), ...(property.history || [])]
@@ -220,48 +201,7 @@ export default function AllPropertiesPayments(props: AllPropertiesPaymentsProps)
     })
   }
 
-  // 調試函數：檢查所有物業的付款記錄
-  const debugAllPropertiesPayments = () => {
-    console.log('=== 全部物業付���記錄調試 ===')
-    console.log('總物業數量:', (allProperties || []).length)
-    
-    // 檢查每個物業的付款記錄
-    (allProperties || []).forEach(property => {
-      console.log(`\n物業: ${property.name} (ID: ${property.id})`)
-      console.log('待付款記錄:', property.payments?.length || 0)
-      console.log('歷史記錄:', property.history?.length || 0)
-      
-      // 檢查逾期記錄
-      const allPropertyPayments = [...(property.payments || []), ...(property.history || [])]
-      const today = new Date()
-      const overduePayments = (allPropertyPayments || []).filter(p => {
-        if (p.s !== 'pending' || p.archived) return false
-        if (!p.due) return false
-        
-        const dueDate = new Date(p.due)
-        return dueDate < today
-      })
-      
-      console.log('逾期記錄:', (overduePayments || []).length)
-      if ((overduePayments || []).length > 0) {
-        console.log('逾期詳情:', overduePayments.map(p => ({
-          房間: p.n,
-          租客: p.t,
-          月份: p.m,
-          到期日: p.due,
-          金額: p.total
-        })))
-      }
-    })
-    
-    // 檢查全部物業的合併數據
-    console.log('\n=== 全部物業合併數據 ===')
-    console.log('總付款記錄:', (allPayments || []).length)
-    console.log('待收款項:', (pendingPayments || []).length)
-    console.log('已收款項:', (collectedPayments || []).length)
-    
-    alert(`全部物業調試信息已輸出到控制台\n總物業: ${(allProperties || []).length}\n總付款記錄: ${(allPayments || []).length}`)
-  }
+  
   
   // 計算所有物業的統計數據
   const calculateAllPropertiesStats = () => {
@@ -269,9 +209,9 @@ export default function AllPropertiesPayments(props: AllPropertiesPaymentsProps)
     let totalPreviousOverdueElectricity = 0
     let totalExpectedRent = 0
     let totalCollectedRent = 0
-    let totalExpectedDeposit = 0
-    let totalCollectedDeposit = 0
-    let totalElectricity = 0
+    let totalExpectedDeposit = 0 as number
+    let totalCollectedDeposit = 0 as number
+    let totalElectricity = 0 as number
     
     (allProperties || []).forEach(property => {
       const rooms = property.rooms || []
@@ -399,14 +339,7 @@ export default function AllPropertiesPayments(props: AllPropertiesPaymentsProps)
             </button>
           </div>
           
-          {/* 調試按鈕 */}
-          <button
-            onClick={debugAllPropertiesPayments}
-            className="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm"
-            title="檢查全部物業付款記錄"
-          >
-            🔍 調試全部
-          </button>
+          
         </div>
       </div>
 
