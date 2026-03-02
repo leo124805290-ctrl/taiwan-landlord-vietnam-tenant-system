@@ -89,6 +89,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 }
               })
               
+              // 確保每個 property 都有必要的子陣列
+              if (Array.isArray(safeCloudData.properties)) {
+                safeCloudData.properties = safeCloudData.properties.map((p: any) => ({
+                  ...p,
+                  rooms: Array.isArray(p.rooms) ? p.rooms : [],
+                  payments: Array.isArray(p.payments) ? p.payments : [],
+                  history: Array.isArray(p.history) ? p.history : [],
+                  maintenance: Array.isArray(p.maintenance) ? p.maintenance : [],
+                }))
+              }
+              
               // 使用安全的雲端數據
               const finalData = {
                 ...initData(),
