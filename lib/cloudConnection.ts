@@ -99,7 +99,7 @@ class CloudConnectionManager {
       const response = await fetch(`${API_URL.replace('/api', '')}/health`)
       const healthData = await response.json()
       
-      if (response.ok && healthData.status === 'healthy') {
+      if (response.ok && healthData.status === 'healthy' || healthData.status === 'ok') {
         this.status.connected = true
         this.status.lastError = null
         this.status.serverTime = healthData.timestamp || new Date().toISOString()
@@ -150,7 +150,7 @@ class CloudConnectionManager {
       const response = await fetch(`${API_URL.replace('/api', '')}/health`)
       const healthData = await response.json()
       
-      if (response.ok && healthData.status === 'healthy') {
+      if (response.ok && healthData.status === 'healthy' || healthData.status === 'ok') {
         this.status.connected = true
         this.status.lastError = null
         this.status.serverTime = healthData.timestamp || new Date().toISOString()
