@@ -61,7 +61,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (connectionStatus.connected) {
           try {
             // 從雲端獲取所有數據
-            const cloudData = await cloudConnection.getAllData()
+            let cloudData: any = { success: false }
+            try {
+              cloudData = await cloudConnection.getAllData()
+            } catch (e) {
+              console.warn('雲端連線失敗，使用本地資料', e)
+              cloudData = { success: false }
+            }
             
             if (cloudData && cloudData.success) {
               console.log('從雲端加載資料成功')
