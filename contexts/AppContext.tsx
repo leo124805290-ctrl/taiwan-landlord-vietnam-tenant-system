@@ -205,6 +205,62 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  // WebSocket 即時同步（電影院架構）
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    let ws: WebSocket | null = null
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+
+    const connect = () => {
+      const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'wss://taiwan-landlord-test.zeabur.app'
+      ws = new WebSocket(WS_URL)
+
+      ws.onopen = () => console.log('🔌 WebSocket 已連線，即時同步啟動')
+
+      ws.onmessage = (event) => {
+        try {
+          const { event: evtName } = JSON.parse(event.data)
+          // 任何資料變更事件都重新載入最新資料
+          if (evtName && (evtName.includes(':created') || evtName.includes(':updated') || evtName.includes(':deleted'))) {
+            console.log(`📡 收到事件 [${evtName}]，重新載入資料...`)
+            cloudConnection.getAllData().then(cloudData => {
+              if (cloudData && cloudData.success) {
+                const safeData = { ...cloudData.data }
+                if (!Array.isArray(safeData.properties)) safeData.properties = []
+                safeData.properties = safeData.properties.map((p: any) => ({
+                  ...p,
+                  rooms: Array.isArray(p.rooms) ? p.rooms : [],
+                  payments: Array.isArray(p.payments) ? p.payments : [],
+                  history: Array.isArray(p.history) ? p.history : [],
+                  maintenance: Array.isArray(p.maintenance) ? p.maintenance : [],
+                }))
+                setState(prev => ({
+                  ...prev,
+                  data: normalizeAppData({ ...initData(), ...safeData }),
+                }))
+              }
+            })
+          }
+        } catch (e) {
+          console.error('WebSocket 訊息解析失敗', e)
+        }
+      }
+
+      ws.onclose = () => {
+        console.log('❌ WebSocket 斷線，5秒後重連...')
+        reconnectTimer = setTimeout(connect, 5000)
+      }
+    }
+
+    connect()
+
+    return () => {
+      if (reconnectTimer) clearTimeout(reconnectTimer)
+      ws?.close()
+    }
+  }, [])
+
   // 計算付款（只在初始化時計算一次）
   useEffect(() => {
     // 只在數據為初始數據時計算付款
