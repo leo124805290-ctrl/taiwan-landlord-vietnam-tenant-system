@@ -184,6 +184,7 @@ export default function AllPropertiesCostManagement({ properties }: AllPropertie
             </thead>
             <tbody>
               {(properties || []).map((property: any) => {
+                if (!property) return null
                 const income = (property?.totalIncome as number) || 0
                 const expense = (property?.totalExpense as number) || 0
                 const net = income - expense
