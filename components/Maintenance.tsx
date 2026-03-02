@@ -426,7 +426,7 @@ export default function Maintenance({ property }: MaintenanceProps) {
   function markAsCompleted(maintId: number) {
     if (!confirm(t('confirmComplete', state.lang))) return
 
-    const updatedProperties = state.data.properties.map(p => 
+    const updatedProperties = (state.data?.properties || []).map(p => 
       p.id === property.id
         ? {
             ...p,
@@ -456,7 +456,7 @@ export default function Maintenance({ property }: MaintenanceProps) {
       return
     }
 
-    const updatedProperties = state.data.properties.map(p => 
+    const updatedProperties = (state.data?.properties || []).map(p => 
       p.id === property.id
         ? {
             ...p,

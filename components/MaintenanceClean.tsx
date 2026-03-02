@@ -303,7 +303,7 @@ export default function MaintenanceClean({ property }: MaintenanceCleanProps) {
   function markAsCompleted(maintId: number) {
     if (!confirm('確定要標記為已完成嗎？')) return
 
-    const updatedProperties = state.data.properties.map(p => 
+    const updatedProperties = (state.data?.properties || []).map(p => 
       p.id === property.id
         ? {
             ...p,

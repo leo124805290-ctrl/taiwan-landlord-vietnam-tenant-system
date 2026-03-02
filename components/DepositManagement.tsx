@@ -254,7 +254,7 @@ export default function DepositManagement() {
               className="w-full p-2 border rounded"
             >
               <option value="all">全部物業</option>
-              {state.data.properties.map(property => (
+              {(state.data?.properties || []).map(property => (
                 <option key={property.id} value={property.id}>
                   {property.name}
                 </option>

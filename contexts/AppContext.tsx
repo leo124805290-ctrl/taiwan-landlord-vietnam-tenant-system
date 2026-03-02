@@ -72,15 +72,37 @@ export function AppProvider({ children }: { children: ReactNode }) {
             if (cloudData && cloudData.success) {
               console.log('從雲端加載資料成功')
               
-              // 使用雲端數據
+              // 安全檢查：確保雲端數據有正確的結構
+              const safeCloudData = cloudData.data || {}
+              
+              // 確保 properties 是陣列
+              if (!Array.isArray(safeCloudData.properties)) {
+                console.warn('雲端返回的 properties 不是陣列，使用空陣列')
+                safeCloudData.properties = []
+              }
+              
+              // 確保其他必要欄位也是陣列
+              const arrayFields = ['rooms', 'payments', 'tenants', 'history', 'maintenance', 'utilityExpenses', 'additionalIncomes']
+              arrayFields.forEach(field => {
+                if (!Array.isArray(safeCloudData[field])) {
+                  safeCloudData[field] = []
+                }
+              })
+              
+              // 使用安全的雲端數據
+              const finalData = {
+                ...initData(),
+                ...safeCloudData
+              }
+              
               setState(prev => ({
                 ...prev,
-                data: cloudData.data || initData(),
-                currentProperty: cloudData.data?.properties?.[0]?.id || null
+                data: finalData,
+                currentProperty: finalData.properties[0]?.id || null
               }))
               
               // 保存到本地緩存
-              localStorage.setItem('multiPropertyDataV2', JSON.stringify(cloudData.data || initData()))
+              localStorage.setItem('multiPropertyDataV2', JSON.stringify(finalData))
               return
             }
           } catch (cloudError) {
@@ -92,11 +114,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const saved = localStorage.getItem('multiPropertyDataV2')
         if (saved) {
           try {
-            const parsedData: AppData = JSON.parse(saved)
+            const parsedData: any = JSON.parse(saved)
+            
+            // 安全檢查：確保本地數據有正確的結構
+            const safeParsedData = parsedData || {}
+            
+            // 確保 properties 是陣列
+            if (!Array.isArray(safeParsedData.properties)) {
+              console.warn('本地儲存的 properties 不是陣列，使用空陣列')
+              safeParsedData.properties = []
+            }
+            
+            // 確保其他必要欄位也是陣列
+            const arrayFields = ['rooms', 'payments', 'tenants', 'history', 'maintenance', 'utilityExpenses', 'additionalIncomes']
+            arrayFields.forEach(field => {
+              if (!Array.isArray(safeParsedData[field])) {
+                safeParsedData[field] = []
+              }
+            })
+            
+            // 使用安全的本地數據
+            const finalData = {
+              ...initData(),
+              ...safeParsedData
+            }
+            
             setState(prev => ({
               ...prev,
-              data: parsedData,
-              currentProperty: parsedData.properties[0]?.id || null
+              data: finalData,
+              currentProperty: finalData.properties[0]?.id || null
             }))
           } catch (error) {
             console.error('載入本地資料失敗:', error)

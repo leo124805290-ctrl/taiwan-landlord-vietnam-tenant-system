@@ -316,7 +316,7 @@ export default function Payments({ property }: PaymentsProps) {
       
       // 更新物業數據
       updateData({
-        properties: state.data.properties.map((p: any) => 
+        properties: (state.data?.properties || []).map((p: any) => 
           p.id === property.id 
             ? { ...p, payments: updatedPayments }
             : p
@@ -381,7 +381,7 @@ export default function Payments({ property }: PaymentsProps) {
       
       // 更新物業數據
       updateData({
-        properties: state.data.properties.map((p: any) => 
+        properties: (state.data?.properties || []).map((p: any) => 
           p.id === property.id 
             ? { ...p, payments: updatedPayments }
             : p
@@ -440,7 +440,7 @@ export default function Payments({ property }: PaymentsProps) {
     })
 
     if (updatedCount > 0) {
-      const updatedProperties = state.data.properties.map(p => 
+      const updatedProperties = (state.data?.properties || []).map(p => 
         p.id === property.id
           ? { ...p, payments: updatedPayments }
           : p
@@ -492,7 +492,7 @@ export default function Payments({ property }: PaymentsProps) {
         : payment
     )
 
-    const updatedProperties = state.data.properties.map(p => 
+    const updatedProperties = (state.data?.properties || []).map(p => 
       p.id === property.id
         ? { ...p, payments: updatedPayments }
         : p

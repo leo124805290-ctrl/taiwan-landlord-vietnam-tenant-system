@@ -1,9 +1,11 @@
 'use client'
+import { useState } from 'react'
+import { useApp } from '@/contexts/AppContext'
+import PaymentStatsPanel from './PaymentStatsPanel'
+import PaymentViews from './PaymentViews'
 import { Payment, Room, Tenant } from '@/lib/types'
 
 // 類型定義
-
-
 interface Property {
   id: number;
   name: string;
@@ -12,14 +14,6 @@ interface Property {
   history?: Payment[];
   rooms?: Room[];
 }
-
-
-
-
-import { useState } from 'react'
-import { useApp } from '@/contexts/AppContext'
-import PaymentStatsPanel from './PaymentStatsPanel'
-import PaymentViews from './PaymentViews'
 
 interface AllPropertiesPaymentsProps {
   // 可以添加 props 類型

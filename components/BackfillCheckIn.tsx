@@ -274,7 +274,7 @@ export default function BackfillCheckIn() {
     })
     
     // 更新物業數據
-    const updatedProperties = state.data.properties.map((p: any) => {
+    const updatedProperties = (state.data?.properties || []).map((p: any) => {
       if (p.id === property.id) {
         return {
           ...p,

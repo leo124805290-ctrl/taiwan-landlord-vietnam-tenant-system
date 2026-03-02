@@ -1048,7 +1048,7 @@ export default function Modal() {
                     )
                     
                     // 更新物業
-                    const updatedProperties = state.data.properties.map(p => 
+                    const updatedProperties = (state.data?.properties || []).map(p => 
                       p.id === property.id ? { ...p, rooms: updatedRooms } : p
                     )
                     
@@ -1451,7 +1451,7 @@ export default function Modal() {
                     )
                     
                     // 更新物業
-                    const updatedProperties = state.data.properties.map(p => 
+                    const updatedProperties = (state.data?.properties || []).map(p => 
                       p.id === property.id ? { ...p, rooms: updatedRooms } : p
                     )
                     
@@ -3103,7 +3103,7 @@ export default function Modal() {
       return
     }
 
-    const newId = Math.max(...state.data.properties.map(p => p.id), 0) + 1
+    const newId = Math.max(...(state.data?.properties || []).map(p => p.id), 0) + 1
     const newProperty = {
       id: newId,
       name: nameInput.value.trim(),
@@ -3151,7 +3151,7 @@ export default function Modal() {
       }
     }
 
-    const newId = Math.max(...state.data.properties.map(p => p.id), 0) + 1
+    const newId = Math.max(...(state.data?.properties || []).map(p => p.id), 0) + 1
     
     // 自動生成房間
     const rooms = []
@@ -3204,7 +3204,7 @@ export default function Modal() {
       return
     }
 
-    const updatedProperties = state.data.properties.map(p => 
+    const updatedProperties = (state.data?.properties || []).map(p => 
       p.id === id 
         ? { 
             ...p, 
@@ -3233,7 +3233,7 @@ export default function Modal() {
       return
     }
 
-    const updatedProperties = state.data.properties.map(p => 
+    const updatedProperties = (state.data?.properties || []).map(p => 
       p.id === property.id
         ? {
             ...p,
@@ -3268,7 +3268,7 @@ export default function Modal() {
       return
     }
 
-    const updatedProperties = state.data.properties.map(p => 
+    const updatedProperties = (state.data?.properties || []).map(p => 
       p.id === property.id
         ? {
             ...p,
@@ -3326,7 +3326,7 @@ export default function Modal() {
       return
     }
 
-    const updatedProperties = state.data.properties.map(p => 
+    const updatedProperties = (state.data?.properties || []).map(p => 
       p.id === property.id
         ? {
             ...p,
@@ -3392,7 +3392,7 @@ export default function Modal() {
       type: 'maintenance' as const
     }
 
-    const updatedProperties = state.data.properties.map(p => 
+    const updatedProperties = (state.data?.properties || []).map(p => 
       p.id === property.id
         ? {
             ...p,
@@ -3466,7 +3466,7 @@ export default function Modal() {
       console.log('新裝修記錄:', newRenovation)
 
       // 更新物業資料
-      const updatedProperties = state.data.properties.map(p => {
+      const updatedProperties = (state.data?.properties || []).map(p => {
         if (p.id === property.id) {
           const updatedProperty = {
             ...p,
@@ -3535,7 +3535,7 @@ export default function Modal() {
       propertyId: property.id
     }
 
-    const updatedProperties = state.data.properties.map(p => 
+    const updatedProperties = (state.data?.properties || []).map(p => 
       p.id === property.id
         ? {
             ...p,
@@ -3575,7 +3575,7 @@ export default function Modal() {
       return
     }
 
-    const updatedProperties = state.data.properties.map(p => 
+    const updatedProperties = (state.data?.properties || []).map(p => 
       p.id === property.id
         ? {
             ...p,
@@ -3644,7 +3644,7 @@ export default function Modal() {
       propertyId: property.id
     }
 
-    const updatedProperties = state.data.properties.map(p => 
+    const updatedProperties = (state.data?.properties || []).map(p => 
       p.id === property.id
         ? {
             ...p,
@@ -3690,7 +3690,7 @@ export default function Modal() {
       return
     }
 
-    const updatedProperties = state.data.properties.map(p => 
+    const updatedProperties = (state.data?.properties || []).map(p => 
       p.id === property.id
         ? {
             ...p,
@@ -3732,7 +3732,7 @@ export default function Modal() {
       return
     }
 
-    const updatedProperties = state.data.properties.map(p => 
+    const updatedProperties = (state.data?.properties || []).map(p => 
       p.id === property.id
         ? {
             ...p,
@@ -3802,7 +3802,7 @@ export default function Modal() {
     // 更新總電費
     const totalFee = updatedReadings.reduce((sum: number, r: any) => sum + (r.fee || 0), 0)
 
-    const updatedProperties = state.data.properties.map(p => 
+    const updatedProperties = (state.data?.properties || []).map(p => 
       p.id === property.id
         ? {
             ...p,
@@ -3834,7 +3834,7 @@ export default function Modal() {
       return
     }
 
-    const updatedProperties = state.data.properties.map(p => 
+    const updatedProperties = (state.data?.properties || []).map(p => 
       p.id === property.id
         ? {
             ...p,
@@ -4033,7 +4033,7 @@ export default function Modal() {
       updatedMeterHistory.push(finalMeterReading)
     }
 
-    const updatedProperties = state.data.properties.map(p => 
+    const updatedProperties = (state.data?.properties || []).map(p => 
       p.id === property.id
         ? {
             ...p,
@@ -4129,7 +4129,7 @@ export default function Modal() {
       electricityRate: payment.electricityRate || state.data.electricityRate // 保留原有或使用當前單價
     }
 
-    const updatedProperties = state.data.properties.map(p => 
+    const updatedProperties = (state.data?.properties || []).map(p => 
       p.id === property.id
         ? {
             ...p,
@@ -4432,7 +4432,7 @@ export default function Modal() {
     }
 
     // 更新房間資料
-    const updatedProperties = state.data.properties.map(p => 
+    const updatedProperties = (state.data?.properties || []).map(p => 
       p.id === property.id
         ? {
             ...p,
@@ -4555,7 +4555,7 @@ export default function Modal() {
     const depositRefund = Math.max(0, deposit - totalDeductions)
 
     // 更新房間狀態
-    const updatedProperties = state.data.properties.map(p => 
+    const updatedProperties = (state.data?.properties || []).map(p => 
       p.id === property.id
         ? {
             ...p,
@@ -4743,7 +4743,7 @@ export default function Modal() {
       })
     }
 
-    const updatedProperties = state.data.properties.map(p => 
+    const updatedProperties = (state.data?.properties || []).map(p => 
       p.id === property.id
         ? {
             ...p,
@@ -4792,7 +4792,7 @@ export default function Modal() {
       s: 'available' as const
     }
 
-    const updatedProperties = state.data.properties.map(p => 
+    const updatedProperties = (state.data?.properties || []).map(p => 
       p.id === property.id
         ? { ...p, rooms: [...p.rooms, newRoom] }
         : p
@@ -4905,7 +4905,7 @@ export default function Modal() {
     })
 
     // 更新數據
-    const updatedProperties = state.data.properties.map(p => 
+    const updatedProperties = (state.data?.properties || []).map(p => 
       p.id === property.id
         ? {
             ...p,
@@ -5078,7 +5078,7 @@ export default function Modal() {
     }
 
     // 更新數據
-    const updatedProperties = state.data.properties.map(p => 
+    const updatedProperties = (state.data?.properties || []).map(p => 
       p.id === property.id
         ? {
             ...p,
@@ -5202,7 +5202,7 @@ export default function Modal() {
     const updatedHistory = [...(property.history || []), paidPayment].filter(Boolean)
 
     // 更新數據
-    const updatedProperties = state.data.properties.map(p => 
+    const updatedProperties = (state.data?.properties || []).map(p => 
       p.id === property.id
         ? {
             ...p,
@@ -5284,7 +5284,7 @@ export default function Modal() {
     const updatedPayments = [...property.payments, restoredPayment]
     
     // 更新數據
-    const updatedProperties = state.data.properties.map(p => 
+    const updatedProperties = (state.data?.properties || []).map(p => 
       p.id === property.id
         ? {
             ...p,
@@ -5436,7 +5436,7 @@ export default function Modal() {
     })
 
     // 更新數據
-    const updatedProperties = state.data.properties.map(p => 
+    const updatedProperties = (state.data?.properties || []).map(p => 
       p.id === property.id
         ? {
             ...p,

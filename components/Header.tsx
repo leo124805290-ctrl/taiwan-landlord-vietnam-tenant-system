@@ -45,11 +45,11 @@ export default function Header() {
                   className="w-full md:w-auto px-3 md:px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base"
                 >
                   <option value="all">
-                    📊 {t('allProperties', state.lang)} ({state.data.properties.length})
+                    📊 {t('allProperties', state.lang)} ({(state.data?.properties || []).length})
                   </option>
-                  {state.data.properties.map(property => (
+                  {(state.data?.properties || []).map(property => (
                     <option key={property.id} value={property.id}>
-                      {property.name} ({property.rooms.length} {t('rooms', state.lang)})
+                      {property.name} ({(property.rooms || []).length} {t('rooms', state.lang)})
                     </option>
                   ))}
                 </select>
@@ -99,7 +99,7 @@ export default function Header() {
 
         {/* 物業標籤 */}
         <div className="flex gap-2 overflow-x-auto mb-4 pb-2" style={{ scrollbarWidth: 'none' }}>
-          {state.data.properties.map(prop => (
+          {(state.data?.properties || []).map(prop => (
             <div 
               key={prop.id}
               onClick={() => updateState({ currentProperty: prop.id })}

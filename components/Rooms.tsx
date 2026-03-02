@@ -59,7 +59,7 @@ export default function Rooms({ property }: RoomsProps) {
     
     // 如果有變更，更新資料
     if (hasChanges) {
-      const updatedProperties = state.data.properties.map(p => 
+      const updatedProperties = (state.data?.properties || []).map(p => 
         p.id === property.id
           ? { ...p, rooms: updatedRooms }
           : p
@@ -234,7 +234,7 @@ export default function Rooms({ property }: RoomsProps) {
   const handleCancelReservation = (roomId: number) => {
     if (!confirm(t('confirmCancelReservation', state.lang))) return
     
-    const updatedProperties = state.data.properties.map(p => 
+    const updatedProperties = (state.data?.properties || []).map(p => 
       p.id === property.id
         ? {
             ...p,
@@ -271,7 +271,7 @@ export default function Rooms({ property }: RoomsProps) {
     
     if (confirmMessage && !confirm(confirmMessage)) return
     
-    const updatedProperties = state.data.properties.map(p => 
+    const updatedProperties = (state.data?.properties || []).map(p => 
       p.id === property.id
         ? {
             ...p,

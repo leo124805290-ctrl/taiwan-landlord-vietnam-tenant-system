@@ -498,7 +498,7 @@ export default function CostManagement({ property }: CostManagementProps) {
       // 使用 updateData 保存到雲端（保存到 property.expenses）
       if (updateData && property) {
         // 更新整個數據結構
-        const updatedProperties = state.data.properties.map((p: any) => {
+        const updatedProperties = (state.data?.properties || []).map((p: any) => {
           if (p.id === property.id) {
             return {
               ...p,
@@ -539,7 +539,7 @@ export default function CostManagement({ property }: CostManagementProps) {
         
         // 更新雲端數據（如果可能）
         if (updateData && property) {
-          const updatedProperties = state.data.properties.map((p: any) => {
+          const updatedProperties = (state.data?.properties || []).map((p: any) => {
             if (p.id === property.id) {
               return {
                 ...p,
