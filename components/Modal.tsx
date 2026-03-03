@@ -4804,7 +4804,7 @@ export default function Modal() {
   }
 
   // 儲存新增房間
-  const saveAddRoom = () => {
+  const saveAddRoom = async () => {
     const property = getCurrentProperty()
     if (!property) return
 
@@ -4818,24 +4818,44 @@ export default function Modal() {
       return
     }
 
-    const newRoomId = Math.max(...property.rooms.map((r: any) => r.id), 0) + 1
-    const newRoom = {
-      id: newRoomId,
-      f: parseInt(floorInput.value) || 1,
-      n: roomNumInput.value.trim(),
-      r: parseInt(rentInput.value) || 7000,
-      d: parseInt(depositInput.value) || 14000,
-      s: 'available' as const
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://taiwan-landlord-test.zeabur.app/api'
+      const res = await fetch(`${API_URL}/rooms`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          property_id: property.id,
+          floor: parseInt(floorInput.value) || 1,
+          room_number: roomNumInput.value.trim(),
+          monthly_rent: parseInt(rentInput.value) || 7000,
+          deposit: parseInt(depositInput.value) || 14000,
+          status: 'available'
+        })
+      })
+      const data = await res.json()
+      if (!data.success) throw new Error(data.error || '新增失敗')
+
+      const newRoom = {
+        id: data.data.id,
+        f: (data.data.floor || 1).toString(),
+        n: data.data.room_number,
+        r: data.data.rent_amount || parseInt(rentInput.value) || 7000,
+        d: data.data.deposit_amount || parseInt(depositInput.value) || 14000,
+        s: 'available' as const
+      }
+
+      const updatedProperties = (state.data?.properties || []).map(p => 
+        p.id === property.id
+          ? { ...p, rooms: [...p.rooms, newRoom] }
+          : p
+      )
+
+      updateData({ properties: updatedProperties })
+      alert('✅ 房間新增成功')
+      closeModal()
+    } catch (err: any) {
+      alert('❌ 新增房間失敗：' + err.message)
     }
-
-    const updatedProperties = (state.data?.properties || []).map(p => 
-      p.id === property.id
-        ? { ...p, rooms: [...p.rooms, newRoom] }
-        : p
-    )
-
-    updateData({ properties: updatedProperties })
-    closeModal()
   }
 
   // 處理快速收租
