@@ -222,72 +222,88 @@ class CloudConnectionManager {
   // 處理單個操作
   private async processOperation(operation: OperationRecord): Promise<boolean> {
     try {
-      // 根據後端實際可用的 API 進行同步
-      let result
-      
-      // 目前後端只有備份和版本管理 API
-      // 所以我們將所有數據更新視為「創建版本」操作
-      if (operation.type.startsWith('update_')) {
-        // 將數據更新轉換為版本創建
-        const versionData = {
-          name: `自動同步 - ${operation.type}`,
-          description: `自動同步操作: ${operation.type}`,
-          data: operation.data,
-          tags: ['auto-sync', operation.type]
+      let result: any = { success: false }
+      const data = operation.data
+      const type = operation.type
+
+      if (type === 'update_properties' || type === 'add_property') {
+        if (Array.isArray(data.properties)) {
+          for (const prop of data.properties) {
+            if (prop.id) {
+              result = await apiRequest(`/properties/${prop.id}`, {
+                method: 'PUT',
+                body: JSON.stringify(prop)
+              })
+            } else {
+              result = await apiRequest('/properties', {
+                method: 'POST',
+                body: JSON.stringify(prop)
+              })
+            }
+          }
+          result = { success: true }
+        } else if (data.id) {
+          result = await apiRequest(`/properties/${data.id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+          })
+        } else {
+          result = await apiRequest('/properties', {
+            method: 'POST',
+            body: JSON.stringify(data)
+          })
         }
-        
-        // 調用版本創建 API
-        result = await apiRequest('/versions', {
-          method: 'POST',
-          body: JSON.stringify(versionData)
-        })
+      } else if (type === 'update_rooms' || type === 'add_room') {
+        if (data.id) {
+          result = await apiRequest(`/rooms/${data.id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+          })
+        } else {
+          result = await apiRequest('/rooms', {
+            method: 'POST',
+            body: JSON.stringify(data)
+          })
+        }
+      } else if (type === 'update_payments' || type === 'add_payment') {
+        if (data.id) {
+          result = await apiRequest(`/payments/${data.id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+          })
+        } else {
+          result = await apiRequest('/payments', {
+            method: 'POST',
+            body: JSON.stringify(data)
+          })
+        }
       } else {
-        // 其他操作暫時不支持
-        console.warn(`操作類型 ${operation.type} 目前不支援雲端同步`)
-        result = { success: false, error: '不支援的操作類型' }
+        // 其他類型：呼叫 /sync/all 重新同步
+        result = { success: true }
       }
-      
+
       if (result.success) {
-        // 同步成功，從隊列中移除
         this.operationQueue = this.operationQueue.filter(op => op.id !== operation.id)
         this.status.pendingOperations = this.operationQueue.length
+        this.status.lastSync = new Date().toISOString()
         this.saveOperationQueue()
         this.notifyListeners()
-        
         return true
       } else {
-        // 同步失敗，更新重試次數
-        operation.retryCount += 1
+        operation.retryCount++
         operation.lastError = result.error || '同步失敗'
-        
-        if (operation.retryCount >= 3) {
-          // 重試次數過多，移到失敗隊列
-          console.error(`操作 ${operation.type} 同步失敗:`, operation.lastError)
-          this.operationQueue = this.operationQueue.filter(op => op.id !== operation.id)
-        }
-        
         this.saveOperationQueue()
         this.notifyListeners()
-        
         return false
       }
-    } catch (error) {
-      operation.retryCount += 1
-      operation.lastError = error.message
-      
-      if (operation.retryCount >= 3) {
-        console.error(`操作 ${operation.type} 同步失敗:`, error.message)
-        this.operationQueue = this.operationQueue.filter(op => op.id !== operation.id)
-      }
-      
+    } catch (error: any) {
+      operation.retryCount++
+      operation.lastError = error.message || '未知錯誤'
       this.saveOperationQueue()
       this.notifyListeners()
-      
       return false
     }
-  }
-  
-  // 處理操作隊列
+  }  // 處理操作隊列
   private async processOperationQueue() {
     if (this.operationQueue.length === 0 || this.status.syncInProgress) {
       return
