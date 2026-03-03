@@ -4,7 +4,7 @@ import { t } from '@/lib/translations'
 import { useApp } from '@/contexts/AppContext'
 
 export default function Header() {
-  const { state, updateState, openModal, getCurrentProperty } = useApp()
+  const { state, updateState, updateData, openModal, getCurrentProperty } = useApp()
   const property = getCurrentProperty()
   const tabs = [
     { key: 'rooms', icon: '🏠', label: 'roomsTab' },
@@ -115,7 +115,61 @@ export default function Header() {
                   : 'white',
               }}
             >
-              <div className="font-bold text-sm">{prop.name}</div>
+                          <div className="flex items-center gap-1">
+
+                            <div className="font-bold text-sm">{prop.name}</div>
+
+                            <button 
+
+                              onClick={(e) => {
+
+                                e.stopPropagation()
+
+                                if (!confirm(`確定要刪除「${prop.name}」嗎？\\n此操作無法復原，所有房間和付款記錄都會一起刪除！`)) return
+
+                                const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://taiwan-landlord-test.zeabur.app/api"
+
+                                fetch(`${API_URL}/properties/${prop.id}`, { method: "DELETE" })
+
+                                  .then(r => r.json())
+
+                                  .then(d => {
+
+                                    if (d.success) {
+
+                                      const updated = state.data.properties.filter((p: any) => p.id !== prop.id)
+
+                                      updateData({ properties: updated })
+
+                                      if (state.currentProperty === prop.id) {
+
+                                        updateState({ currentProperty: updated[0]?.id || null })
+
+                                      }
+
+                                    } else {
+
+                                      alert("刪除失敗：" + (d.error || "未知錯誤"))
+
+                                    }
+
+                                  })
+
+                                  .catch(() => alert("刪除失敗，請檢查網絡連接"))
+
+                              }}
+
+                              className="text-red-400 hover:text-red-600 text-xs leading-none px-1"
+
+                              title="刪除物業"
+
+                            >
+
+                              ✕
+
+                            </button>
+
+                          </div>
               <div className="text-xs opacity-75">
                 {prop.rooms.length} {t('rooms', state.lang)}
               </div>

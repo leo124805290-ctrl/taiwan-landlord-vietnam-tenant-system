@@ -3124,7 +3124,7 @@ export default function Modal() {
   }
 
   // 儲存新增物業（帶快速房間設定）
-  const saveAddPropertyWithRooms = () => {
+  const saveAddPropertyWithRooms = async () => {
     const nameInput = document.getElementById('pname') as HTMLInputElement
     const addrInput = document.getElementById('paddr') as HTMLInputElement
     const floorsInput = document.getElementById('pfloors') as HTMLInputElement
@@ -3147,50 +3147,86 @@ export default function Modal() {
       if (floorInput) {
         floorRooms.push(parseInt(floorInput.value) || 4)
       } else {
-        floorRooms.push(4) // 預設值
+        floorRooms.push(4)
       }
     }
 
-    const newId = Math.max(...(state.data?.properties || []).map(p => p.id), 0) + 1
-    
-    // 自動生成房間
-    const rooms = []
-    let roomId = 1
-    
-    for (let floor = 1; floor <= floors; floor++) {
-      const roomsOnFloor = floorRooms[floor - 1]
-      for (let roomNum = 1; roomNum <= roomsOnFloor; roomNum++) {
-        rooms.push({
-          id: roomId++,
-          f: floor,
-          n: `${floor}${roomNum.toString().padStart(2, '0')}`, // 如 101, 102, 201, 202
-          r: defaultRent,
-          d: defaultDeposit,
-          s: 'available' as const
+    try {
+      // 1. 先呼叫後端 API 新增物業，取得真實 ID
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://taiwan-landlord-test.zeabur.app/api'
+      const propRes = await fetch(`${API_URL}/properties`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: nameInput.value.trim(),
+          address: addrInput.value.trim(),
+          owner_name: '',
+          owner_phone: ''
         })
+      })
+      const propData = await propRes.json()
+      if (!propData.success) throw new Error('新增物業失敗')
+      const newPropertyId = propData.data.id
+
+      // 2. 逐一新增房間
+      const rooms = []
+      let roomNum = 1
+      for (let floor = 1; floor <= floors; floor++) {
+        const roomsOnFloor = floorRooms[floor - 1]
+        for (let r = 1; r <= roomsOnFloor; r++) {
+          const roomLabel = `${floor}${r.toString().padStart(2, '0')}`
+          const roomRes = await fetch(`${API_URL}/rooms`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              property_id: newPropertyId,
+              floor: floor.toString(),
+              room_number: roomLabel,
+              monthly_rent: defaultRent,
+              deposit: defaultDeposit,
+              status: 'available'
+            })
+          })
+          const roomData = await roomRes.json()
+          if (roomData.success) {
+            rooms.push({
+              id: roomData.data.id,
+              f: floor.toString(),
+              n: roomLabel,
+              r: defaultRent,
+              d: defaultDeposit,
+              s: 'available' as const
+            })
+          }
+          roomNum++
+        }
       }
-    }
 
-    const newProperty = {
-      id: newId,
-      name: nameInput.value.trim(),
-      address: addrInput.value.trim(),
-      floors: floors,
-      rooms: rooms,
-      payments: [],
-      history: [],
-      maintenance: []
-    }
+      // 3. 更新本地狀態
+      const newProperty = {
+        id: newPropertyId,
+        name: nameInput.value.trim(),
+        address: addrInput.value.trim(),
+        floors: floors,
+        rooms: rooms,
+        payments: [],
+        history: [],
+        maintenance: []
+      }
 
-    updateData({
-      properties: [...state.data.properties, newProperty]
-    })
-    
-    updateState({ currentProperty: newId })
-    
-    // 顯示成功訊息
-    alert(`✅ 物業建立成功！\n已自動建立 ${rooms.length} 間房間`)
-    closeModal()
+      updateData({
+        properties: [...state.data.properties, newProperty]
+      })
+      
+      updateState({ currentProperty: newPropertyId })
+      
+      // 顯示成功訊息
+      alert(`✅ 物業建立成功！\n已自動建立 ${rooms.length} 間房間`)
+      closeModal()
+    } catch (err) {
+      console.error('新增物業失敗:', err)
+      alert('❌ 新增物業失敗，請稍後再試')
+    }
   }
 
   // 儲存編輯物業
