@@ -247,6 +247,28 @@ export default function Rooms({ property }: RoomsProps) {
         : p
     )
     
+    // 同步後端
+    const _apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://taiwan-landlord-test.zeabur.app/api'
+    const _room = property.rooms.find((r: Room) => r.id === roomId)
+    if (_room) {
+      fetch(_apiUrl + '/rooms/' + roomId, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          floor: _room.f,
+          room_number: _room.n,
+          monthly_rent: _room.r,
+          deposit: _room.d,
+          status: newStatus,
+          tenant_name: newStatus === 'maintenance' ? null : (_room.t || null),
+          check_in_date: _room.in || null,
+          check_out_date: _room.out || null,
+          current_meter: _room.cm || 0,
+          previous_meter: _room.pm || 0
+        })
+      }).catch(e => console.error('狀態同步失敗:', e))
+    }
+
     updateData({ properties: updatedProperties })
   }
 
