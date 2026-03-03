@@ -16,6 +16,7 @@ interface AppContextType {
   openModal: (type: string, data?: any) => void
   closeModal: () => void
   getCurrentProperty: () => any
+  reloadFromCloud: () => Promise<void>
   // 雲端用戶相關
   login: (username: string, password: string) => Promise<boolean>
   logout: () => void
@@ -289,6 +290,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setState(prev => ({ ...prev, ...updates }))
   }
 
+  // 從雲端重新載入資料
+  const reloadFromCloud = async () => {
+    try {
+      const freshData = await cloudConnection.getAllData()
+      if (freshData && freshData.data && freshData.data.properties) {
+        setState((prev: any) => ({
+          ...prev,
+          data: { ...prev.data, ...freshData.data }
+        }))
+      }
+    } catch (err) {
+      console.error('重新載入失敗:', err)
+    }
+  }
+
   // 更新資料的輔助函數（自動同步到雲端）
   const updateData = (updates: Partial<AppData>, options?: {
     requireConfirmation?: boolean
@@ -418,6 +434,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     openModal,
     closeModal,
     getCurrentProperty,
+    reloadFromCloud,
     login,
     logout,
     isLoading: false

@@ -7,7 +7,7 @@ import { useApp } from '@/contexts/AppContext'
 import { useEffect, useRef } from 'react'
 
 export default function Modal() {
-  const { state, updateState, updateData, closeModal, getCurrentProperty } = useApp()
+  const { state, updateState, updateData, reloadFromCloud, closeModal, getCurrentProperty } = useApp()
   
   const type = state.modal?.type || ''
   const data = state.modal?.data
@@ -4183,371 +4183,213 @@ export default function Modal() {
   }
 
   // 儲存入住房間（三種付款方式）
-  const saveCheckIn = (roomId: number) => {
+  const saveCheckIn = async (roomId: number) => {
     const property = getCurrentProperty()
     if (!property) return
 
-    // 獲取付款方式
-    const paymentOption = document.querySelector('input[name="paymentOption"]:checked') as HTMLInputElement
+    const paymentOption = (document.querySelector('input[name="paymentOption"]:checked') as HTMLInputElement)?.value
     if (!paymentOption) {
-      alert('請選擇付款方式')
+      alert('請選擇付款方式');
       return
     }
 
-    // 獲取租客資訊
     const nameInput = document.getElementById('checkInTenantName') as HTMLInputElement
     const phoneInput = document.getElementById('checkInTenantPhone') as HTMLInputElement
     const startInput = document.getElementById('checkInContractStart') as HTMLInputElement
     const endInput = document.getElementById('checkInContractEnd') as HTMLInputElement
-    const meterInput = document.getElementById('checkInElectricityMeter') as HTMLInputElement
-    const notesInput = document.getElementById('checkInNotes') as HTMLTextAreaElement
 
-    // 驗證必填字段
     if (!nameInput?.value.trim()) {
-      alert(t('pleaseEnterTenantName', state.lang))
+      alert('請填寫租客姓名');
       return
     }
 
-    if (!phoneInput?.value.trim()) {
-      alert('請輸入租客電話')
+    if (!startInput?.value) {
+      alert('請填寫起租日');
       return
     }
 
-    if (!startInput?.value || !endInput?.value) {
-      alert('請填寫合約起訖日期')
-      return
-    }
-
-    const startDate = new Date(startInput.value)
-    const endDate = new Date(endInput.value)
-
-    if (endDate <= startDate) {
-      alert('合約結束日期必須晚於開始日期')
-      return
-    }
-
-    // 今天日期（用於判斷入住狀態）
-    const today = new Date().toISOString().split('T')[0]
-
-    // 根據付款方式設定房間狀態
-    let roomStatus: RoomStatus
-    let checkInPaymentType: 'full' | 'deposit_only' | 'reservation_only'
-
-    switch (paymentOption.value) {
-      case 'full':
-        // 全額付款：檢查入住日期
-        if (startInput.value <= today) {
-          // 入住日期已到或已過：直接設為已出租
-          roomStatus = 'occupied'
-        } else {
-          // 入住日期未到：設為待入住（已結清）
-          roomStatus = 'pending_checkin_paid'
-        }
-        checkInPaymentType = 'full'
-        break
-      case 'deposit_only':
-        // 僅付訂金：檢查入住日期
-        if (startInput.value <= today) {
-          // 入住日期已到：設為待入住（尚未結清）
-          roomStatus = 'pending_checkin_unpaid'
-        } else {
-          // 入住日期未到：設為待入住（尚未結清）
-          roomStatus = 'pending_checkin_unpaid'
-        }
-        checkInPaymentType = 'deposit_only'
-        break
-      case 'reservation_only':
-        // 僅預訂：設為待入住（尚未結清）
-        roomStatus = 'pending_checkin_unpaid'
-        checkInPaymentType = 'reservation_only'
-        break
-      default:
-        roomStatus = 'occupied'
-        checkInPaymentType = 'full'
-    }
-
-    // 計算合約月數
-    const monthsDiff = (endDate.getFullYear() - startDate.getFullYear()) * 12 + 
-                      (endDate.getMonth() - startDate.getMonth())
-
-    // 獲取房間資訊
     const room = property.rooms.find((r: any) => r.id === roomId)
-    if (!room) {
-      alert('找不到房間資訊')
-      return
-    }
+    if (!room) return
 
-    // 檢查是否需要生成補登記錄
-    const todayDate = new Date()
-    const firstDayOfMonth = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1)
-    const needsBackfill = startDate < firstDayOfMonth
-    
-    // 生成付款記錄（根據付款類型）
-    let newPayments: any[] = []
-    let paymentId = Math.max(...(property.payments || []).map((p: any) => p.id), 0) + 1
-    
-    // 當前月份（用於付款記錄）
-    const currentMonth = new Date().toISOString().slice(0, 7).replace('-', '/')
-    
-    // 如果需要補登，生成補登記錄
-    if (needsBackfill) {
-      // 計算需要補登的月份
-      const startYear = startDate.getFullYear()
-      const startMonth = startDate.getMonth()
-      const currentYear = todayDate.getFullYear()
-      const currentMonthIndex = todayDate.getMonth()
-      
-      // 計算月份差（從起租月到上個月）
-      const monthDiff = (currentYear - startYear) * 12 + (currentMonthIndex - startMonth)
-      const backfillMonthCount = Math.max(0, monthDiff - 1) // 減去當前月份
-      
-      // 生成押金補登記錄
-      if (room.d && room.d > 0) {
-        newPayments.push({
-          id: paymentId++,
-          rid: roomId,
-          n: room.n,
-          t: nameInput.value.trim(),
-          m: `${startYear}/${String(startMonth + 1).padStart(2, '0')}`,
-          r: 0,
-          e: 0,
-          total: room.d,
-          due: startInput.value,
-          s: 'paid' as const,  // 默認為已收款
-          paid: startInput.value,  // 收款日期為入住日期
-          archived: true,  // 已歸檔
-          paymentType: 'deposit' as const,
-          isBackfill: true,
-          notes: `歷史日期補登 - 押金 (${nameInput.value.trim()})`
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://taiwan-landlord-test.zeabur.app/api'
+    try {
+      // 1. 建立租約
+      const tenantRes = await fetch(`${API_URL}/tenants`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          property_id: property.id,
+          room_id: roomId,
+          room_number: room.n,
+          tenant_name: nameInput.value.trim(),
+          tenant_phone: phoneInput?.value.trim() || '',
+          check_in_date: startInput.value,
+          check_out_date: endInput?.value || null,
+          rent_amount: room.r,
+          deposit_amount: room.d,
+          deposit_status: paymentOption === 'full' || paymentOption === 'deposit_only' ? 'paid' : 'pending',
+          status: 'active'
         })
-      }
-      
-      // 生成租金補登記錄（從起租月到上個月）
-      for (let i = 0; i < backfillMonthCount; i++) {
-        const monthOffset = i
-        const backfillYear = startYear + Math.floor((startMonth + monthOffset) / 12)
-        const backfillMonth = (startMonth + monthOffset) % 12 + 1
-        
-        newPayments.push({
-          id: paymentId++,
-          rid: roomId,
-          n: room.n,
-          t: nameInput.value.trim(),
-          m: `${backfillYear}/${String(backfillMonth).padStart(2, '0')}`,
-          r: room.r,
-          e: 0,
-          total: room.r,
-          due: `${backfillYear}-${String(backfillMonth).padStart(2, '0')}-28`,
-          s: 'paid' as const,  // 默認為已收款
-          paid: `${backfillYear}-${String(backfillMonth).padStart(2, '0')}-28`,  // 收款日期為到期日
-          archived: true,  // 已歸檔
-          paymentType: 'rent' as const,
-          isBackfill: true,
-          notes: `歷史日期補登 - ${backfillYear}/${backfillMonth} 租金 (${nameInput.value.trim()})`
-        })
-      }
-      
-      // 顯示確認訊息並提供選擇
-      if (backfillMonthCount > 0 || (room.d && room.d > 0)) {
-        // 生成詳細的補登記錄列表
-        let backfillDetails = '📅 歷史日期補登詳細記錄：\n\n'
-        
-        // 押金補登
-        if (room.d && room.d > 0) {
-          backfillDetails += `1. ${startYear}/${String(startMonth + 1).padStart(2, '0')} 押金\n`
-          backfillDetails += `   • 金額：${formatCurrency(room.d)}\n`
-          backfillDetails += `   • 類型：一次性押金\n\n`
-        }
-        
-        // 租金補登
-        for (let i = 0; i < backfillMonthCount; i++) {
-          const monthOffset = i
-          const backfillYear = startYear + Math.floor((startMonth + monthOffset) / 12)
-          const backfillMonth = (startMonth + monthOffset) % 12 + 1
-          
-          backfillDetails += `${i + (room.d && room.d > 0 ? 2 : 1)}. ${backfillYear}/${String(backfillMonth).padStart(2, '0')} 租金\n`
-          backfillDetails += `   • 金額：${formatCurrency(room.r)}\n`
-          backfillDetails += `   • 電費：待更新\n\n`
-        }
-        
-        backfillDetails += `總計：${newPayments.length} 筆記錄\n`
-        backfillDetails += `總金額：${formatCurrency(newPayments.reduce((sum, p) => sum + p.total, 0))}\n\n`
-        
-        const confirmMessage = `${backfillDetails}請選擇補登記錄的收款狀態：
-        
-        1. ✅ 默認已收款（推薦）
-           - 補登記錄標記為「已收款」
-           - 不生成待收款項
-           - 影響對應月份的現金流統計
-        
-        2. ⏳ 設為待確認
-           - 補登記錄標記為「待確認」
-           - 在繳費分頁生成待收款項
-           - 管理者需手動點擊收款
-        
-        請輸入選擇（1 或 2）：`
-        
-        const userChoice = prompt(confirmMessage)
-        
-        if (userChoice === null) {
-          return // 用戶取消
-        }
-        
-        if (userChoice === '2') {
-          // 用戶選擇「設為待確認」，將所有補登記錄狀態改為 pending
-          newPayments = newPayments.map(payment => ({
-            ...payment,
-            s: 'pending' as const,
-            paid: undefined,
-            archived: false
-          }))
-          
-          alert(`已設定 ${newPayments.length} 筆補登記錄為「待確認」狀態，將在繳費分頁生成待收款項。`)
-        } else {
-          // 默認或選擇 1：保持已收款狀態
-          alert(`已設定 ${newPayments.length} 筆補登記錄為「已收款」狀態，將影響對應月份的現金流統計。`)
-        }
-      }
-    }
-    
-    switch (paymentOption.value) {
-      case 'deposit_only':
-        // 僅付訂金：生成租金待收款項
-        newPayments.push({
-          id: paymentId++,
-          rid: roomId,
-          n: room.n,
-          t: nameInput.value.trim(),
-          m: currentMonth,
-          r: room.r, // 租金金額
-          u: 0, // 用電度數（稍後更新）
-          e: 0, // 電費（稍後更新）
-          total: room.r, // 總金額（僅租金）
-          due: startInput.value, // 入住日就是租金到期日
-          s: 'pending' as const,
-          notes: '待收租金（已收訂金）',
-          paymentType: 'rent_pending'
-        })
-        break
-        
-      case 'reservation_only':
-        // 僅預訂：生成租金+訂金待收款項
-        newPayments.push({
-          id: paymentId,
-          rid: roomId,
-          n: room.n,
-          t: nameInput.value.trim(),
-          m: currentMonth,
-          r: room.r, // 租金金額
-          u: 0,
-          e: 0,
-          total: room.r, // 租金
-          due: startInput.value,
-          s: 'pending' as const,
-          notes: '待收租金（預訂中）',
-          paymentType: 'rent_pending'
-        })
-        
-        // 訂金待收款項
-        newPayments.push({
-          id: paymentId + 1,
-          rid: roomId,
-          n: room.n,
-          t: nameInput.value.trim(),
-          m: currentMonth,
-          r: 0, // 訂金在租金欄位為0，有專門欄位
-          u: 0,
-          e: 0,
-          total: room.d || 0, // 訂金金額
-          due: startInput.value,
-          s: 'pending' as const,
-          notes: '待收訂金（預訂中）',
-          paymentType: 'deposit_pending'
-        })
-        break
-    }
+      })
+      const tenantData = await tenantRes.json()
+      if (!tenantData.success) throw new Error(tenantData.error || '建立租約失敗')
+      const tenantId = tenantData.data.id
 
-    // 更新房間資料
-    const updatedProperties = (state.data?.properties || []).map(p => 
-      p.id === property.id
-        ? {
-            ...p,
-            rooms: p.rooms.map(r => 
-              r.id === roomId
-                ? {
-                    ...r,
-                    s: roomStatus,
-                    t: nameInput.value.trim(),
-                    p: phoneInput.value.trim(),
-                    in: startInput.value,
-                    out: endInput.value,
-                    pm: meterInput?.value ? parseInt(meterInput.value) : 0,
-                    checkInPaymentType,
-                    contractMonths: monthsDiff,
-                    initialElectricityMeter: meterInput?.value ? parseInt(meterInput.value) : 0,
-                    notes: notesInput?.value || '',
-                    // 如果是全額付款，設定電錶讀數
-                    ...(paymentOption.value === 'full' && meterInput?.value 
-                      ? { cm: parseInt(meterInput.value) } 
-                      : {})
-                  }
-                : r
-            ),
-            // 添加新的付款記錄
-            payments: [...(p.payments || []), ...newPayments]
-          }
-        : p
-    )
+      // 2. 更新房間狀態
+      const newStatus = paymentOption === 'reservation_only' ? 'pending_checkin_unpaid' : paymentOption === 'deposit_only' ? 'pending_checkin_unpaid' : 'occupied'
+      await fetch(`${API_URL}/rooms/${roomId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: newStatus,
+          tenant_name: nameInput.value.trim(),
+          tenant_phone: phoneInput?.value.trim() || '',
+          check_in_date: startInput.value,
+          check_out_date: endInput?.value || null,
+          monthly_rent: room.r,
+          deposit: room.d,
+          floor: room.f,
+          room_number: room.n,
+          current_meter: room.cm || 0,
+          previous_meter: room.pm || 0,
+          current_tenant_id: tenantId
+        })
+      })
 
-    updateData({ properties: updatedProperties })
-    
-    // 顯示成功訊息
-    let successMessage = ''
-    switch (paymentOption.value) {
-      case 'full':
-        successMessage = '✅ 入住成功！已收取全額租金和押金。'
-        break
-      case 'deposit_only':
-        successMessage = '💰 入住成功！已收取押金。\n' +
-                        '📋 系統已自動生成租金待收款項。\n' +
-                        '📅 入住日到時，房間會自動轉為「已出租」。'
-        break
-      case 'reservation_only':
-        successMessage = '📅 預訂成功！房間已保留。\n' +
-                        '📋 系統已自動生成租金+訂金待收款項。\n' +
-                        '📅 入住日到時，房間會自動轉為「待付款」。'
-        break
-    }
-    
-    // 添加補登記錄資訊
-    if (needsBackfill) {
-      const backfillCount = newPayments.filter(p => p.isBackfill).length
-      const backfillPaidCount = newPayments.filter(p => p.isBackfill && p.s === 'paid').length
-      const backfillPendingCount = newPayments.filter(p => p.isBackfill && p.s === 'pending').length
-      
-      if (backfillCount > 0) {
-        successMessage += `\n\n📅 歷史日期補登：已生成 ${backfillCount} 筆補登記錄\n`
-        
-        if (backfillPaidCount > 0) {
-          successMessage += `• ${backfillPaidCount} 筆已設為「已收款」狀態\n` +
-                           '• 將影響對應月份的現金流統計\n'
-        }
-        
-        if (backfillPendingCount > 0) {
-          successMessage += `• ${backfillPendingCount} 筆已設為「待確認」狀態\n` +
-                           '• 請到繳費分頁查看和確認補登記錄\n'
-        }
-        
-        successMessage += '• 所有補登記錄可在繳費分頁的歷史記錄中查詢'
+      // 3. 建立繳費記錄
+      const today = new Date()
+      const currentMonth = `${today.getFullYear()}/${String(today.getMonth()+1).padStart(2,'0')}`
+      const paymentPromises = []
+
+      if (paymentOption === 'full') {
+        // 押金已收款
+        paymentPromises.push(fetch(`${API_URL}/payments`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            property_id: property.id,
+            room_id: roomId,
+            tenant_id: tenantId,
+            room_number: room.n,
+            tenant_name: nameInput.value.trim(),
+            month: currentMonth,
+            type: 'deposit',
+            total_amount: room.d,
+            status: 'paid',
+            paid_date: startInput.value,
+            notes: '入住押金'
+          })
+        }))
+        // 首月租金已收款
+        paymentPromises.push(fetch(`${API_URL}/payments`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            property_id: property.id,
+            room_id: roomId,
+            tenant_id: tenantId,
+            room_number: room.n,
+            tenant_name: nameInput.value.trim(),
+            month: currentMonth,
+            type: 'rent',
+            rent_amount: room.r,
+            total_amount: room.r,
+            status: 'paid',
+            paid_date: startInput.value,
+            notes: '入住首月租金'
+          })
+        }))
+      } else if (paymentOption === 'deposit_only') {
+        // 押金已收款
+        paymentPromises.push(fetch(`${API_URL}/payments`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            property_id: property.id,
+            room_id: roomId,
+            tenant_id: tenantId,
+            room_number: room.n,
+            tenant_name: nameInput.value.trim(),
+            month: currentMonth,
+            type: 'deposit',
+            total_amount: room.d,
+            status: 'paid',
+            paid_date: startInput.value,
+            notes: '入住押金'
+          })
+        }))
+        // 首月租金待繳
+        paymentPromises.push(fetch(`${API_URL}/payments`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            property_id: property.id,
+            room_id: roomId,
+            tenant_id: tenantId,
+            room_number: room.n,
+            tenant_name: nameInput.value.trim(),
+            month: currentMonth,
+            type: 'rent',
+            rent_amount: room.r,
+            total_amount: room.r,
+            status: 'pending',
+            due_date: startInput.value,
+            notes: '入住首月租金'
+          })
+        }))
+      } else {
+        // 押金待繳
+        paymentPromises.push(fetch(`${API_URL}/payments`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            property_id: property.id,
+            room_id: roomId,
+            tenant_id: tenantId,
+            room_number: room.n,
+            tenant_name: nameInput.value.trim(),
+            month: currentMonth,
+            type: 'deposit',
+            total_amount: room.d,
+            status: 'pending',
+            due_date: startInput.value,
+            notes: '入住押金待繳'
+          })
+        }))
+        // 首月租金待繳
+        paymentPromises.push(fetch(`${API_URL}/payments`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            property_id: property.id,
+            room_id: roomId,
+            tenant_id: tenantId,
+            room_number: room.n,
+            tenant_name: nameInput.value.trim(),
+            month: currentMonth,
+            type: 'rent',
+            rent_amount: room.r,
+            total_amount: room.r,
+            status: 'pending',
+            due_date: startInput.value,
+            notes: '入住首月租金待繳'
+          })
+        }))
       }
+
+      await Promise.all(paymentPromises)
+
+      // 4. 重新載入資料
+      await reloadFromCloud()
+      alert('✅ 入住成功')
+      closeModal()
+    } catch (err: any) {
+      alert('❌ 入住失敗：' + err.message)
     }
-    
-    alert(successMessage)
-    closeModal()
   }
 
   // 儲存退房結算
-  const saveCheckOut = (roomId: number) => {
+  const saveCheckOut = async (roomId: number) => {
     const property = getCurrentProperty()
     if (!property) return
 
@@ -4652,6 +4494,48 @@ export default function Modal() {
         : p
     )
 
+    
+    // 同步後端
+    const _API = process.env.NEXT_PUBLIC_API_URL || 'https://taiwan-landlord-test.zeabur.app/api'
+    const _room = property?.rooms.find((r: any) => r.id === roomId)
+    if (_room) {
+      try {
+        // 更新房間狀態為空房
+        await fetch(`${_API}/rooms/${roomId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            status: 'available',
+            tenant_name: null,
+            tenant_phone: null,
+            check_in_date: null,
+            check_out_date: null,
+            monthly_rent: _room.r,
+            deposit: _room.d,
+            floor: _room.f,
+            room_number: _room.n,
+            current_meter: _room.cm || 0,
+            previous_meter: _room.pm || 0,
+            current_tenant_id: null
+          })
+        })
+        // 更新租約狀態為已退房
+        if (_room.current_tenant_id) {
+          await fetch(`${_API}/tenants/${_room.current_tenant_id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              status: 'closed'
+            })
+          })
+        }
+        await reloadFromCloud()
+      } catch (e) {
+        console.error('退房同步失敗:', e)
+      }
+    }
+
+
     updateData({ properties: updatedProperties })
     
     // 顯示成功訊息
@@ -4672,7 +4556,7 @@ export default function Modal() {
   }
 
   // 儲存出租房間
-  const saveRentOut = (roomId: number) => {
+  const saveRentOut = async (roomId: number) => {
     const property = getCurrentProperty()
     if (!property) return
 
@@ -4811,6 +4695,67 @@ export default function Modal() {
         })
       }).catch(e => console.error('後端同步失敗:', e))
     }
+
+    
+    // 同步後端（續租邏輯）
+    const _API2 = process.env.NEXT_PUBLIC_API_URL || 'https://taiwan-landlord-test.zeabur.app/api'
+    const _room2 = property?.rooms.find((r: any) => r.id === roomId)
+    if (_room2 && _room2.current_tenant_id) {
+      try {
+        // 舊租約標記為已續租
+        await fetch(`${_API2}/tenants/${_room2.current_tenant_id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            status: 'renewed'
+          })
+        })
+        // 建立新租約（押金沿用）
+        const newTenantRes = await fetch(`${_API2}/tenants/${_room2.current_tenant_id}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            property_id: property.id,
+            room_id: roomId,
+            room_number: _room2.n,
+            tenant_name: _room2.t,
+            tenant_phone: _room2.p || '',
+            check_in_date: (document.getElementById('renewStart') as HTMLInputElement)?.value || '',
+            check_out_date: (document.getElementById('renewEnd') as HTMLInputElement)?.value || '',
+            rent_amount: parseInt((document.getElementById('renewRent') as HTMLInputElement)?.value || _room2.r),
+            deposit_amount: _room2.d,
+            deposit_status: 'paid',
+            deposit_carried_over: true,
+            previous_tenant_id: _room2.current_tenant_id,
+            status: 'active'
+          })
+        })
+        const newTenantData = await newTenantRes.json()
+        // 更新房間的 current_tenant_id
+        if (newTenantData.success) {
+          await fetch(`${_API2}/tenants/${_room2.current_tenant_id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              current_tenant_id: newTenantData.data.id,
+              check_out_date: (document.getElementById('renewEnd') as HTMLInputElement)?.value || '',
+              monthly_rent: parseInt((document.getElementById('renewRent') as HTMLInputElement)?.value || _room2.r),
+              deposit: _room2.d,
+              floor: _room2.f,
+              room_number: _room2.n,
+              status: 'occupied',
+              tenant_name: _room2.t,
+              current_meter: _room2.cm || 0,
+              previous_meter: _room2.pm || 0
+            })
+          })
+        }
+        await reloadFromCloud()
+      } catch (e) {
+        console.error('續租同步失敗:', e)
+      }
+    }
+
 
     updateData({ properties: updatedProperties })
     
