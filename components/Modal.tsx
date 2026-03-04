@@ -4212,8 +4212,11 @@ export default function Modal() {
     if (!room) return
 
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://taiwan-landlord-test.zeabur.app/api'
+    const today = new Date().toISOString().split('T')[0]
+    const currentMonth = today.substring(0, 7).replace('-', '/')
     try {
       // 1. 建立租約
+      const depositStatus = paymentOption === 'full' || paymentOption === 'deposit_only' ? 'paid' : 'pending'
       const tenantRes = await fetch(`${API_URL}/tenants`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -4227,7 +4230,7 @@ export default function Modal() {
           check_out_date: endInput?.value || null,
           rent_amount: room.r,
           deposit_amount: room.d,
-          deposit_status: paymentOption === 'full' || paymentOption === 'deposit_only' ? 'paid' : 'pending',
+          deposit_status: depositStatus,
           status: 'active'
         })
       })
@@ -4236,7 +4239,7 @@ export default function Modal() {
       const tenantId = tenantData.data.id
 
       // 2. 更新房間狀態
-      const newStatus = paymentOption === 'reservation_only' ? 'pending_checkin_unpaid' : paymentOption === 'deposit_only' ? 'pending_checkin_unpaid' : 'occupied'
+      const newStatus = paymentOption === 'full' ? 'occupied' : paymentOption === 'deposit_only' ? 'occupied' : 'pending_checkin_unpaid'
       await fetch(`${API_URL}/rooms/${roomId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -4257,10 +4260,7 @@ export default function Modal() {
       })
 
       // 3. 建立繳費記錄
-      const today = new Date()
-      const currentMonth = `${today.getFullYear()}/${String(today.getMonth()+1).padStart(2,'0')}`
       const paymentPromises = []
-
       if (paymentOption === 'full') {
         // 押金已收款
         paymentPromises.push(fetch(`${API_URL}/payments`, {
@@ -4276,7 +4276,7 @@ export default function Modal() {
             type: 'deposit',
             total_amount: room.d,
             status: 'paid',
-            paid_date: startInput.value,
+            paid_date: today,
             notes: '入住押金'
           })
         }))
@@ -4295,7 +4295,7 @@ export default function Modal() {
             rent_amount: room.r,
             total_amount: room.r,
             status: 'paid',
-            paid_date: startInput.value,
+            paid_date: today,
             notes: '入住首月租金'
           })
         }))
@@ -4314,46 +4314,8 @@ export default function Modal() {
             type: 'deposit',
             total_amount: room.d,
             status: 'paid',
-            paid_date: startInput.value,
+            paid_date: today,
             notes: '入住押金'
-          })
-        }))
-        // 首月租金待繳
-        paymentPromises.push(fetch(`${API_URL}/payments`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            property_id: property.id,
-            room_id: roomId,
-            tenant_id: tenantId,
-            room_number: room.n,
-            tenant_name: nameInput.value.trim(),
-            month: currentMonth,
-            type: 'rent',
-            rent_amount: room.r,
-            total_amount: room.r,
-            status: 'pending',
-            due_date: startInput.value,
-            notes: '入住首月租金'
-          })
-        }))
-      } else {
-        // 押金待繳
-        paymentPromises.push(fetch(`${API_URL}/payments`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            property_id: property.id,
-            room_id: roomId,
-            tenant_id: tenantId,
-            room_number: room.n,
-            tenant_name: nameInput.value.trim(),
-            month: currentMonth,
-            type: 'deposit',
-            total_amount: room.d,
-            status: 'pending',
-            due_date: startInput.value,
-            notes: '入住押金待繳'
           })
         }))
         // 首月租金待繳
@@ -4375,11 +4337,47 @@ export default function Modal() {
             notes: '入住首月租金待繳'
           })
         }))
+      } else {
+        // 僅預訂：押金待繳
+        paymentPromises.push(fetch(`${API_URL}/payments`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            property_id: property.id,
+            room_id: roomId,
+            tenant_id: tenantId,
+            room_number: room.n,
+            tenant_name: nameInput.value.trim(),
+            month: currentMonth,
+            type: 'deposit',
+            total_amount: room.d,
+            status: 'pending',
+            due_date: startInput.value,
+            notes: '押金待繳'
+          })
+        }))
+        // 首月租金待繳
+        paymentPromises.push(fetch(`${API_URL}/payments`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            property_id: property.id,
+            room_id: roomId,
+            tenant_id: tenantId,
+            room_number: room.n,
+            tenant_name: nameInput.value.trim(),
+            month: currentMonth,
+            type: 'rent',
+            rent_amount: room.r,
+            total_amount: room.r,
+            status: 'pending',
+            due_date: startInput.value,
+            notes: '首月租金待繳'
+          })
+        }))
       }
 
       await Promise.all(paymentPromises)
-
-      // 4. 重新載入資料
       await reloadFromCloud()
       alert('✅ 入住成功')
       closeModal()
