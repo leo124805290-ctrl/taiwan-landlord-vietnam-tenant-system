@@ -3,7 +3,7 @@
 import Header from '@/components/Header'
 import Rooms from '@/components/Rooms'
 import AllPropertiesRooms from '@/components/AllPropertiesRooms'
-import AllPropertiesPayments from '@/components/AllPropertiesPaymentsV2'
+import SimplePaymentsPage from '@/components/SimplePaymentsPage'
 import Payments from '@/components/Payments'
 import CostManagement from '@/components/CostManagement'
 import AllPropertiesCostManagement from '@/components/AllPropertiesCostManagement'
@@ -58,7 +58,7 @@ export default function HomePage() {
         case 'cost-management':
           return <AllPropertiesCostManagement properties={state.data.properties || []} />
         case 'payments':
-          return <AllPropertiesPayments />
+          return <SimplePaymentsPage />
         case 'settings':
           return (
             <div className="card text-center py-12">
