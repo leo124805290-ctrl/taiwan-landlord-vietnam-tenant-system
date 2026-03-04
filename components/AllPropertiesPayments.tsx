@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useApp } from '@/contexts/AppContext'
 import PaymentStatsPanel from './PaymentStatsPanel'
 import PaymentViews from './PaymentViews'
+import SuggestionsPanel from './SuggestionsPanel'
 import { Payment, Room, Tenant } from '@/lib/types'
 
 // 類型定義
@@ -643,7 +644,7 @@ export default function AllPropertiesPayments(props: AllPropertiesPaymentsProps)
       </div>
 
       {/* 建議繳費項目面板 */}
-      {showSuggestions && suggestedCharges.length > 0 && (
+      {showSuggestions && (
         <div className="card bg-amber-50 border-amber-200 mb-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-amber-800 flex items-center gap-2">
@@ -790,83 +791,6 @@ export default function AllPropertiesPayments(props: AllPropertiesPaymentsProps)
           </button>
         </div>
       )}
-
-      {/* 簡單建議繳費項目面板 */}
-      <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-        <div className="flex justify-between items-center mb-4">
-          <div className="font-bold text-amber-800 flex items-center gap-2">
-            <span>💡</span>
-            建議繳費項目
-          </div>
-          <button 
-            onClick={async () => {
-              try {
-                const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://taiwan-landlord-test.zeabur.app/api'
-                const response = await fetch(`${API_URL}/charges/suggested`)
-                const data = await response.json()
-                
-                if (data.success) {
-                  const tenants = data.data.tenants || []
-                  alert(`✅ 計算完成！\n找到 ${tenants.length} 個租客的建議項目\n總金額: ${new Intl.NumberFormat('zh-TW').format(data.data.summary.total_suggested_amount)}元`)
-                  
-                  // 顯示詳細資訊
-                  if (tenants.length > 0) {
-                    let details = '詳細資訊:\n'
-                    tenants.forEach((tenant: any, index: number) => {
-                      const total = tenant.suggested_charges.reduce((sum: number, charge: any) => sum + charge.amount, 0)
-                      details += `${index + 1}. ${tenant.tenant_name} (${tenant.room_number}): ${new Intl.NumberFormat('zh-TW').format(total)}元\n`
-                    })
-                    console.log(details)
-                  }
-                } else {
-                  alert(`❌ 計算失敗: ${data.error}`)
-                }
-              } catch (error: any) {
-                alert(`❌ 網路錯誤: ${error.message}`)
-              }
-            }}
-            className="px-3 py-1 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded text-sm"
-          >
-            🔄 計算建議項目
-          </button>
-        </div>
-        
-        <div className="text-gray-600 mb-3">
-          系統會自動計算租客的應繳項目（押金、租金、電費）
-        </div>
-        
-        <div className="space-y-3">
-          <div className="p-3 bg-white border border-amber-100 rounded">
-            <div className="font-bold">操作步驟：</div>
-            <ol className="mt-2 space-y-2 text-sm">
-              <li>1. 點擊「🔄 計算建議項目」按鈕</li>
-              <li>2. 系統會顯示計算結果</li>
-              <li>3. 為需要的租客生成繳費記錄</li>
-              <li>4. 在下方「待收款項」中管理收款</li>
-            </ol>
-          </div>
-          
-          <div className="p-3 bg-white border border-amber-100 rounded">
-            <div className="font-bold">目前已知租客：</div>
-            <div className="mt-2 text-sm text-gray-600">
-              根據API資料，目前有 4 個租客有建議繳費項目，總金額約 25,292 元
-            </div>
-            <button 
-              onClick={async () => {
-                // 這裡可以實現批量生成功能
-                alert('批量生成功能開發中...\n請先使用個別生成功能')
-              }}
-              className="mt-3 w-full px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded"
-            >
-              批量生成所有建議項目
-            </button>
-          </div>
-        </div>
-        
-        <div className="mt-4 pt-3 border-t border-amber-200 text-sm text-amber-700">
-          💡 提示: 生成繳費記錄後，項目會出現在下方的「待收款項」中
-        </div>
-      </div>
 
       {/* 分類篩選 */}
       <div className="flex flex-wrap gap-2">
