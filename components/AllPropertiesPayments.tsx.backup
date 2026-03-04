@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useApp } from '@/contexts/AppContext'
 import PaymentStatsPanel from './PaymentStatsPanel'
 import PaymentViews from './PaymentViews'
@@ -30,12 +30,6 @@ export default function AllPropertiesPayments(props: AllPropertiesPaymentsProps)
   
   // 物業篩選狀態
   const [propertyFilter, setPropertyFilter] = useState<string>('all')
-  
-  // 建議繳費項目狀態
-  const [suggestedCharges, setSuggestedCharges] = useState<any[]>([])
-  const [loadingSuggestions, setLoadingSuggestions] = useState(false)
-  const [generatingPayments, setGeneratingPayments] = useState(false)
-  const [showSuggestions, setShowSuggestions] = useState(true)
   
   // 獲取所有物業
   const allProperties = state.data?.properties || []
@@ -72,119 +66,6 @@ export default function AllPropertiesPayments(props: AllPropertiesPaymentsProps)
   const pendingPayments = (allPayments || []).filter(p => 
     p.s === 'pending' && !p.archived
   )
-  
-  // 計算建議繳費項目
-  const calculateSuggestedCharges = async () => {
-    setLoadingSuggestions(true)
-    try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://taiwan-landlord-test.zeabur.app/api'
-      const response = await fetch(`${API_URL}/charges/suggested`)
-      const data = await response.json()
-      
-      if (data.success) {
-        setSuggestedCharges(data.data.tenants || [])
-      } else {
-        console.error('計算建議繳費項目失敗:', data.error)
-        setSuggestedCharges([])
-      }
-    } catch (error) {
-      console.error('計算建議繳費項目失敗:', error)
-      setSuggestedCharges([])
-    } finally {
-      setLoadingSuggestions(false)
-    }
-  }
-  
-  // 生成繳費記錄
-  const generatePaymentRecords = async (tenantId: number, chargeTypes: string[]) => {
-    setGeneratingPayments(true)
-    try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://taiwan-landlord-test.zeabur.app/api'
-      const response = await fetch(`${API_URL}/charges/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tenant_id: tenantId,
-          charges: chargeTypes
-        })
-      })
-      
-      const data = await response.json()
-      
-      if (data.success) {
-        alert(`✅ 成功生成 ${data.data.summary.generated_count} 筆繳費記錄，總金額 ${formatCurrency(data.data.summary.total_amount)}`)
-        // 重新載入資料
-        await updateData({})
-        // 重新計算建議項目
-        await calculateSuggestedCharges()
-      } else {
-        alert(`❌ 生成繳費記錄失敗: ${data.error}`)
-      }
-    } catch (error: any) {
-      alert(`❌ 生成繳費記錄失敗: ${error.message}`)
-    } finally {
-      setGeneratingPayments(false)
-    }
-  }
-  
-  // 批量生成所有建議項目
-  const generateAllSuggestedCharges = async () => {
-    if (suggestedCharges.length === 0) {
-      alert('沒有建議繳費項目可生成')
-      return
-    }
-    
-    if (!confirm(`確定要生成 ${suggestedCharges.length} 個租客的建議繳費項目嗎？`)) {
-      return
-    }
-    
-    setGeneratingPayments(true)
-    let totalGenerated = 0
-    let totalAmount = 0
-    
-    try {
-      for (const tenant of suggestedCharges) {
-        // 為每個租客生成所有建議項目
-        const chargeTypes = tenant.suggested_charges.map((charge: any) => charge.type)
-        
-        if (chargeTypes.length > 0) {
-          const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://taiwan-landlord-test.zeabur.app/api'
-          const response = await fetch(`${API_URL}/charges/generate`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              tenant_id: tenant.id,
-              charges: chargeTypes
-            })
-          })
-          
-          const data = await response.json()
-          if (data.success) {
-            totalGenerated += data.data.summary.generated_count
-            totalAmount += data.data.summary.total_amount
-          }
-        }
-      }
-      
-      alert(`✅ 批量生成完成！共生成 ${totalGenerated} 筆繳費記錄，總金額 ${formatCurrency(totalAmount)}`)
-      // 重新載入資料
-      await updateData({})
-      // 重新計算建議項目
-      await calculateSuggestedCharges()
-      
-    } catch (error: any) {
-      alert(`❌ 批量生成失敗: ${error.message}`)
-    } finally {
-      setGeneratingPayments(false)
-    }
-  }
-  
-  // 初始化時計算建議項目
-  useEffect(() => {
-    if (showSuggestions) {
-      calculateSuggestedCharges()
-    }
-  }, [showSuggestions])
   
   // 獲取已收款項（已歸檔的 paid 狀態）
   const collectedPayments = (allPayments || []).filter(p => 
@@ -452,15 +333,7 @@ export default function AllPropertiesPayments(props: AllPropertiesPaymentsProps)
             </button>
           </div>
           
-          {/* 計算建議項目按鈕 */}
-          <button
-            onClick={calculateSuggestedCharges}
-            disabled={loadingSuggestions}
-            className="px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded text-sm flex items-center gap-1"
-            title="計算建議繳費項目"
-          >
-            {loadingSuggestions ? '🔄 計算中...' : '💡 計算建議項目'}
-          </button>
+          
         </div>
       </div>
 
@@ -641,155 +514,6 @@ export default function AllPropertiesPayments(props: AllPropertiesPaymentsProps)
           </button>
         ))}
       </div>
-
-      {/* 建議繳費項目面板 */}
-      {showSuggestions && suggestedCharges.length > 0 && (
-        <div className="card bg-amber-50 border-amber-200 mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold text-amber-800 flex items-center gap-2">
-              <span>💡</span>
-              建議繳費項目
-              <span className="text-xs bg-amber-600 text-white px-2 py-1 rounded-full">
-                {suggestedCharges.length}個租客
-              </span>
-            </h3>
-            <div className="flex gap-2">
-              <button
-                onClick={calculateSuggestedCharges}
-                disabled={loadingSuggestions}
-                className="px-3 py-1 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded text-sm"
-              >
-                {loadingSuggestions ? '計算中...' : '🔄 重新計算'}
-              </button>
-              <button
-                onClick={generateAllSuggestedCharges}
-                disabled={generatingPayments}
-                className="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded text-sm"
-              >
-                {generatingPayments ? '生成中...' : '🚀 批量生成全部'}
-              </button>
-              <button
-                onClick={() => setShowSuggestions(false)}
-                className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm"
-              >
-                ✕ 隱藏
-              </button>
-            </div>
-          </div>
-          
-          <div className="space-y-4">
-            {suggestedCharges.map((tenant) => {
-              const totalAmount = tenant.suggested_charges.reduce((sum: number, charge: any) => sum + charge.amount, 0)
-              
-              return (
-                <div key={tenant.id} className="border border-amber-200 rounded-lg p-4 bg-white">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <div className="font-bold text-gray-800">
-                        {tenant.tenant_name} • {tenant.room_number}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        入住日期: {tenant.check_in_date} • 
-                        月租: {formatCurrency(tenant.rent_amount)} • 
-                        押金: {formatCurrency(tenant.deposit_amount)} ({tenant.deposit_status})
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold text-amber-700">
-                        總計: {formatCurrency(totalAmount)}
-                      </div>
-                      <button
-                        onClick={() => {
-                          const chargeTypes = tenant.suggested_charges.map((charge: any) => charge.type)
-                          generatePaymentRecords(tenant.id, chargeTypes)
-                        }}
-                        disabled={generatingPayments}
-                        className="mt-2 px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded text-sm"
-                      >
-                        生成繳費記錄
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {tenant.suggested_charges.map((charge: any, index: number) => (
-                      <div key={index} className={`p-3 rounded ${charge.is_urgent ? 'bg-red-50 border border-red-200' : 'bg-gray-50'}`}>
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <div className="font-medium">
-                              {charge.type === 'deposit' ? '🏦 押金' : 
-                               charge.type === 'rent' ? '💰 租金' : 
-                               '⚡ 電費'}
-                              {charge.is_urgent && <span className="ml-2 text-xs bg-red-500 text-white px-2 py-1 rounded">緊急</span>}
-                            </div>
-                            <div className="text-sm text-gray-600">{charge.reason}</div>
-                            {charge.notes && <div className="text-xs text-gray-500">{charge.notes}</div>}
-                          </div>
-                          <div className="text-right">
-                            <div className="font-bold">{formatCurrency(charge.amount)}</div>
-                            {charge.due_date && (
-                              <div className="text-xs text-gray-500">
-                                到期: {charge.due_date}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-          
-          <div className="mt-4 pt-4 border-t border-amber-200 text-sm text-amber-700">
-            💡 提示: 這些是系統計算出的建議繳費項目。點擊「生成繳費記錄」後，項目會出現在上方的待收款項中。
-          </div>
-        </div>
-      )}
-      
-      {/* 如果沒有建議項目但顯示開關打開，顯示提示 */}
-      {showSuggestions && suggestedCharges.length === 0 && !loadingSuggestions && (
-        <div className="card bg-gray-50 border-gray-200 mb-6">
-          <div className="flex justify-between items-center">
-            <div className="text-gray-600">
-              <span className="font-medium">💡 建議繳費項目</span>
-              <span className="ml-2 text-sm">目前沒有建議項目</span>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={calculateSuggestedCharges}
-                disabled={loadingSuggestions}
-                className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm"
-              >
-                {loadingSuggestions ? '計算中...' : '🔄 重新計算'}
-              </button>
-              <button
-                onClick={() => setShowSuggestions(false)}
-                className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm"
-              >
-                ✕ 隱藏
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* 如果建議項目被隱藏，顯示恢復按鈕 */}
-      {!showSuggestions && (
-        <div className="mb-6">
-          <button
-            onClick={() => {
-              setShowSuggestions(true)
-              calculateSuggestedCharges()
-            }}
-            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg flex items-center gap-2"
-          >
-            <span>💡</span>
-            顯示建議繳費項目
-          </button>
-        </div>
-      )}
 
       {/* 分類篩選 */}
       <div className="flex flex-wrap gap-2">
