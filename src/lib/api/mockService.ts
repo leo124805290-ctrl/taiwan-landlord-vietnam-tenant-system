@@ -3,8 +3,8 @@ import {
   SimpleRoom, SimplePayment, SimpleTenant, SimpleProperty,
   CreateRoomRequest, UpdateRoomRequest, CheckInRequest, CheckOutRequest, CreatePaymentRequest,
   SimpleRoomStatus, SimplePaymentType, SimplePaymentStatus
-} from '~/types/simple'
-import { sampleRooms } from '~/components/unified/sampleRooms'
+} from '@/src/types/simple'
+import { sampleRooms } from '@/src/components/unified/sampleRooms'
 import { createApiResponse } from './client'
 
 // 模擬數據存儲

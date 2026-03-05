@@ -65,7 +65,7 @@ export interface SimpleRoom {
     currentMeter: number;   // 本期電錶
     lastMeter: number;      // 上期電錶
     rate: number;          // 電費單價（元/度）
-    lastUpdated: string;    // 最後更新日期
+    lastUpdated?: string;   // 最後更新日期（可選）
   };
   
   // 時間戳記
