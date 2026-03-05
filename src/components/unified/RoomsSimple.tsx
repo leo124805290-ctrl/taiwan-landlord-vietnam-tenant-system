@@ -18,6 +18,11 @@ interface SimpleRoom {
     checkInDate: string;
     checkOutDate: string;
   };
+  electricity?: {
+    usage: number;
+    rate: number;
+    fee: number;
+  };
   createdAt: string;
   updatedAt: string;
 }
