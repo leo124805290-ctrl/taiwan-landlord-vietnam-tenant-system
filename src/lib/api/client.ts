@@ -3,7 +3,7 @@ import {
   SimpleRoom, SimplePayment, SimpleTenant, SimpleProperty,
   ApiResponse, PaginatedResponse,
   CreateRoomRequest, UpdateRoomRequest, CheckInRequest, CheckOutRequest, CreatePaymentRequest
-} from '@/types/simple'
+} from '~/types/simple'
 
 // API配置
 const API_CONFIG = {

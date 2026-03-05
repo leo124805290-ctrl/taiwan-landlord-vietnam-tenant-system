@@ -1,6 +1,6 @@
 'use client'
 
-import { SimpleRoomStatus, roomStatusDisplayNames } from '@/types/simple'
+import { SimpleRoomStatus, roomStatusDisplayNames } from '~/types/simple'
 
 interface RoomFiltersProps {
   filterStatus: SimpleRoomStatus | 'all'

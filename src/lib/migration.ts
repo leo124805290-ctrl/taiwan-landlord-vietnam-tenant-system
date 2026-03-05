@@ -1,6 +1,6 @@
 // 數據遷移工具 - 從舊類型遷移到簡化類型
-import { Room } from '@/lib/types';
-import { SimpleRoom, SimpleRoomStatus } from '@/types/simple';
+import { Room } from '~/lib/types';
+import { SimpleRoom, SimpleRoomStatus } from '~/types/simple';
 
 /**
  * 將舊房間狀態映射到簡化房間狀態
