@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { SimpleRoom } from '@/src/types/simple'
-import { roomsApi } from '@/src/lib/api/client'
+// import { roomsApi } from '@/src/lib/api/client' // 暫時註解，使用模擬數據
 
 interface UseRoomsResult {
   rooms: SimpleRoom[] | null
