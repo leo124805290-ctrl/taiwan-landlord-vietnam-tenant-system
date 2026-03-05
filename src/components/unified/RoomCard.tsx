@@ -1,7 +1,7 @@
 'use client'
 
-import { SimpleRoom, roomStatusDisplayNames, roomStatusColors } from '@/types/simple'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { SimpleRoom, roomStatusDisplayNames, roomStatusColors } from '@types/simple'
+import { formatCurrency, formatDate } from '@lib/utils'
 
 interface RoomCardProps {
   room: SimpleRoom

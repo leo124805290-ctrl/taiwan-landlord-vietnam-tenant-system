@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { SimpleRoom, SimpleRoomStatus, roomStatusDisplayNames, roomStatusColors } from '@/types/simple'
+import { SimpleRoom, SimpleRoomStatus, roomStatusDisplayNames, roomStatusColors } from '@types/simple'
 import RoomCard from './RoomCard'
 import RoomFilters from './RoomFilters'
 import RoomActions from './RoomActions'

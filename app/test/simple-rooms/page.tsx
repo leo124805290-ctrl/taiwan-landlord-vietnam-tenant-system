@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import RoomsSimple from '@/components/rooms/RoomsSimple'
-import { sampleRooms, handleRoomAction } from '@/data/sampleRooms'
-import { mockApiService } from '@/lib/api/mockService'
-import { SimpleRoom } from '@/types/simple'
+import RoomsSimple from '../../../../src/components/rooms/RoomsSimple'
+import { sampleRooms, handleRoomAction } from '../../../../src/data/sampleRooms'
+import { mockApiService } from '../../../../src/lib/api/mockService'
+import { SimpleRoom } from '../../../../src/types/simple'
 
 export default function SimpleRoomsTestPage() {
   const [rooms, setRooms] = useState<SimpleRoom[]>(sampleRooms)
