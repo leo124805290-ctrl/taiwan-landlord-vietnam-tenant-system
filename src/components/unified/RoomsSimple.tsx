@@ -26,6 +26,7 @@ interface SimpleRoom {
   };
   createdAt: string;
   updatedAt: string;
+  notes?: string;          // 備註
 }
 
 type SimpleRoomStatus = 'available' | 'occupied' | 'maintenance';

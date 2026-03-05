@@ -23,6 +23,7 @@ interface SimpleRoom {
   };
   createdAt: string;
   updatedAt: string;
+  notes?: string;          // 備註
 }
 
 // 生成示例房間數據

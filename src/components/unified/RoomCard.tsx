@@ -25,6 +25,7 @@ interface SimpleRoom {
   };
   createdAt: string;
   updatedAt: string;
+  notes?: string;          // 備註
 }
 
 const roomStatusDisplayNames = {
