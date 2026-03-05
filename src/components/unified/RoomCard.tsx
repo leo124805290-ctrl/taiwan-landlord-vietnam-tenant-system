@@ -18,9 +18,9 @@ interface SimpleRoom {
     checkOutDate: string;
   };
   electricity?: {
-    usage: number;
-    rate: number;
-    fee: number;
+    currentMeter: number;  // 當前電表讀數
+    lastMeter: number;     // 上次電表讀數
+    rate: number;          // 電費費率（元/度）
   };
   createdAt: string;
   updatedAt: string;
@@ -89,8 +89,11 @@ export default function RoomCard({ room, isSelected, onSelect, onAction }: RoomC
       return 0
     }
     
+    if (!room.electricity?.currentMeter || !room.electricity?.lastMeter) {
+      return 0
+    }
     const usage = room.electricity.currentMeter - room.electricity.lastMeter
-    return usage > 0 ? usage * room.electricity.rate : 0
+    return usage > 0 ? usage * (room.electricity.rate || 0) : 0
   }
 
   const daysRemaining = getDaysRemaining()

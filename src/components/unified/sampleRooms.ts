@@ -16,9 +16,9 @@ interface SimpleRoom {
     checkOutDate: string;
   };
   electricity?: {
-    usage: number;
-    rate: number;
-    fee: number;
+    currentMeter: number;  // 當前電表讀數
+    lastMeter: number;     // 上次電表讀數
+    rate: number;          // 電費費率（元/度）
   };
   createdAt: string;
   updatedAt: string;
