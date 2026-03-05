@@ -21,6 +21,7 @@ interface SimpleRoom {
     currentMeter: number;  // 當前電表讀數
     lastMeter: number;     // 上次電表讀數
     rate: number;          // 電費費率（元/度）
+    lastUpdated?: string;  // 最後更新時間
   };
   createdAt: string;
   updatedAt: string;
