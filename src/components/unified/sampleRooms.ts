@@ -1,4 +1,23 @@
-import { SimpleRoom } from '@/types/simple'
+// 本地類型定義
+interface SimpleRoom {
+  id: string;
+  propertyId: string;
+  number: string;
+  floor: number;
+  monthlyRent: number;
+  deposit: number;
+  status: 'available' | 'occupied' | 'maintenance';
+  tenant?: {
+    name: string;
+    phone: string;
+  };
+  lease?: {
+    checkInDate: string;
+    checkOutDate: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
 
 // 生成示例房間數據
 export const sampleRooms: SimpleRoom[] = [

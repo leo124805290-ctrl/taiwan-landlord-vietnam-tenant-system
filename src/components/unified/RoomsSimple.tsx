@@ -1,7 +1,41 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { SimpleRoom, SimpleRoomStatus, roomStatusDisplayNames, roomStatusColors } from '@types/simple'
+// 本地類型定義
+interface SimpleRoom {
+  id: string;
+  propertyId: string;
+  number: string;
+  floor: number;
+  monthlyRent: number;
+  deposit: number;
+  status: 'available' | 'occupied' | 'maintenance';
+  tenant?: {
+    name: string;
+    phone: string;
+  };
+  lease?: {
+    checkInDate: string;
+    checkOutDate: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+type SimpleRoomStatus = 'available' | 'occupied' | 'maintenance';
+
+const roomStatusDisplayNames = {
+  available: '空房可出租',
+  occupied: '已出租',
+  maintenance: '維修中'
+} as const;
+
+const roomStatusColors = {
+  available: 'bg-green-100 text-green-800',
+  occupied: 'bg-blue-100 text-blue-800',
+  maintenance: 'bg-orange-100 text-orange-800'
+} as const;
+
 import RoomCard from './RoomCard'
 import RoomFilters from './RoomFilters'
 import RoomActions from './RoomActions'

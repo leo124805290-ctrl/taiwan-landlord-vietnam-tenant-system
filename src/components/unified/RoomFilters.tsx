@@ -1,6 +1,13 @@
 'use client'
 
-import { SimpleRoomStatus, roomStatusDisplayNames } from '~/types/simple'
+// 本地類型定義
+type SimpleRoomStatus = 'available' | 'occupied' | 'maintenance';
+
+const roomStatusDisplayNames = {
+  available: '空房可出租',
+  occupied: '已出租',
+  maintenance: '維修中'
+} as const;
 
 interface RoomFiltersProps {
   filterStatus: SimpleRoomStatus | 'all'

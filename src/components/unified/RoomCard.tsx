@@ -1,7 +1,46 @@
 'use client'
 
-import { SimpleRoom, roomStatusDisplayNames, roomStatusColors } from '@types/simple'
-import { formatCurrency, formatDate } from '@lib/utils'
+// 本地類型定義，避免導入問題
+interface SimpleRoom {
+  id: string;
+  propertyId: string;
+  number: string;
+  floor: number;
+  monthlyRent: number;
+  deposit: number;
+  status: 'available' | 'occupied' | 'maintenance';
+  tenant?: {
+    name: string;
+    phone: string;
+  };
+  lease?: {
+    checkInDate: string;
+    checkOutDate: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+const roomStatusDisplayNames = {
+  available: '空房可出租',
+  occupied: '已出租',
+  maintenance: '維修中'
+} as const;
+
+const roomStatusColors = {
+  available: 'bg-green-100 text-green-800',
+  occupied: 'bg-blue-100 text-blue-800',
+  maintenance: 'bg-orange-100 text-orange-800'
+} as const;
+
+// 本地工具函數
+const formatCurrency = (amount: number): string => {
+  return `$${amount.toLocaleString('zh-TW')}`;
+};
+
+const formatDate = (dateString: string): string => {
+  return new Date(dateString).toLocaleDateString('zh-TW');
+};
 
 interface RoomCardProps {
   room: SimpleRoom
