@@ -50,6 +50,7 @@ class MockDatabase {
         status: 'paid',
         notes: '3月份租金',
         createdAt: '2026-03-01T10:00:00Z',
+        updatedAt: '2026-03-01T10:30:00Z',
       },
       {
         id: 'payment_2',
