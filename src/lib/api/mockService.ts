@@ -57,9 +57,9 @@ class MockDatabase {
         roomId: 'room_1',
         type: 'deposit',
         amount: 24000,
-        date: '2026-01-15',
+        dueDate: '2026-01-15',
         status: 'paid',
-        description: '入住押金',
+        notes: '入住押金',
         createdAt: '2026-01-15T14:30:00Z',
       },
       {
@@ -67,9 +67,9 @@ class MockDatabase {
         roomId: 'room_3',
         type: 'electricity',
         amount: 200,
-        date: '2026-03-01',
+        dueDate: '2026-03-01',
         status: 'pending',
-        description: '2月份電費',
+        notes: '2月份電費',
         createdAt: '2026-03-01T16:45:00Z',
       },
     ]
@@ -177,9 +177,9 @@ class MockDatabase {
       roomId: data.roomId,
       type: data.type as SimplePaymentType,
       amount: data.amount,
-      date: data.date,
+      dueDate: data.date,
       status: 'pending',
-      description: data.description,
+      notes: data.description,
       createdAt: now,
     }
     
@@ -335,7 +335,7 @@ export class MockApiService {
       type: 'deposit',
       amount: room.deposit,
       date: data.checkInDate,
-      description: '入住押金',
+      notes: '入住押金',
     }
     
     const payment = mockDb.createPayment(paymentData)
@@ -489,7 +489,7 @@ export class MockApiService {
     let filteredPayments = payments
     if (params?.startDate || params?.endDate) {
       filteredPayments = payments.filter(payment => {
-        const paymentDate = new Date(payment.date)
+        const paymentDate = new Date(payment.dueDate)
         const startDate = params.startDate ? new Date(params.startDate) : null
         const endDate = params.endDate ? new Date(params.endDate) : null
         
