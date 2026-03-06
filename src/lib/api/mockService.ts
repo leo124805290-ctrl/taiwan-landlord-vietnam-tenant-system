@@ -61,6 +61,7 @@ class MockDatabase {
         status: 'paid',
         notes: '入住押金',
         createdAt: '2026-01-15T14:30:00Z',
+        updatedAt: '2026-01-15T15:00:00Z',
       },
       {
         id: 'payment_3',
@@ -71,6 +72,7 @@ class MockDatabase {
         status: 'pending',
         notes: '2月份電費',
         createdAt: '2026-03-01T16:45:00Z',
+        updatedAt: '2026-03-01T16:45:00Z',
       },
     ]
 
@@ -181,6 +183,7 @@ class MockDatabase {
       status: 'pending',
       notes: data.description,
       createdAt: now,
+      updatedAt: now,
     }
     
     this.payments.set(id, payment)
@@ -335,7 +338,7 @@ export class MockApiService {
       type: 'deposit',
       amount: room.deposit,
       date: data.checkInDate,
-      notes: '入住押金',
+      description: '入住押金',
     }
     
     const payment = mockDb.createPayment(paymentData)
