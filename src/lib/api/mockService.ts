@@ -46,9 +46,9 @@ class MockDatabase {
         roomId: 'room_1',
         type: 'rent',
         amount: 12000,
-        date: '2026-03-01',
+        dueDate: '2026-03-01',
         status: 'paid',
-        description: '3月份租金',
+        notes: '3月份租金',
         createdAt: '2026-03-01T10:00:00Z',
       },
       {

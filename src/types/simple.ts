@@ -82,15 +82,18 @@ export interface SimpleRoom {
 export interface SimplePayment {
   id: string;
   roomId: string;
+  tenantId?: string;     // 租客ID（可選）
   type: SimplePaymentType;
   amount: number;
-  date: string;          // 付款日期 YYYY-MM-DD
+  dueDate: string;       // 到期日期 YYYY-MM-DD
+  paidDate?: string;     // 付款日期 YYYY-MM-DD（可選）
   status: SimplePaymentStatus;
-  description?: string;  // 備註
+  notes?: string;        // 備註
+  isBackfill?: boolean;  // 是否為補登記錄
   
   // 時間戳記
   createdAt: string;
-  updatedAt?: string;
+  updatedAt: string;
 }
 
 /**
