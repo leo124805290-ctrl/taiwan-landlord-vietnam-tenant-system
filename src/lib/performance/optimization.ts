@@ -146,14 +146,16 @@ export class PerformanceMonitor {
       } catch (e) {
         console.warn('LCP監測失敗:', e)
       }
-      
-      // 監測累計佈局偏移（CLS）
+
+// 監測累計佈局偏移（CLS）
       try {
         let clsValue = 0
         const clsObserver = new PerformanceObserver((entryList) => {
           for (const entry of entryList.getEntries()) {
-            if (!('hadRecentInput' in entry) || !entry.hadRecentInput) {
-              clsValue += entry.value
+            if (!(entry instanceof PerformanceResourceTiming)) continue
+            if ('hadRecentInput' in entry && !entry.hadRecentInput && 'value' in entry) {
+              const layoutShift = entry as PerformanceEntry & { value: number }
+              clsValue += layoutShift.value
               this.metrics.cls = clsValue
               console.log('CLS累計:', clsValue)
             }
